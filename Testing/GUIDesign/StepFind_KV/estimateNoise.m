@@ -9,7 +9,7 @@ function outNoise = estimateNoise(inContour, inWidth, ver)
 %Outputs the variance of the noise for historical reasons (current users expect variance)
 %Sanity check: Try estimateNoise(randn(1,1e6)), should be ~1
 if nargin < 3
-    ver = 2;
+    ver = 1;
 end
 if ver == 2
     din = diff(inContour);

@@ -1,8 +1,12 @@
-function extractFCsHMM(aseed)
+function extractFCsHMM(aseed, cropstr)
 
 if nargin < 1
     aseed = [];
 end
+if nargin < 2
+    cropstr = '';
+end
+
 %
 %Based off of @Iterate_GatherFCs
 %Get files
@@ -21,10 +25,10 @@ outpath = uigetdir(path);
 for i = 1:length(files)
     file = files{i};
     %Load crop
-    cropfp = sprintf('%s\\CropFiles\\%s.crop',path, file(6:end-4));
+    cropfp = sprintf('%s\\CropFiles%s\\%s.crop',path, cropstr, file(6:end-4));
     fid = fopen(cropfp);
     if fid == -1
-        fprintf('Crop not found for %s\n', file)
+        fprintf('Crop%s not found for %s\n',cropstr, file)
         continue
     end
     ts = textscan(fid, '%f');
