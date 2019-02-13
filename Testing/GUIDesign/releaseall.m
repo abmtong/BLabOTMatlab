@@ -1,0 +1,10 @@
+function releaseall()
+
+prepforrelease('PhageGUI_V2', 'release011619')
+prepforrelease('PhageGUIcrop_V2', 'release011619')
+prepforrelease('BatchKV', 'release011619')
+prepforrelease('batchHMMV4', 'release011619')
+prepforrelease('AProcessData', 'release011619')
+prepforrelease('Iterate_GatherFCs', 'release011619')
+prepforrelease('prepTrHMM', 'release011619')
+prepforrelease('ForExtGUI_V2', 'release011619')

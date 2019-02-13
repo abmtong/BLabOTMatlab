@@ -1,0 +1,1 @@
+guiCnn = windowFilter(@C_var, guiCn, 100)

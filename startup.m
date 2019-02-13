@@ -1,0 +1,6 @@
+addpath('C:\Users\Alexander Tong\Box Sync\Year 2 Semester 2\Res\MATLAB\Phi29_Alex')
+addpath('C:\Users\Alexander Tong\Box Sync\Year 2 Semester 2\Res\MATLAB\Phi29_Alex\helperFunctions')
+addpath('C:\Users\Alexander Tong\Box Sync\Year 2 Semester 2\Res\MATLAB\Phi29_Alex\Calibration')
+addpath('C:\Users\Alexander Tong\Box Sync\Year 2 Semester 2\Res\MATLAB\Testing\GUIDesign')
+addpath('C:\Users\Alexander Tong\Box Sync\Year 2 Semester 2\Res\MATLAB\Testing\GUIDesign\StepFind_KV')
+addpath('C:\Users\Alexander Tong\Box Sync\Year 2 Semester 2\Res\MATLAB\Testing\GUIDesign\StepFind_Hist')
