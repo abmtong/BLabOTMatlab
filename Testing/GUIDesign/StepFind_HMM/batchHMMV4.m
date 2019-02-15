@@ -1,4 +1,4 @@
-function out = batchHMMV4(nitermax, stopatlogp)
+function out = batchHMMV4(nitermax, stopatlogp, hmmfh)
 %Applies stepFindHMM to a bunch of traces
 
 if nargin < 1
@@ -7,6 +7,10 @@ end
 
 if nargin < 2
     stopatlogp = 1;
+end
+
+if nargin < 4
+    hmmfh = @findStepHMMV1b;
 end
 
 lowprocesspriority = 0;
@@ -39,7 +43,7 @@ parfor i = 1:len
     %load file and current iter.
     file = files{i};
     fp = [path filesep file];
-    outflags(i) = fsHMMsave(fp, nitermax, stopatlogp);
+    outflags(i) = fsHMMsave(fp, nitermax, stopatlogp, hmmfh);
 end
 
 fprintf('batchHMM finished in %0.1fm, %d files processed, %d files errored, %d files converged with itermax=%d\n',...

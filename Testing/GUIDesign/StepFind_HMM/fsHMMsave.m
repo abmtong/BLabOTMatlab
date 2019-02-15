@@ -1,4 +1,4 @@
-function outflag = fsHMMsave(infilepath, nitermax, stopatlogp)
+function outflag = fsHMMsave(infilepath, nitermax, stopatlogp, hmmfh)
 %current: fsHMMV1b
 
 verboseflag = 2; %use 2 if you want fprintf updates [to get a sense of iter. time], 0 if not
@@ -17,6 +17,10 @@ end
 
 if nargin < 3
     stopatlogp = 1; %whether to stop when logp becomes smaller (less probable) than the previous's or not
+end
+
+if nargin < 4
+    hmmfh = @findStepHMMV1b;
 end
 
 fcdata = load(infilepath, 'fcdata'); %loads struct called fcdata
@@ -50,7 +54,7 @@ while iter <= nitermax
         end
         %do stepfinding
         try
-            newres = findStepHMMV1b(tr, mod, verboseflag);
+            newres = hmmfh(tr, mod, verboseflag);
         catch
             newres = [];
             fcdata.hmm = newres;
@@ -72,7 +76,7 @@ while iter <= nitermax
     else
         %do stepfinding
         try
-            newres = findStepHMMV1b(tr, preres, 0);
+            newres = hmmfh(tr, preres, 0);
         catch
             fcdata.hmmfinished = -1;
             outflag = -1;
