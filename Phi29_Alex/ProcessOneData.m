@@ -188,7 +188,8 @@ else %Phage-only processing
     %Use velocity thresholding to find steps in mirror movement
     dmx = diff(windowFilter(@mean, rawdat(5,:), fil, dec));
     %Threshold = 5 * 1.4 * MAD (= 5*SD), assume mean ~ 0
-    thr = 5 * 1.4 * median(abs(dmx - mean(dmx))); %should be ~equal to the thr in the switch above
+    thr = 3 * 1.4 * median(abs(dmx - mean(dmx))); %should be ~equal to the thr in the switch above
+    %is this necessary to recalc or just use one value?
     ind = diff(abs(dmx) > thr);
 %     ind = diff(abs(smooth(velocityThresh(rawdat(5,:), dec))) > thr)';
     indSta = dec*find(ind<0)+pad; %=-1, end of mirror movement (start of segment)

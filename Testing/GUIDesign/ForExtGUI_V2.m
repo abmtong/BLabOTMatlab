@@ -264,7 +264,7 @@ fig.Visible = 'on';
         
         %Plot residual, fit
 %         fitx = xwlcfit(3) * .34 * ForceExt_XWLC_Wikipedia(frcFc, xwlcfit(1),xwlcfit(2)) + xwlcfit(4);
-        fitx = xwlcfit(3) * .34 * XWLC_legacy(frcFc, xwlcfit(1),xwlcfit(2)) + xwlcfit(4);
+        fitx = xwlcfit(3) * .34 * XWLC(frcFc, xwlcfit(1),xwlcfit(2), [], 3) + xwlcfit(4);
         extresid = extFc - fitx;
         delete(fitLine)
         fitLine = plot(subAxis, fitx, frcFc, 'Color', 'k', 'LineWidth', 1);

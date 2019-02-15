@@ -30,11 +30,10 @@ end
 
 [inExt, inFor] = trimTrace(inExt, inFor, opts.loF, opts.hiF);
 %bounds
-lb = [1 1 1 -400];
-ub = [1e3 1e4 1e4 400];
+lb = [1 1 1 -0];
+ub = [1e3 1e4 1e4 00];
 
-% fitfcn = @(opts,force)( opts(3) * .34 * ForceExt_XWLC_Wikipedia(force, opts(1),opts(2)) + opts(4) );
-fitfcn = @(opts,force)( opts(3) * .34 * XWLC_legacy(force, opts(1),opts(2)) + opts(4) );
+fitfcn = @(opts,force)( opts(3) * .34 * XWLC(force, opts(1),opts(2), [], 3) + opts(4) );
 
 %Mute lsqcurvefit
 options=optimoptions(@lsqcurvefit);
