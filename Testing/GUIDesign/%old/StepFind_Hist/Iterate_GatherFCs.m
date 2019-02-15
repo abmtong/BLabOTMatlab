@@ -1,4 +1,7 @@
-function [outCons, outExts] = Iterate_GatherFCs()
+function [outCons, outExts] = Iterate_GatherFCs(cropstr)
+if nargin < 1
+    cropstr = '';
+end
 
 [files, path] = uigetfile('C:\Data\phage*.mat','MultiSelect','on');
 if ~path
@@ -24,10 +27,10 @@ outExts = [];
 for i = 1:length(files)
     file = files{i};
     %Load crop
-    cropfp = sprintf('%s\\CropFiles\\%s.crop',path, file(6:end-4));
+    cropfp = sprintf('%s\\CropFiles%s\\%s.crop',path,cropstr, file(6:end-4));
     fid = fopen(cropfp);
     if fid == -1
-        fprintf('Crop not found for %s\n', file)
+        fprintf('Crop%s not found for %s\n', cropstr, file)
         continue
     end
     ts = textscan(fid, '%f');

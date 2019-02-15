@@ -1,4 +1,4 @@
-function clearHMM()
+function clearHMM(aseed)
 
 [f, p] = uigetfile('pHMM*.mat', 'MultiSelect', 'on');
 
@@ -17,7 +17,9 @@ for i = 1:length(f)
     if isfield(fcdata, 'hmmfinished')
         fcdata = rmfield(fcdata, 'hmmfinished');
     end
-    if isfield(fcdata, 'aseed')
+    if nargin > 0
+        fcdata.aseed = aseed;
+    elseif isfield(fcdata, 'aseed')
         fcdata = rmfield(fcdata, 'aseed');
     end
     save([p filesep 'stripped' filesep f{i}], 'fcdata')
