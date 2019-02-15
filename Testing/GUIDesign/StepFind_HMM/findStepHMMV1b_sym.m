@@ -64,6 +64,7 @@ ahalf = (length(a)-1)/2;
 
 %define upper, lower bdys in terms of y-indicies
 maxdif = max(abs(diff(tr)));
+maxdif = max(maxdif, length(a));
 ub = min(  ceil((tr+maxdif)/binsz), hei);
 lb = max( floor((tr-maxdif)/binsz), 1);
 wid = ub-lb+1;
@@ -208,7 +209,7 @@ wid2 = ub2-lb2+1;
 maxwid2 = max(wid2);
 %make 2d a
 widaa = min(hei, (length(a)+1)/2);
-aa = spdiags( repmat(a(ahalf+2+(-widaa:widaa)), hei, 1), -widaa:widaa, hei, hei);
+aa = spdiags( repmat(a(ahalf+1+(-widaa:widaa)), hei, 1), -widaa:widaa, hei, hei);
 xi = zeros(hei);
 
 
@@ -263,13 +264,13 @@ newpi(lb(1):ub(1)) = ga(1,1:wid(1));
 %new a
 newa = zeros(size(a));
 [B, d] = spdiags(xi);
-d = d(d>=0); %find why d is negative sometimes - I assume when P underflows (backtracking?)
-if(any(d<0))
-    fprintf('d < 0 on this trace')
-end
+% d = d(d>=0); %find why d is negative sometimes - I assume when P underflows (backtracking?)
+% if(any(d<0))
+%     fprintf('d < 0 on this trace')
+% end
 B = sum(B,1);
 for j = 1:length(d)
-    newa(d(j)+(end+1)/2) = newa(d(j)+(end+1)/2) + B(j);
+    newa(d(j)+ahalf+1) = newa(d(j)+ahalf+1) + B(j);
 end
 newa = newa/sum(newa);
 
@@ -303,7 +304,7 @@ figure, plot(tr, 'Color', [.7 .7 .7 ]), hold on, plot(y(st))
 
 %make a into a matrix
 widaa = min(maxwid2, (lena+1)/2);
-aa = spdiags( repmat(newa(ahalf+2+(-widaa:widaa)) , maxwid2, 1), -widaa:widaa, maxwid2, maxwid2);
+aa = spdiags( repmat(newa(ahalf+1+(-widaa:widaa)) , maxwid2, 1), -widaa:widaa, maxwid2, maxwid2);
 %vitterbi for trace fit (mle is pretty much the same and faster, but vitterbi is more proper)
 vitdp = zeros(len-1, maxwid2); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
 vitsc = npdf2(1).^2;
@@ -345,7 +346,9 @@ if verbose == 1
     yp = 0.9 * yl(2) + 0.1 * yl(1);
     text(0,yp,sprintf('trnsprb %0.04f, sig %0.2f, logp %0.2f', 1-newa(1), out.sig, out.logp))
     %plot a
-    subplot(3, 1, 3), plot( -15:0.1:15, newa)
+    plota = newa;
+    plota(151)=0;
+    subplot(3, 1, 3), plot( -15:0.1:15, plota)
     %Finds steps from 0 to 25, but some can be 0; find last nonzero
 %     xm = find(newa > 1e-5, 1, 'last');
 %     xlim([0 xm*binsz])
