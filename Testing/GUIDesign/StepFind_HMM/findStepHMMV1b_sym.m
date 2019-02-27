@@ -209,7 +209,7 @@ wid2 = ub2-lb2+1;
 maxwid2 = max(wid2);
 %make 2d a
 widaa = min(hei, (length(a)+1)/2);
-aa = spdiags( repmat(a(ahalf+1+(-widaa:widaa)), hei, 1), -widaa:widaa, hei, hei);
+aa = spdiags( repmat(a(ahalf+1+(-widaa+1:widaa-1)), lena, 1), -widaa:widaa, hei, hei);
 xi = zeros(hei);
 
 

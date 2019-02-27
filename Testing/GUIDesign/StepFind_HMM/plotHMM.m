@@ -57,22 +57,30 @@ end
 subplot(3,1,3)
 hold on
 binsz = 0.1;
-alen = length(fcdata.hmm(1).a);
-x = binsz * (1:alen-1);
+% alen = length(fcdata.hmm(1).a);
+% x = binsz * (1:alen-1);
 len = ind;
 lw = .5;
 for i = 1:len
-    tempa= fcdata.hmm(i);
+    tempa= fcdata.hmm(i).a;
+    if i == 1
+        alen = length(tempa);
+        [~,zpos] = max(tempa);
+        x = (1:alen) - zpos;
+        x = x * binsz;
+    end
+    tempa(zpos) = 0;
     %plot lines in increasing saturation of green, last line bold
     if i == len
         lw=2;
+        sig = fcdata.hmm(i).sig;
     end
-    plot(x,tempa.a(2:end), 'Color', [0 1 0] * i/ len, 'LineWidth', lw)
+    plot(x,tempa, 'Color', [0 1 0] * i/ len, 'LineWidth', lw)
 end
-xlim([0,10])
+xlim(x([1 end]))
 
 yl = ylim;
-line(tempa.sig * [1 1], yl)
+line(sig * [1 1], yl)
 
 
 % figure

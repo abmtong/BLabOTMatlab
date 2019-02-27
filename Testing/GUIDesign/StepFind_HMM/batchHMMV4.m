@@ -1,15 +1,15 @@
 function out = batchHMMV4(nitermax, stopatlogp, hmmfh)
 %Applies stepFindHMM to a bunch of traces
 
-if nargin < 1
+if nargin < 1 || isempty(nitermax)
     nitermax = 5;
 end
 
-if nargin < 2
+if nargin < 2 || isempty(stopatlogp)
     stopatlogp = 1;
 end
 
-if nargin < 4
+if nargin < 3
     hmmfh = @findStepHMMV1b;
 end
 

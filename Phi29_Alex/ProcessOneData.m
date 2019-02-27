@@ -18,6 +18,7 @@ opts.comment = '';
 %Calibration options
 opts.cal.verbose=1;
 opts.cal.Fs = 62.5e3;
+opts.cal.d2o = 0;
 %Phage options
 opts.isPhage = 0;
 opts.dnaPL = 50;
@@ -188,7 +189,7 @@ else %Phage-only processing
     %Use velocity thresholding to find steps in mirror movement
     dmx = diff(windowFilter(@mean, rawdat(5,:), fil, dec));
     %Threshold = 5 * 1.4 * MAD (= 5*SD), assume mean ~ 0
-    thr = 3 * 1.4 * median(abs(dmx - mean(dmx))); %should be ~equal to the thr in the switch above
+    thr = 5 * 1.4 * median(abs(dmx - mean(dmx))); %should be ~equal to the thr in the switch above
     %is this necessary to recalc or just use one value?
     ind = diff(abs(dmx) > thr);
 %     ind = diff(abs(smooth(velocityThresh(rawdat(5,:), dec))) > thr)';
