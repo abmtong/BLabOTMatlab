@@ -1,4 +1,4 @@
-function [outCons, outExts] = Iterate_GatherFCs(cropstr)
+function [outCons, outExts, outFrcs] = getFCs(cropstr)
 if nargin < 1
     cropstr = '';
 end
@@ -24,6 +24,7 @@ end
 
 outCons = [];
 outExts = [];
+outFrcs = [];
 for i = 1:length(files)
     file = files{i};
     %Load crop
@@ -47,10 +48,12 @@ for i = 1:length(files)
         frc = cellfun(@(ce,st,en)ce(st:en),stepdata.force, indsta, indend, 'UniformOutput',0);
         ext = cellfun(@(c,f)c .* XWLC(f, 60, 550, 4.14) *.34, con, frc, 'Uni', 0);
         outExts = [outExts ext]; %#ok<AGROW>
+        outFrcs = [outFrcs frc]; %#ok<AGROW>
     end
 end
 outCons = outCons(~cellfun(@isempty,outCons));
 if nargout>1
     outExts = outExts(~cellfun(@isempty,outExts));
+    outFrcs = outFrcs(~cellfun(@isempty,outFrcs));
 end
 end

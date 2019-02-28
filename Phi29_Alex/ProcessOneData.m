@@ -169,12 +169,12 @@ else %Phage-only processing
         case 2.5e3
             fil = 12;
             dec = 1;
-%             thr = 1e-4;
+            thr = 1e-4;
             pad = fil*2;
         case 62.5e3 %same as 50kHz
             fil = 100;
             dec = 25;
-%             thr = 1e-5;
+            thr = 1e-5;
             pad = fil*2;
         otherwise
             warning('No velocity thresholding options for that Fsamp, guessing')
@@ -182,14 +182,14 @@ else %Phage-only processing
             dec = max(round(opts.Fsamp / 2500), 1);
             fil = round(12*sqrt(dec));
             mxfil = windowFilter(@mean, rawdat(5,:), fil, dec);
-%             thr = 15 * median(abs(mxfil-mean(mxfil)));
+            thr = 5 * 1.4 * median(abs(mxfil-mean(mxfil)));
             pad = fil*2;
     end
     
     %Use velocity thresholding to find steps in mirror movement
     dmx = diff(windowFilter(@mean, rawdat(5,:), fil, dec));
     %Threshold = 5 * 1.4 * MAD (= 5*SD), assume mean ~ 0
-    thr = 5 * 1.4 * median(abs(dmx - mean(dmx))); %should be ~equal to the thr in the switch above
+%     thr = 5 * 1.4 * median(abs(dmx - mean(dmx))); %should be ~equal to the thr in the switch above
     %is this necessary to recalc or just use one value?
     ind = diff(abs(dmx) > thr);
 %     ind = diff(abs(smooth(velocityThresh(rawdat(5,:), dec))) > thr)';

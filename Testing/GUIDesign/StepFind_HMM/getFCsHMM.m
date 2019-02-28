@@ -1,4 +1,4 @@
-function extractFCsHMM(aseed, cropstr)
+function getFCsHMM(aseed, cropstr)
 
 if nargin < 1
     aseed = [];

@@ -505,6 +505,10 @@ fig.Visible = 'on';
     end
 
     function custom03_callback(~,~)
+        customB3.String = 'PlotCals';
+        plotcal(stepdata.cal);
+        
+        %{
         customB3.String = 'Recalc Contour';
         %XWLC fcn
         function outXpL = XWLC(F, P, S, kT)
@@ -523,12 +527,14 @@ fig.Visible = 'on';
         %RNA: 60 , 400, 0.27
         %One on new: 43, 845
         %Hyb?
+        %'XWLC PL(nm), 50D 40R 35H' 'XWLC SM(pN), 700D 450R 500H' 'kT (pN nm)' 'Rise/bp (nm/bp)'...
         pl = 35;
         sm = 500;
         npb = 0.34;
         stepdata.contour = cellfun(@(x,y) x ./ XWLC(y, pl, sm, 4.14)./ npb, stepdata.extension, stepdata.force, 'uni', 0);
         stepdata.cut.contour = cellfun(@(x,y) x ./ XWLC(y, pl, sm, 4.14)./ npb, stepdata.cut.extension, stepdata.cut.force, 'uni', 0);
         refilter_callback
+        %}
     end
 
     function printFig_callback(~,~)
