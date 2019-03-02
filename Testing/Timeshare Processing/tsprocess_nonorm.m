@@ -1,4 +1,7 @@
-function [out, outfp] = tsprocess(dtype)
+function [out, outfp] = tsprocess_nonorm(dtype)
+%Edited to not normalize the voltage
+%RADIII CHANGED
+
 if nargin < 1
     dtype = 'int16';
 end
@@ -19,6 +22,7 @@ end
 %process cal
 calraw = timeshareread([p f{1}], dtype);
 
+%Currently there's a bug in ScaleIntensities that calibration data starts before voltage is rectified, so cut the first bit of data (1e4 of 1e5 pts)
 fnames = {'AX' 'AY' 'BX' 'BY' 'AS' 'BS'};
 for i = 1:6
     calraw.(fnames{i}) = calraw.(fnames{i})(1e4:end);
@@ -28,9 +32,9 @@ end
 calopts.hydro = 0;
 calopts.Fs = 1/calraw.meta.hdr(3);
 calopts.ra = 1100; %bead radius, nm. Replace with query window later like @AProcessData
-calopts.nBin = ceil(length(calraw.AX) / 1000); %200 total pts in pspec
+calopts.nBin = ceil(length(calraw.AX) / 400); %200 total pts in pspec
 calopts.Fmin = 50;
-% calopts.Fmax = 5e3;
+calopts.Fmax = calopts.Fs/2; %5e3;
 fnames = {'AX' 'AY' 'BX' 'BY'};
 sumnms = {'AS' 'AS' 'BS' 'BS'};
 
@@ -53,7 +57,10 @@ for i = 1:length(fnames)
     calopts.name = fnames{i};
     calopts.Sum = mean( calraw.(sumnms{i}) );
 %     cal.(fnames{i}) = tscalibrate( calraw.(fnames{i})(1e4:end), calopts);
-    cal.(fnames{i}) = tscalibrate( calraw.(fnames{i}) ./ calraw.(sumnms{i}), calopts);
+    %Original code
+%     cal.(fnames{i}) = tscalibrate( calraw.(fnames{i}) ./ calraw.(sumnms{i}), calopts);
+    %No normalize
+    cal.(fnames{i}) = tscalibrate( calraw.(fnames{i}), calopts);
 %     cal.(fnames{i}) = Calibrate( calraw.(fnames{i}) ./ calraw.(sumnms{i}), calopts);
 end
 out.cal = cal;
@@ -84,15 +91,15 @@ fnames = {'AX' 'AY' 'BX' 'BY'};
 sumnms = {'AS' 'AS' 'BS' 'BS'};
 dattd = datraw.T2F - datraw.T1F;
 for i = 1:length(fnames)
-    % normalized voltage = (AX - offAX[interp'd]) ./ AS;
-    datraw.(fnames{i}) = ( datraw.(fnames{i}) - interp1( off.td, off.(fnames{i}), dattd, 'linear', mean(off.(fnames{i})) ) )  ./ datraw.(sumnms{i});
+    % normalized voltage = (AX - offAX[interp'd]) %do not normalize% ./ AS;
+    datraw.(fnames{i}) = ( datraw.(fnames{i}) - interp1( off.td, off.(fnames{i}), dattd, 'linear', mean(off.(fnames{i})) ) ) ;% ./ datraw.(sumnms{i});
     %Trap force = nAX * alpha * kappa
     out.(['force' fnames{i}]) = datraw.(fnames{i}) * cal.(fnames{i}).a * cal.(fnames{i}).k;
 end
 
 %Calculate extension  = hypot( TrapDelta + BeadsX, BeadsY) - Bead Radii
-out.extension = hypot( (datraw.T2F-datraw.T1F)*opts.convTrapX  - cal.AX.a*datraw.AX + cal.BX.a*datraw.BX, ...
-                                                               - cal.AY.a*datraw.AY + cal.BY.a*datraw.BY )...
+out.extension = hypot( (datraw.T2F-datraw.T1F)*opts.convTrapX - cal.AX.a*datraw.AX + cal.BX.a*datraw.BX, ...
+                                                              - cal.AY.a*datraw.AY + cal.BY.a*datraw.BY )...
                        - opts.raA - opts.raB;
 %Calculate total force = hypot( forX, forY ) using differential force (average of forces)
 out.force = hypot((out.forceBX - out.forceAX)/2, ...

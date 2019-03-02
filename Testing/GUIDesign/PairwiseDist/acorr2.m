@@ -12,4 +12,6 @@ for i = 1:len
     out(i) = iny(i:end) * iny(1:end-i+1)' / sqrt( sum( iny2(i:end)) * sum(iny2(1:end-i+1))); %scale by magnitude (A*B/sqrt A*A B*B)
 end
 
+out(isnan(out)) = 0;
+
 out = out / out(1);

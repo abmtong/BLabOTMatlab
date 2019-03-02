@@ -21,6 +21,10 @@ p = diff([0 p]); %first value of cdf is fine, = pdf(1)
 % p = normHist(inY, binsize);
 % p = p(:,2)';
 
-outPWD = real(ifft(abs(fft(p)).^2));
-outPWD = outPWD(1:floor(end/2)) / outPWD(1);
+%regular V1b
+% outPWD = real(ifft(abs(fft(p)).^2));
+% outPWD = outPWD(1:floor(end/2)) / outPWD(1);
+
+outPWD = acorr2(p);
+
 outX = binsize*(0:length(outPWD)-1);

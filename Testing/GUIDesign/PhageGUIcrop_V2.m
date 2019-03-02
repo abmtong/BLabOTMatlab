@@ -398,7 +398,14 @@ fig.Visible = 'on';
                 textc = double(mean(stepdata.contour{i}(ran)));
 %                 textv = std(cfil(ran));
                 textv = sqrt(estimateNoise(stepdata.contour{i}(ran), [], 1));
-                text(mainAxis, textt, textc+20, sprintf('%0.2f',textv), 'Rotation', 90, 'Clipping', 'on')
+                if j == 1
+                    pfit = @(x)polyfit(1:length(x), x, 1);
+                    textvel = pfit(stepdata.contour{i});
+                    textvel = -textvel(1) * 2500;
+                    text(mainAxis, textt, textc+20, sprintf('%0.2f, %0.1fv',textv, textvel), 'Rotation', 90, 'Clipping', 'on')
+                else
+                    text(mainAxis, textt, textc+20, sprintf('%0.2f',textv), 'Rotation', 90, 'Clipping', 'on')
+                end
             end
         end
     end
@@ -505,8 +512,41 @@ fig.Visible = 'on';
     end
 
     function custom03_callback(~,~)
+        
+        customB3.String = 'GetBacktracks';
+        a = ginput(4); %select left, start bt, end bt, right
+        %get relevant numbers
+        %extract left to right
+        cropt = a([1 4]);
+        %extract backtrack stats
+        btt = a([2 3]);
+        btc = a([2 3], 2);
+        
+        %extract from guistepdata
+        cropfcn = @(x, y, z) x(y>z(1) & y<z(2) ); %cropfcn(con, tim, a) = con(tim>a(1) & tim<a(2))
+        concrop = cellfun(@(x,y)cropfcn(x,y,cropt), stepdata.contour, stepdata.time, 'uni', 0);
+        frccrop = cellfun(@(x,y)cropfcn(x,y,cropt), stepdata.force, stepdata.time, 'uni', 0);
+        timcrop = cellfun(@(x,y)cropfcn(x,y,cropt), stepdata.time, stepdata.time, 'uni', 0);
+        keepind = ~cellfun(@isempty, concrop);
+        
+        stepback.con = concrop(keepind);
+        stepback.tim = timcrop(keepind);
+        stepback.frc = frccrop(keepind);
+        stepback.t = cropt;
+        stepback.sb = [btt(:) btc(:)];
+        %save
+        sbpath = sprintf('%s\\Backtracks\\', path);
+        if ~isdir(sbpath)
+            mkdir(sbpath)
+        end
+        save(sprintf('%s\\Backtracks\\phBT%sS%0.2f.mat', path, name, btt(1)), 'stepback')
+        
+        
+        %{
         customB3.String = 'PlotCals';
         plotcal(stepdata.cal);
+        %}
+        
         
         %{
         customB3.String = 'Recalc Contour';
