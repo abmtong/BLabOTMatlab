@@ -30,7 +30,7 @@ p = double(p(:)');
 if isa(ax.Children(end), 'patch')
 [x, ix] = unique(x);
 p = p(ix);
-
+end
 %renormalize
 p = p / sum(p) * mean(diff(x));
 

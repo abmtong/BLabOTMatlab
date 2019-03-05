@@ -541,7 +541,7 @@ fig.Visible = 'on';
         end
         save(sprintf('%s\\Backtracks\\phBT%sS%0.2f.mat', path, name, btt(1)), 'stepback')
         
-        
+        pan on
         %{
         customB3.String = 'PlotCals';
         plotcal(stepdata.cal);

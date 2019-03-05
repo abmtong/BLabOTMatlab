@@ -6,8 +6,12 @@ function [outPWD, outX] = calcPWDV1b( inY, binsize )
 if nargin < 2
     binsize = 0.2;
 end
+
 p = cdf(inY,binsize);
 p = diff([0 p]); %first value of cdf is fine, = pdf(1)
+
+% p = sgolaydiff(inY, {1 13});
+
 % p = diff(diff(p));
 % p = log(p);
 % p = resTimeHist(inY,binsize);

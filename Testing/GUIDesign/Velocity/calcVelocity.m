@@ -3,6 +3,10 @@ function [out, outfs] = calcVelocity(incell, maxsz, incellf)
 %output: velocities, as a cell of arrays
 %averages incellf (to get e.g. avg force) over the velocity region, outputs as similar to output
 
+%consider using @phagepause instead (sgfilters whole trace, plots vel. dist
+
+
+
 %could rewrite this as "does @fun to incell{i} chopped up into maxsz bits" - just change @polyfit to something generic
 
 if nargin < 2
