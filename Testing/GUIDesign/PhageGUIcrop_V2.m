@@ -397,7 +397,7 @@ fig.Visible = 'on';
                 textt = double(mean(stepdata.time{i}(ran([1 end]))));
                 textc = double(mean(stepdata.contour{i}(ran)));
 %                 textv = std(cfil(ran));
-                textv = sqrt(estimateNoise(stepdata.contour{i}(ran), [], 1));
+                textv = sqrt(estimateNoise(stepdata.contour{i}(ran), [], 2));
                 if j == 1
                     pfit = @(x)polyfit(1:length(x), x, 1);
                     textvel = pfit(stepdata.contour{i});
@@ -513,6 +513,7 @@ fig.Visible = 'on';
 
     function custom03_callback(~,~)
         
+        %{
         customB3.String = 'GetBacktracks';
         a = ginput(4); %select left, start bt, end bt, right
         %get relevant numbers
@@ -542,13 +543,15 @@ fig.Visible = 'on';
         save(sprintf('%s\\Backtracks\\phBT%sS%0.2f.mat', path, name, btt(1)), 'stepback')
         
         pan on
+        %}
+        
         %{
         customB3.String = 'PlotCals';
         plotcal(stepdata.cal);
         %}
         
         
-        %{
+        
         customB3.String = 'Recalc Contour';
         %XWLC fcn
         function outXpL = XWLC(F, P, S, kT)
@@ -568,13 +571,13 @@ fig.Visible = 'on';
         %One on new: 43, 845
         %Hyb?
         %'XWLC PL(nm), 50D 40R 35H' 'XWLC SM(pN), 700D 450R 500H' 'kT (pN nm)' 'Rise/bp (nm/bp)'...
-        pl = 35;
-        sm = 500;
+        pl = 50;
+        sm = 1200;
         npb = 0.34;
         stepdata.contour = cellfun(@(x,y) x ./ XWLC(y, pl, sm, 4.14)./ npb, stepdata.extension, stepdata.force, 'uni', 0);
         stepdata.cut.contour = cellfun(@(x,y) x ./ XWLC(y, pl, sm, 4.14)./ npb, stepdata.cut.extension, stepdata.cut.force, 'uni', 0);
         refilter_callback
-        %}
+        
     end
 
     function printFig_callback(~,~)

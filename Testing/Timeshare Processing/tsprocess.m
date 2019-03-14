@@ -4,8 +4,15 @@ if nargin < 1
 end
 %reads files, passes data to @ProcessOneData -like methods, then outputs a .mat file
 
-[f, p] = uigetfile('./*.dat', 'Select cal/off/dat files', 'MultiSelect', 'on');
-
+[f{1}, p] = uigetfile('./*.dat', 'Select cal file');
+if ~p
+    return
+end
+[f{2}, p] = uigetfile([p '*.dat'], 'Select offset file');
+if ~p
+    return
+end
+[f{3}, p] = uigetfile([p '*.dat'], 'Select data file');
 if ~p
     return
 end
@@ -27,9 +34,9 @@ end
 %set up opts
 calopts.hydro = 0;
 calopts.Fs = 1/calraw.meta.hdr(3);
-calopts.ra = 1100; %bead radius, nm. Replace with query window later like @AProcessData
+calopts.ra = 1000; %bead radius, nm. Replace with query window later like @AProcessData
 calopts.nBin = ceil(length(calraw.AX) / 1000); %200 total pts in pspec
-calopts.Fmin = 50;
+calopts.Fmin =  50;
 % calopts.Fmax = 5e3;
 fnames = {'AX' 'AY' 'BX' 'BY'};
 sumnms = {'AS' 'AS' 'BS' 'BS'};
@@ -47,14 +54,15 @@ calopts.verbose = 1;
 scrsz = get(groot,'ScreenSize');
 sz = [scrsz(3:4)*.2 scrsz(3:4)*.6];
 figure('Name',sprintf('%s Calibration',f{1}), 'Position',sz)
+axi = [1 3 2 4];
 for i = 1:length(fnames)
-    calopts.color = colors{i};
-    calopts.ax = subplot(2, 2, i);
+    calopts.color = colors{axi(i)};
+    calopts.ax = subplot(2, 2, axi(i));
     calopts.name = fnames{i};
     calopts.Sum = mean( calraw.(sumnms{i}) );
 %     cal.(fnames{i}) = tscalibrate( calraw.(fnames{i})(1e4:end), calopts);
-    cal.(fnames{i}) = tscalibrate( calraw.(fnames{i}) ./ calraw.(sumnms{i}), calopts);
-%     cal.(fnames{i}) = Calibrate( calraw.(fnames{i}) ./ calraw.(sumnms{i}), calopts);
+%     cal.(fnames{i}) = tscalibrate( calraw.(fnames{i}) ./ calraw.(sumnms{i}), calopts);
+    cal.(fnames{i}) = Calibrate( calraw.(fnames{i}) ./ calraw.(sumnms{i}), calopts);
 end
 out.cal = cal;
 

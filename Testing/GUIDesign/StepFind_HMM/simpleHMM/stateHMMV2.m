@@ -1,68 +1,52 @@
-function out = stateHMM(inRealModel, inModel)
+function out = stateHMMV2(tr, inModel)
 %Fits a HMM to a n-state hopping problem; generates test data if nothing supplied
-ns = 4;
-
-% if nargin<1
-%     %simulate trace data
-%     % reals = [1 2 4.5];
-%     realmu = (1:ns)/ns + randn(1,ns)/ns^2/2;
-%     realsig = 1/ns;
-%     % reala = [.99 .002 .008; .004 .99 .006; .009 .001 .99];
-%     reala = rand(ns) / 100 /ns + diag(ones(1,ns));
-%     reala = bsxfun(@rdivide, reala, sum(reala,2));
-%     % reala = [.95 .01 .04; .02 .95 .03; .04 .01 .95];
-%     % reala = [.95 .05 0; .02 .95 .03; 0 .05 .95];
-%     len = 1e5;
-%     realst = zeros(1,len);
-%     realpi = [1 0 0];
-%     realst(1) = 1; %start in state 1
-%     for i = 2:len
-%         %roll dice
-%         newstate = find( rand(1) < cumsum(reala(realst(i-1),:)), 1);
-%         realst(i) = newstate;
-%     end
-%     tr = realmu(realst);
-%     tr = tr + realsig * randn(1,len);
-%     real.mu = realmu;
-%     real.sig = realsig;
-%     real.a = reala;
-%     real.tr = tr;
-%     real.st = realst;
-%     real.pi = realpi;
-% else
-% %     tr = inRealModel.tr;
-% %     len = length(tr);
-% %     realmu = inRealModel.mu;
-% %     realst = inRealModel.st;
-% %     real = inRealModel;
-% end
 
 if nargin<2 %generate model guess
-%     a = [.99 .005 .005; .005 .99 .005; .005 .005 .99];
-a = ones(ns)/30 + diag(ones(1,ns));
-a = bsxfun(@rdivide, a, sum(a,2));
-%     a = [.99 .01 0; .005 .99 .005; 0 .01 .99];
-%     a = ones(3)/3;
-    %guess mu
-    mu = (1:ns)/ns;
-    %guess sig
-    sig = 1/ns;
-    %guess pi
+    inModel = [];
+end
+
+if ~isfield(inModel, 'ns')
+    ns = 2;
+    inModel.ns = ns;
+else
+    ns = inModel.ns;
+end
+
+%generate missing model stuffs
+if ~isfield(inModel, 'a')
+    a = ones(ns)/1e4 + diag(ones(1,ns));
+    a = bsxfun(@rdivide, a, sum(a,2));
+    inModel.a = a;
+else
+    a = inModel.a;
+end
+
+if ~isfield(inModel, 'mu')
+    mu = (2:ns+1)/(ns+2) * (max(tr) - min(tr)) + min(tr); %evenly divided
+    inModel.mu = mu;
+else
+    mu = inModel.mu;
+end
+
+if ~isfield(inModel, 'sig')
+    sig = sqrt(estimateNoise(tr, [], 2));
+%     sig = std(tr);
+    inModel.sig = sig;
+else
+    sig = inModel.sig;
+end
+
+if ~isfield(inModel, 'pi')
     pi = normpdf(mu,tr(1),sig);
     pi = pi/sum(pi);
-    
-    inModel.a = a;
-    inModel.mu = mu;
-    inModel.sig = sig;
     inModel.pi = pi;
-else %given model
-    a = inModel.a;
-    mu = inModel.mu;
-    sig = inModel.sig;
+else
     pi = inModel.pi;
 end
 
-%precalc/normalize normpdf
+len = length(tr);
+
+%precalc & normalize (necessary?) normpdf
 gauss = @(x) exp( -(mu-x).^2 /2 /sig/sig);
 npdf = zeros(len,ns);
 for i = 1:len
@@ -97,7 +81,7 @@ for t = 1:len-1
     for j = 1:ns
         temp = 0;
         for i = 1:ns
-        	temp = temp + al2(t,i) * a(i,j);
+            temp = temp + al2(t,i) * a(i,j);
         end
         al2(t+1, j) = temp * npdf(t+1,j);
     end
@@ -143,6 +127,7 @@ ga = bsxfun(@rdivide, ga,  sum(ga,2));
 %     ga(i,:) = ga(i,:) / sum(ga(i,:));
 % end
 
+
 %naive method
 %{
 %assign, use naive maximum likelihood for now
@@ -164,6 +149,7 @@ end
 newa = bsxfun(@rdivide, newa, sum(newa,2));
 %}
 
+
 %more rigorous way
 xi = zeros(len-1, ns, ns);
 for i = 1:len-1
@@ -173,29 +159,29 @@ end
 %could also do in loop (temp = ..., tempsum = sum(sum(temp)), xi(i,:,:) = temp/tempsum, but matrix ops should be faster?
 xi = bsxfun(@rdivide, xi, sum(sum(xi,3),2));
 
-%non-matrix way, probably slower
+%non-matrix way, probably slower unless JIT
 xi2 = zeros(len-1,ns,ns);
 for t = 1:len-1
     for i = 1:ns
         for j = 1:ns
-        	xi2(t,i,j) = al(t,i) * a(i,j) * npdf(t+1,j) * be(t+1,j);
+            xi2(t,i,j) = al(t,i) * a(i,j) * npdf(t+1,j) * be(t+1,j);
         end
     end
 end
 xi2 = bsxfun(@rdivide, xi2, sum(sum(xi,3),2));
 
-%it should be the case that ga = sum(xi, 3);
-ga2 = sum(xi,3);
-ga3 = sum(xi2,3);
+%it should be the case that ga = sum(xi, 3); : true
+% ga2 = sum(xi,3);
+% ga3 = sum(xi2,3);
 
-%calculate new a, pi
-newpi = ga(1);
+%calculate new var.s
+newpi = ga(1,:);
 newa = squeeze(sum(xi,1));
-% newa = bsxfun(@rdivide, newa,  sum(ga(1:end-1,:), 1) );
 newa = bsxfun(@rdivide, newa, sum(newa, 2));
-%%someting slightly wrong with either gamma or xi, norm. not quite working
+newmu = sum(bsxfun(@times, ga, tr'), 1) ./ sum(ga, 1);
+newsig = sqrt( sum(sum(ga .* bsxfun(@minus, tr', newmu).^2))  / (len-1) ) ;
 
-%to calculate new mu, sig, we actually need to vitterbi
+%vitterbi
 vitdp = zeros(len-1, ns); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
 vitdp(1,:) = 1:ns;
 vitsc = pi .* npdf(1,:);
@@ -209,19 +195,16 @@ st = zeros(1,len);
 for i = len-1:-1:1
     st(i) = vitdp(i,st(i+1));
 end
-st = st + lb - 1;
-
-figure, plot(y(st))
 
 finish.a = newa;
 finish.mu = newmu;
 finish.sig = newsig;
 finish.pi = newpi;
+finish.ns = ns;
 
 out.start = inModel;
-out.real = real;
 out.finish = finish;
 
 %it works! kinda, weird on convergence (a's sometimes diverge)
-figure, plot(tr, 'Color', [.7 .7 .7]), hold on, plot( realmu(realst), 'g' ), plot( newmu(st), 'b' )
+figure, plot(tr, 'Color', [.7 .7 .7]), hold on, plot( newmu(st), 'b' )
 fprintf('Trace logprob: %0.3f\n', sum(log(scal)) + log(sum(al(end,:))) )

@@ -1,4 +1,4 @@
-function out = Calibrate(inData, inOpts)
+function out = tscalibrate(inData, inOpts)
 %Takes in normalized data and outputs the calibration values as a structure
 %Output fields:
     %fit: Lorentzian fit parameters, = [Fc D al F3]
@@ -24,13 +24,13 @@ opts.nBin = 1563; %Points per bin, currently taking 3127*200 pts, so closest div
 opts.Fs = 62500; %sampling freq.
 opts.nAlias = 20; %Aliasing window size
 opts.wV = 9.1e-10; %Water viscosity at 24C, pNs/nm^2
-opts.dV = 1.25e-9; %D2O viscosity at 20C, pNs/nm^2
-opts.d2o = 0; %all H2O
+% opts.wV = 1.25e-9; %D2O viscosity at 20C, pNs/nm^2
 opts.kT = 4.10; %kB*T at 24C, pN*nm
 opts.name = []; %Name of this detector, e.g. 'AX'
 opts.color = [.8 .8 .8]; %Color to plot power spectrum
 opts.verbose = 1;
 opts.Sum = 0;
+opts.hydro = 0;
 %Assign any overridden values
 if exist('inOpts','var') && isstruct(inOpts)
     fn = fieldnames(inOpts);
@@ -44,9 +44,6 @@ opts.Fnyq = opts.Fs/2; %Nyquist freq, used in Fmax or opts. guess
 if isempty(opts.Fmax)
     opts.Fmax = opts.Fs/2; %Nyquist freq.
 end
-
-%Calculate viscosity using Arrhenius' rule
-opts.wV = exp( log(opts.wV) * (1-opts.d2o) + log(opts.dV) * (opts.d2o) );
 
 %Create axis handle if not passed
 if ~isfield(opts,'ax') && opts.verbose
@@ -103,33 +100,50 @@ end
 Pall = [Pall{:}]';
 Fall = [Fall{:}]';
 
-%Estimate Fc, D using a Lorentzian without the instrument's 'filter'
-[Fcg, Dg] = FitLorentzian(Fbf, Pbf);
-% Guess = [Fcg, Dg, 1, 0];
-Guess = [Fcg, Dg, .3, opts.Fnyq/2];
+%Estimate Fc, D
+[Fcg, Dg] = tscalibrate_lorentzguess(Fbf, Pbf);
 
-%Assign lb and ub
-lb = [0 0 0 Fcg];
-ub = [10*Fcg 10*Dg 1 opts.Fs];
+%Set up hydro or non-hydro espectrum
+if opts.hydro
+    n = 9e-10; % [pN s/nm^2] water viscosity at 24.4C
+    p = 1e-21; % [pN s^2/nm^4] water density
+    pbead = 1.05e-21; % [pN s^2/nm^4] bead density polystyrene
+    % pbead = 2e-21; % [pN s^2/nm^4] bead density silica particles, mau
+    % pbead = 19.3e-21; % [pN s^2/nm^4] bead density gold, troy
+    beadA = opts.ra;
+    gA = 3*pi*n*beadA;
+    mA = pi/6*pbead*beadA^3;
+    % Set Hydrodynamic Parameters
+    fmA = gA/(2*pi*(mA+pi/12*p*beadA^3));
+    fvA = n/p/(pi*beadA^2/4);
+    lzian = @(x, f, ops)tscalibrate_lorentzian_hydro([x fmA fvA], f, ops) ;
+    Guess = [Fcg, Dg];
+else
+    lzian = @tscalibrate_lorentzian;
+    Guess = [Fcg, Dg];
+end
+
+lb = zeros(1, length(Guess));
+ub = inf(1, length(Guess));
 
 %Optimize in log-space
 lPbf = log(Pbf);
-fitfcn = @(x)(log(Lorentzian(x,Fbf,opts)) - lPbf);
+fitfcn = @(x)(log(lzian(x,Fbf,opts)) - lPbf);
 options = optimoptions(@lsqnonlin);
 options.Display = 'none';
-fit = lsqnonlin(fitfcn, Guess,lb,ub,options);
+fit = lsqnonlin(fitfcn, Guess, lb, ub, options);
 %tweezercalib essentially does >>fit = lsqcurvefit(@(x,f)Pbf./Lorentzian(x,f,opts),Guess,Fbf,ones(1,length(Fbf)),[],[],options);
 % There is no real difference between the two, +-1% difference. I like normalizing in log-space over normalizing all values to 1.
 % @lsqcurvefit(@(x,xdata)fcn(x,xdata), xdata, ydata,...) is essentially @lsqnonlin(@(x)fcn(x,xdata)-ydata,...), doesn't matter which to use
 
 %Calculate alpha, kappa from fit parameters
-%Drag coefficient of a sphere in water (unit 
+%Drag coefficient of a sphere in water
 dC = 6*pi*opts.wV*opts.ra;
-%Theoretical Diffusion Coefficient
+%Theoretical D
 D = opts.kT/dC;
-%Conversion factor alpha, gotten by the ratio of D (nm^2/V^2)
+%Conversion factor alpha
 a = sqrt(D/fit(2));
-%Spring constant kappa, 2 pi dC Fc
+%Spring constant kappa
 k = 2*pi*dC*fit(1);
 
 %Plot fit, display values
@@ -140,11 +154,11 @@ if opts.verbose
     loglog(opts.ax, Fall, Pall, 'Color', .8*[1 1 1])
     hold on
     loglog(opts.ax, Fbf,Pbf,'o','Color',opts.color)
-    loglog(opts.ax, [Fall(1) Fbf Fall(end)], (Lorentzian(fit,[Fall(1) Fbf Fall(end)], opts)), 'Color', 'k', 'LineWidth',2)
+    loglog(opts.ax, Fbf, (lzian(fit, Fbf, opts)), 'Color', 'k', 'LineWidth',2)
     Pmin = min(Pbf);
     Pmax = max(Pbf);
     text(Fbf(1),(Pmin^2*Pmax)^.33,...
-        sprintf(' %s \n fc: %0.0fHz \n D: %0.3f\n al: %0.3f\n f3: %0.1f \n \\alpha: %0.0fnm/NV \n \\kappa: %0.3fpN/nm \n \\alpha*\\kappa: %0.1fpN/NV \n r: %dnm Sum: %0.2fV wV: %0.2e \n ',opts.name,fit,a,k,a*k, opts.ra, opts.Sum, opts.wV),...
+        sprintf(' %s \n fc: %0.0fHz \n D: %0.3f\n \\alpha: %0.0fnm/NV \n \\kappa: %0.3fpN/nm \n \\alpha*\\kappa: %0.1fpN/NV \n r: %dnm Sum: %0.2fV \n ',opts.name,fit(1),fit(2),a,k,a*k, opts.ra, opts.Sum),...
         'FontSize',12);
 %         sprintf(' %s \n \\itf_{c}\\rm: %0.0fHz \n \\alpha: %0.0fnm/NV \n \\kappa: %0.3fpN/nm \n \\alpha*\\kappa: %0.1fpN/NV',opts.name,fit(1),a,k,a*k),...
 %         'FontSize',12);

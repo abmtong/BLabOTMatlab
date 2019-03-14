@@ -77,8 +77,8 @@ istl = cellfun(@(x) x < vthrp, dvel, 'uni', 0);
 isbtp = double([isbt{:}]) - double([istl{:}]);
 dfilp = [dfil{:}];
 dcropp = [dcrop{:}];
-% figure, %plot(dcropp,'Color', [.7 .7 .7]), hold on
-% surface([1:length(dfilp);1:length(isbtp)],[dfilp;dfilp],zeros(2,length(dfilp)),[isbtp;isbtp] ,'edgecol', 'interp')
+figure, %plot(dcropp,'Color', [.7 .7 .7]), hold on
+surface([1:length(dfilp);1:length(isbtp)],[dfilp;dfilp],zeros(2,length(dfilp)),[isbtp;isbtp] ,'edgecol', 'interp')
 
 fprintf('Velocity threshs %0.2f %0.2f\n', vthr, vthrp)
 

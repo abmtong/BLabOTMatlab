@@ -168,6 +168,8 @@ fig.Visible = 'on';
         else
             datTable.Data(1:5) = zeros(1,5);
         end
+        
+        locNoise_callback()
     end
 
     function tempCrop_callback(~,~)
@@ -296,6 +298,29 @@ fig.Visible = 'on';
         dat = dat / (len-1);
         %Update table
         datTable.Data = [0; (xwlcfit ./ [1 1 1000 1])'; len-1; dat';];
+    end
+
+    function locNoise_callback(~,~)
+        %Plot the local noise levels every so-and-so points
+        netlen = length(frc);
+        if netlen > 1e5
+            noiwin = 2e3;
+        else
+            noiwin = 1e3;
+        end
+        szs = floor(netlen/noiwin);
+        
+        for j = 1:szs
+            %Estimate noise, annotate with text
+            ran = (j-1)*noiwin+1:j*noiwin;
+            textt = double(mean(tim(ran([1 end]))));
+            textc = double(mean(frc(ran)));
+            %                 textv = std(cfil(ran));
+            textv = sqrt(estimateNoise(ext(ran), [], 2));
+            text(mainAxis, textt, textc+2, sprintf('%0.2f',textv), 'Rotation', 90, 'Clipping', 'on')
+            
+        end
+        
     end
 
     function clrHists_callback(~,~)
