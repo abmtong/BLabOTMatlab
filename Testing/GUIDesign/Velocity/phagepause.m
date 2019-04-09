@@ -1,47 +1,73 @@
-function [out, outf] = phagepause(data, sgf, fdata)
-if nargin < 3
+function [out, outf] = phagepause(data, fdata, inOpts)
+%Takes in data, and determines whether the phage is paused, translocating, or backtracking at a given pt
+%Generates stats on backtrack segments
+%Based on Ronen's polymerase pausing code
+
+if nargin < 2 || isempty(fdata)
     fdata = cellfun(@(x) 0 * x, data, 'uni', 0);
 end
-[p, x, dvel, dfil, dcrop] = vdist(data, sgf);
-[~, ~, ~, ffil, ~] = vdist(fdata, sgf);
-xbinsz = 2;
 
-p = p / sum(p) / xbinsz;
+%verbose flags
+opts.verbose.vdist = 1;
+opts.verbose.traces = 1;
+opts.verbose.output = 1;
 
-%fit to two gaussians [fiddle with sgf filter width to make the peaks nice)
+%vdist opts
+opts.sgf = {1 301};
+opts.vbinsz = 2;
+opts.Fs = 2500;
+
+%phagepause opts
+%ispaused threshold
+%zero peak velocity thresh.
+%bt minpts
+%bt minsz
+
+if nargin >= 3
+    opts = handleOpts(opts, inOpts);
+end
+
+%Filter the inputs
+[p, x, dvel, dfil, dcrop] = vdist(data, opts);
+[~, ~, ~, ffil, ~] = vdist(fdata, opts);
+
+%Fit vel pdf to two gaussians [fiddle with sgf filter width to make the peaks nice)
+% Peaks are the paused and translocating sections
 npdf = @(x0, y) normpdf(y, x0(1), x0(2))*x0(3);
 bigauss = @(x0, y) normpdf(y, x0(1), x0(2))*x0(3) + normpdf(y, x0(4), x0(5))*x0(6) ;
 xg = [0 20 .4 -80 30 .5];
 lb = [0 0 0 -300 0 0];
 ub = [0 inf 1 0 inf 1];
 
+% %fit to three gaussians
 % bigauss = @(x0, y) normpdf(y, x0(1), x0(2))*x0(3) + normpdf(y, x0(4), x0(5))*x0(6) + normpdf(y, x0(7), x0(8))*x0(9);
 % xg = [0 20 .4 -80 30 .5 30 20 .1];
 % lb = [0 0 0 -300 0 0 0 0 0];
 % ub = [0 inf 1 0 inf 1 inf inf 1];
 
-
-
-opts = optimoptions('lsqcurvefit');
-opts.Display = 'none';
-fit = lsqcurvefit(bigauss, xg, x, p, lb, ub, opts);
+%Fit using @lsqcurvefit
+lsqopts = optimoptions('lsqcurvefit');
+lsqopts.Display = 'none';
+fit = lsqcurvefit(bigauss, xg, x, p, lb, ub, lsqopts);
 fp = bigauss(fit, x);
 
 
-% consider just fitting the 0 peak first, to make sure it's of proper height
+%Fit just the 0 peak
 dv = 10;
 inds = find(x == -dv):find(x==dv);
-fit2 = lsqcurvefit(npdf, [0 30 0.3], x(inds), p(inds),[], [], opts);
+fit2 = lsqcurvefit(npdf, [0 30 0.3], x(inds), p(inds),[], [], lsqopts);
+% %Consider fitting the second peak only after the zero peak is fit (worse)
 % fit3 = lsqcurvefit(npdf, [-100 20 .6], x, p-npdf(fit2, x));
 
-%plot
-figure, plot(x, p), hold on, plot(x, fp), plot(x, npdf(fit(1:3),x)), plot(x, npdf(fit(4:6),x)), %plot(x, npdf(fit(7:9),x))
-plot(x, npdf(fit2, x))
-%put text at peak locations
-text(fit(1), npdf(fit(1:3), fit(1)), sprintf('Mean %0.2f, SD %0.2f, Proportion %0.2f', fit(1:3)))
-text(fit(4), npdf(fit(4:6), fit(4)), sprintf('Mean %0.2f, SD %0.2f, Proportion %0.2f', fit(4:6)))
-text(fit2(1), npdf(fit2, fit2(1)), sprintf('Mean %0.2f, SD %0.2f, Proportion %0.2f', fit2))
-
+%Plot the velocity distribution and fits
+if opts.verbose.vdist
+    figure, plot(x, p), hold on, plot(x, fp), plot(x, npdf(fit(1:3),x)), plot(x, npdf(fit(4:6),x)), %plot(x, npdf(fit(7:9),x))
+    plot(x, npdf(fit2, x))
+    %put text at peak locations
+    text(fit(1), npdf(fit(1:3), fit(1)), sprintf('Mean %0.2f, SD %0.2f, Proportion %0.2f', fit(1:3)))
+    text(fit(4), npdf(fit(4:6), fit(4)), sprintf('Mean %0.2f, SD %0.2f, Proportion %0.2f', fit(4:6)))
+    text(fit2(1), npdf(fit2, fit2(1)), sprintf('Mean %0.2f, SD %0.2f, Proportion %0.2f', fit2))
+end
 % figure, plot(x, p), hold on, plot(x, npdf(fit2, x)), 
 
 %just use fitting of center gaussian
@@ -59,11 +85,7 @@ isbt = cellfun(@(x) x > vthr, dvel, 'uni', 0);
 
 %take the translocation peak and compare it to the rest
 %lsqcurvefit might switch the two peaks, make sure it's the leftmost peak
-if fit(1) < fit(4)
-    ind = 1;
-else
-    ind = 4;
-end %could do like ind = 1 + 3 * fit(1)<fit(4) but lol
+ind = 1 + 3 * (fit(1)<fit(4));
 tlg = normpdf(x, fit(ind), fit(ind+1))*fit(ind+2);
 tlgp = tlg ./ p;
 % figure, plot(x, tlgp)
@@ -73,12 +95,14 @@ vthrp = x(vthrp);
 % vthrp = -40;
 istl = cellfun(@(x) x < vthrp, dvel, 'uni', 0);
 
-%plot them all
-isbtp = double([isbt{:}]) - double([istl{:}]);
-dfilp = [dfil{:}];
-dcropp = [dcrop{:}];
-figure, %plot(dcropp,'Color', [.7 .7 .7]), hold on
-surface([1:length(dfilp);1:length(isbtp)],[dfilp;dfilp],zeros(2,length(dfilp)),[isbtp;isbtp] ,'edgecol', 'interp')
+%Plot traces colored by state (translocating vs. paused vs. backtracked
+if opts.verbose.traces
+    isbtp = double([isbt{:}]) - double([istl{:}]);
+    dfilp = [dfil{:}];
+    % dcropp = [dcrop{:}];
+    figure, %plot(dcropp,'Color', [.7 .7 .7]), hold on
+    surface([1:length(dfilp);1:length(isbtp)],[dfilp;dfilp],zeros(2,length(dfilp)),[isbtp;isbtp] ,'edgecol', 'interp')
+end
 
 fprintf('Velocity threshs %0.2f %0.2f\n', vthr, vthrp)
 
@@ -96,7 +120,7 @@ for i = 1:len
     indEnds = [find(diff(istl{i}) == 1) length(isbt{i})];
     
     if isbt{i}(1) == 1
-        indSta = [1 indSta];
+        indSta = [1 indSta]; %#ok<AGROW>
     end
     
     %find the closest end bit after each start bit
@@ -140,13 +164,10 @@ for i = 1:len
             line(indSta(j) * [1 1], yl)
             line(indEnd(j) * [1 1], yl, 'Color', 'g')
         end
-        
     end
-    
 end
 
 %get stats on these bits
-
 tmp = [out{:}];
 tmpf = [outf{:}];
 
@@ -182,11 +203,11 @@ bte2 = arrayfun(@(z,zz) ste(bts(:,bts(4,:)>z & bts(4,:)< zz)), fbins(1:end-1), f
 bte2 = [bte2{:}];
 
 
-mle = @(x) median(abs(bsxfun(@plus, median(x,2),-x)),2) /.67449 ;
-mlee = @(x) median(abs(bsxfun(@plus, median(x,2),-x)),2) /.67449 /sqrt(size(x,2));
+mad = @(x) median(abs(bsxfun(@plus, median(x,2),-x)),2) /.67449 ;
+made = @(x) median(abs(bsxfun(@plus, median(x,2),-x)),2) /.67449 /sqrt(size(x,2));
 btm2 = arrayfun(@(z,zz) median(bts(:,bts(4,:)>z & bts(4,:)< zz),2), fbins(1:end-1), fbins(2:end), 'Uni', 0);
-btml2 = arrayfun(@(z,zz) mle(bts(:,bts(4,:)>z & bts(4,:)< zz)), fbins(1:end-1), fbins(2:end), 'Uni', 0);
-btme2 = arrayfun(@(z,zz) mlee(bts(:,bts(4,:)>z & bts(4,:)< zz)), fbins(1:end-1), fbins(2:end), 'Uni', 0);
+btml2 = arrayfun(@(z,zz) mad(bts(:,bts(4,:)>z & bts(4,:)< zz)), fbins(1:end-1), fbins(2:end), 'Uni', 0);
+btme2 = arrayfun(@(z,zz) made(bts(:,bts(4,:)>z & bts(4,:)< zz)), fbins(1:end-1), fbins(2:end), 'Uni', 0);
 btm2=[btm2{:}];
 btml2=[btml2{:}];
 btme2=[btme2{:}];

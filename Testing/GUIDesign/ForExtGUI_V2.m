@@ -62,13 +62,15 @@ colormap cool
 %Top row of buttons
 pantop = uipanel('Position', [0 1-panwid_top 1 panwid_top]);
 loadFile = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [ 0, 0, .1, 1], 'String', 'Load File', 'Callback',@loadFile_callback);
-takeCrop = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.1, 0, .1, 1], 'String', 'Crop', 'Callback',@tempCrop_callback);
+takeCrop = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.1, 0, .075, 1], 'String', 'Crop', 'Callback',@tempCrop_callback);
+takeCropL= uicontrol('Parent', pantop, 'Style', 'text', 'Units', 'normalized', 'Position', [.175, .5, .025, .5 ], 'String', 'CropN');
+takeCropT= uicontrol('Parent', pantop, 'Style', 'edit', 'Units', 'normalized', 'Position', [.175, 0, .025, .5 ], 'String', '1', 'Callback',@loadCrop_callback);
 stepKlVi = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.2, 0, .05, 1], 'String', 'Fit XWLC' , 'Callback',@fitXWLC_callback);
 frcRange = uicontrol('Parent', pantop, 'Style', 'edit', 'Units', 'normalized', 'Position', [.25 0 .05 .5], 'String', '[5 35]');
 frcRangeT= uicontrol('Parent', pantop, 'Style', 'text', 'Units', 'normalized', 'Position', [.25 .5 .05 .5], 'String', 'Force Range');
 stepHist = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.3, 0, .1, 1], 'String', 'Measure', 'Callback',@measure_callback);
 toWorksp = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.4, 0, .1, 1], 'String', 'To Workspace' , 'Callback',@toWorksp_callback);
-tempCrop = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.5, 0, .05, 1], 'String', '[]', 'Callback',[]);
+ensembFit= uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.5, 0, .05, 1], 'String', 'XWLC All', 'Callback',@ensembFit_callback);
 printFig = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.55, 0, .05, 1], 'String', 'Print', 'Callback',@printFig_callback);
 customB1 = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.60, 0, .05, 1], 'String', 'But01', 'Callback',@custom01_callback);
 customB2 = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.65, 0, .05, 1], 'String', 'But02', 'Callback',@custom02_callback);
@@ -170,14 +172,59 @@ fig.Visible = 'on';
         end
         
         locNoise_callback()
+        
+        loadCrop_callback
     end
 
     function tempCrop_callback(~,~)
         cellfun(@delete, cropLines)
         %Select crop
-        gin = ginput(2);
-        cropT = sort(gin(:,1));
+        [x, ~] = ginput(2);
+        cropT = sort(x(:,1));
+        cropstr = takeCropT.String;
+        if cropstr == '1';
+            cropstr = [];
+        end
+        cropfp = sprintf('%s\\CropFiles%s\\%s.crop', path, cropstr, name);
+        cropp = fileparts(cropfp);
+        if ~exist(cropp, 'dir')
+            mkdir(cropp)
+        end
+        if ~issorted(x)
+            if exist(cropfp, 'file')
+                fprintf('Deleted crop%s for %s\n', cropstr, name)
+                delete(cropfp)
+            end
+            return
+        end
+        fid = fopen(cropfp, 'w');
+        fwrite(fid, sprintf('%f\n%f', x));
+        fclose(fid);
+        loadCrop_callback
+    end
+
+    function loadCrop_callback(~,~)
+        cropstr = takeCropT.String;
+        i = str2double(cropstr);
+        if cropstr == '1'
+            cropstr = '';
+        end
+        cropfp = sprintf('%s\\CropFiles%s\\%s.crop', path, cropstr, name);
+        fid = fopen(cropfp);
+        if fid == -1
+%             takeCrop.String = 'Crop not found';
+            return
+        end
         
+        ts = textscan(fid, '%f');
+        fclose(fid);
+        ts = ts{1};
+        cropT = ts;
+        
+        %Delete old lines
+        if ~isempty(cropLines{1,1})
+            cellfun(@delete, cropLines(1,:))
+        end
         %Draw a line at the start/end crop bdys
         mainYLim = mainAxis.YLim;
         subYLim = subAxis.YLim;
@@ -298,6 +345,36 @@ fig.Visible = 'on';
         dat = dat / (len-1);
         %Update table
         datTable.Data = [0; (xwlcfit ./ [1 1 1000 1])'; len-1; dat';];
+    end
+
+    function ensembFit_callback(~,~)
+        cropstr = takeCropT.String;
+        if cropstr == '1'
+            cropstr = '';
+        end
+        [exts, frcs] = getFCs_fx(cropstr, path);
+        dec = str2double(deciFact.String);
+        fil = str2num(filtFact.String); %#ok<ST2NM>
+        exts = exts(~cellfun(@isempty, frcs));
+        frcs = frcs(~cellfun(@isempty, frcs));
+        
+        exts = cellfun(@(x)windowFilter(@mean, x, fil, dec), exts, 'uni', 0);
+        frcs = cellfun(@(x)windowFilter(@mean, x, fil, dec), frcs, 'uni', 0);
+        
+        %Open a figure and plot the traces, so you can delete ones you don't want; then fit XWLC
+        figure('CloseRequestFcn', @crf_cb, 'Name', 'Delete outliers then close figure to fit XWLC')
+        hold on
+        cellfun(@scatter, exts, frcs)
+        function crf_cb(~,~)
+            ax=gca;
+            fg = gcf;
+            axc = ax.Children;
+            ex = {axc.XData};
+            fr = {axc.YData};
+            delete(fg)
+            frcrng = str2num(frcRange.String); %#ok<ST2NM>
+            fitForceExt_ensemble(ex, fr, struct('loF', frcrng(1), 'hiF', frcrng(2)), 1);
+        end
     end
 
     function locNoise_callback(~,~)

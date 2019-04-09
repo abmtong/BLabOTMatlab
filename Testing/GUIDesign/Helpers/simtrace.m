@@ -1,4 +1,4 @@
-function out = simtrace(noi, sm)
+function [out, sgn] = simtrace(noi, sm)
 n=100; %total steps
 if nargin < 1
     noi = 3; %sd noise
@@ -9,11 +9,16 @@ if nargin < 2
 end
 
 %number of points for step/substeps
-dwp = 166; %time at dwell: same length as usual dwell (usual length is ~166ms)
-bup = 100; %Moffitt has subdwells ~50ms = 125 pts at 2.5kHz, but we have 60bp/s = 24st/s = 100ms
+% dwp = 166; %time at dwell: same length as usual dwell (usual length is ~166ms)
+% bup = 100; %Moffitt has subdwells ~50ms = 125 pts at 2.5kHz, but we have 60bp/s = 24st/s = 100ms
 
-sts = [2.5 2.5 2.5 1.1];
+%loF: dist. is different
+dwp = 200;
+bup = 20;
+
+% sts = [2.5 2.5 2.5 2];
 % sts = 2.2 * ones(1,4);
+sts = 2.4 * ones(1,4);
 
 out = cell(1,n);
 loc = 9000;
@@ -35,5 +40,5 @@ out = [out{:}];
 if ~isempty(sm)
     out = smooth(out, sm)';
 end
-
+sgn = out;
 out = out + noi * randn(size(out));

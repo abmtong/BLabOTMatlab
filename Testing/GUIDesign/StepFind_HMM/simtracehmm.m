@@ -1,4 +1,4 @@
-function tr=simtracehmm
+function [tr, realst] =simtracehmm
     %simulate trace data
     realmu = 10;
     realsig = realmu/2;

@@ -121,6 +121,7 @@ fprintf('al: matrix %0.5fs, for %0.5fs; be: matrix %0.5fs, for %0.5fs\n', ta1, t
 %calculate gamma
 ga = al .* be;
 ga = bsxfun(@rdivide, ga,  sum(ga,2));
+[~, fitmle] = max(ga, [], 2);
 % ga = zeros(len,ns);
 % for i = 1:len
 %     ga(i,:) = al(i,:) .* be(i,:);
@@ -181,14 +182,25 @@ newa = bsxfun(@rdivide, newa, sum(newa, 2));
 newmu = sum(bsxfun(@times, ga, tr'), 1) ./ sum(ga, 1);
 newsig = sqrt( sum(sum(ga .* bsxfun(@minus, tr', newmu).^2))  / (len-1) ) ;
 
+newgauss = @(x) exp( -(mu-x).^2 /2 /newsig/newsig);
+newnpdf = zeros(len, ns);
+
+%precalc & normalize (necessary?) normpdf
+for i = 1:len
+    newnpdf(i,:) = newgauss(tr(i));
+end
+%normalize
+newnpdf = bsxfun(@rdivide, newnpdf, sum(newnpdf,2));
+
 %vitterbi
 vitdp = zeros(len-1, ns); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
 vitdp(1,:) = 1:ns;
-vitsc = pi .* npdf(1,:);
+vitsc = newpi .* newnpdf(1,:);
 for i = 1:len-1
-    [vitsc, vitdp(i,:)] = max(bsxfun(@times, a, vitsc'), [], 1);
-    vitsc = vitsc .* npdf(i+1,:) / sum(vitsc); %renormalize
+    [vitsc, vitdp(i,:)] = max(bsxfun(@times, newa, vitsc'), [], 1);
+    vitsc = vitsc .* newnpdf(i+1,:) / sum(vitsc); %renormalize
 end
+
 %assemble path via backtracking
 st = zeros(1,len);
 [~, st(len)] = max(vitsc);
@@ -196,15 +208,36 @@ for i = len-1:-1:1
     st(i) = vitdp(i,st(i+1));
 end
 
+%vitterbi, just apply w/ inModel
+vitdp = zeros(len-1, ns); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
+vitdp(1,:) = 1:ns;
+vitsc = pi .* npdf(1,:);
+for i = 1:len-1
+    [vitsc, vitdp(i,:)] = max(bsxfun(@times, a, vitsc'), [], 1);
+    vitsc = vitsc .* npdf(i+1,:) / sum(vitsc); %renormalize
+end
+
+%assemble path via backtracking
+st2 = zeros(1,len);
+[~, st2(len)] = max(vitsc);
+for i = len-1:-1:1
+    st2(i) = vitdp(i,st2(i+1));
+end
+
 finish.a = newa;
 finish.mu = newmu;
 finish.sig = newsig;
 finish.pi = newpi;
 finish.ns = ns;
+finish.fitmle = fitmle(:)';
+finish.fit = st(:)';
+finish.fitnoopt = st2(:)';
 
 out.start = inModel;
 out.finish = finish;
 
 %it works! kinda, weird on convergence (a's sometimes diverge)
 figure, plot(tr, 'Color', [.7 .7 .7]), hold on, plot( newmu(st), 'b' )
+plot( newmu(st2)+range(tr)/5, 'g' )
+plot( newmu(fitmle)+2*range(tr)/5, 'r' )
 fprintf('Trace logprob: %0.3f\n', sum(log(scal)) + log(sum(al(end,:))) )

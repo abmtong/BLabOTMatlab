@@ -28,6 +28,11 @@ if nargin < 3 || isempty(verbose)
 end
 
 if nargin<2 || isempty(inModel) %generate model guess
+    inModel = [];
+end
+
+%trns matrix
+if ~isfield(inModel, 'a')
     %search from 0 to 25bp step, seed with gaussian (high sig = essentially flat fcn)
     maxstep = 15;
     guessmean = 2.5;
@@ -41,17 +46,18 @@ if nargin<2 || isempty(inModel) %generate model guess
     a(1) = 1-pstep;
 else %given model, i.e. the output of this fcn.
     a = inModel.a;
-    if isfield(inModel, 'sig')
-        sig = inModel.sig;
-    end
-    if isfield(inModel, 'pi')
-        pi = inModel.pi;
-    end
 end
 
-%guess sig if not supplied
-if ~exist('sig', 'var')
-    sig = sqrt(estimateNoise(tr,[],1));
+%sd noise
+if ~isfield(inModel, 'sig')
+    sig = sqrt(estimateNoise(tr,[],2));
+else
+    sig = inModel.sig;
+end
+
+%starting state (default assigned below)
+if isfield(inModel, 'pi')
+    pi = inModel.pi;
 end
 
 %make trace increasing, minimum point binsz

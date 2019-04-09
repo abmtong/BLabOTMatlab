@@ -1,4 +1,8 @@
 function shiftplot(gobjs, varargin)
+if isempty(gobjs)
+    gobjs = get(gca, 'Children');
+end
+
 
 for i = 1:length(gobjs)
     tmp = gobjs(i);

@@ -1,4 +1,4 @@
-function [outCons, outExts, outFrcs] = getFCs(cropstr)
+function [outCons, outExts, outFrcs, outTrNs] = getFCs(cropstr)
 if nargin < 1
     cropstr = '';
 end
@@ -25,6 +25,7 @@ end
 outCons = [];
 outExts = [];
 outFrcs = [];
+outTrNs = []; %arg that groups fcs from the same file together
 for i = 1:length(files)
     file = files{i};
     %Load crop
@@ -43,6 +44,7 @@ for i = 1:length(files)
     indend = cellfun(@(x)find(x<crop(2),1,'last'), stepdata.time,'UniformOutput',0);
     con = cellfun(@(ce,st,en)ce(st:en),stepdata.contour, indsta, indend, 'UniformOutput',0);
     outCons = [outCons con]; %#ok<AGROW>
+    outTrNs = [outTrNs ones(1,length(con)) * i];
     if nargout > 1 %convert to extension, from contour
         %Con = Ext/XWLC/.34, so Ext = Con*XWLC*.34
         frc = cellfun(@(ce,st,en)ce(st:en),stepdata.force, indsta, indend, 'UniformOutput',0);
@@ -51,6 +53,7 @@ for i = 1:length(files)
         outFrcs = [outFrcs frc]; %#ok<AGROW>
     end
 end
+outTrNs = outTrNs(~cellfun(@isempty,outCons));
 outCons = outCons(~cellfun(@isempty,outCons));
 if nargout>1
     outExts = outExts(~cellfun(@isempty,outExts));

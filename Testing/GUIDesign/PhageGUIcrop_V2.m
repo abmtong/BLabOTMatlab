@@ -20,7 +20,7 @@ end
 
 %Declare variables for static workspace - or just shove everything in a struct [less readable]
 stepdata = [];
-cropLines = cell(10,4);
+cropLines = cell(1,4);
 stepLines = {[] []};
 filtLine = [];
 cropT = [];
@@ -51,7 +51,7 @@ loadFile = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [ 0, 0
 loadCrop = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.1, 0, .1, 1], 'String', 'Load Crop', 'Callback',@loadCrop_callback);
 permCrop = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.2, 0, .075, 1], 'String', 'Crop', 'Callback',@permCrop_callback);
 permCropT= uicontrol('Parent', pantop, 'Style', 'text', 'Units', 'normalized', 'Position', [.275, .5, .025, .5], 'String', 'CropNum', 'Callback',[]);
-permCropB= uicontrol('Parent', pantop, 'Style', 'edit', 'Units', 'normalized', 'Position', [.275, 0, .025, .5], 'String', '1', 'Callback',[]);
+permCropB= uicontrol('Parent', pantop, 'Style', 'edit', 'Units', 'normalized', 'Position', [.275, 0, .025, .5], 'String', '1', 'Callback',@loadCrop_callback);
 measLine = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.3, 0, .1, 1], 'String', 'Measure', 'Callback',@measLine_callback);
 trimTrace= uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.4, 0, .1, 1], 'String', 'Trim', 'Callback',@trimTrace_callback);
 toWorksp = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.5, 0, .05, 1], 'String', 'ToWkspace' , 'Callback',@toWorksp_callback);
@@ -70,9 +70,9 @@ fileSlider= uicontrol('Parent', panlef, 'Style', 'slider', 'Units', 'normalized'
 txtSlider = uicontrol('Parent', panlef, 'Style', 'text', 'Units', 'normalized', 'Position', [.15 .901 .7 .05], 'String', '1');
 clrGraph  = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [0 .875 1 .025], 'String', 'Clear Graph', 'Callback', @clrGraph_callback);
 filtFactT = uicontrol('Parent', panlef, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .85 .5 .025], 'String', 'Filt Fact');
-filtFact  = uicontrol('Parent', panlef, 'Style', 'edit', 'Units', 'normalized', 'Position', [0 .8 .5 .05], 'String', '[]', 'Callback', @refilter_callback);
+filtFact  = uicontrol('Parent', panlef, 'Style', 'edit', 'Units', 'normalized', 'Position', [0 .8 .5 .05], 'String', '10', 'Callback', @refilter_callback);
 deciFactT = uicontrol('Parent', panlef, 'Style', 'text', 'Units', 'normalized', 'Position', [.5 .85 .5 .025], 'String', 'Dec Fact');
-deciFact  = uicontrol('Parent', panlef, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .8 .5 .05], 'String', '5', 'Callback', @refilter_callback);
+deciFact  = uicontrol('Parent', panlef, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .8 .5 .05], 'String', '2', 'Callback', @refilter_callback);
 
 %Load first file
 loadFile_callback
@@ -125,6 +125,8 @@ fig.Visible = 'on';
         fileSlider.Value = find(cellfun(@(x) strcmp(x, file),fileSlider.String),1);
         txtSlider.String = sprintf('%s\n%d/%d', name, round(fileSlider.Value), fileSlider.Max);
         
+        loadCrop.String = 'Load Crop';
+        
         %Plot
         refilter_callback
         fixLimit_callback
@@ -133,18 +135,18 @@ fig.Visible = 'on';
     end
 
     function loadCrop_callback(~,~)
-        %Create path(s) of crop file
-        for i = 1:10
-            if i == 1
+        %Create path of crop file
+        cropstr = permCropB.String;
+        i = str2double(cropstr);
+            if strcmp(cropstr,'1')
                 cropstr = '';
-            else
-                cropstr = num2str(i);
             end
             cropfp = sprintf('%s\\CropFiles%s\\%s.crop', path, cropstr, name);
             fid = fopen(cropfp);
             if fid == -1
-                %fprintf('Crop not found for %s\n', name)
-                continue
+                loadCrop.String = 'Crop not found';
+%                 fprintf('Crop not found for %s\n', name)
+                return
             end
             
             ts = textscan(fid, '%f');
@@ -152,17 +154,17 @@ fig.Visible = 'on';
             ts = ts{1};
             
             %Delete old lines
-            if ~isempty(cropLines{i,1})
-                cellfun(@delete, cropLines(i,:))
+            if ~isempty(cropLines{1,1})
+                cellfun(@delete, cropLines(1,:))
             end
             
             %Draw a line at the start/end crop bdys
             mainYLim = mainAxis.YLim;
             subYLim = subAxis.YLim;
-            cropLines{i,1} = line(mainAxis,ts(1) * [1 1], mainYLim, 'Color', getColor(i));
-            cropLines{i,2} = line(mainAxis,ts(2) * [1 1], mainYLim, 'Color', getColor(i));
-            cropLines{i,3} = line(subAxis ,ts(1) * [1 1], subYLim, 'Color', getColor(i));
-            cropLines{i,4} = line(subAxis ,ts(2) * [1 1], subYLim, 'Color', getColor(i));
+            cropLines{1,1} = line(mainAxis,ts(1) * [1 1], mainYLim, 'Color', getColor(i));
+            cropLines{1,2} = line(mainAxis,ts(2) * [1 1], mainYLim, 'Color', getColor(i));
+            cropLines{1,3} = line(subAxis ,ts(1) * [1 1], subYLim, 'Color', getColor(i));
+            cropLines{1,4} = line(subAxis ,ts(2) * [1 1], subYLim, 'Color', getColor(i));
             
             if mainAxis.XLim(1) > ts(1)
                 mainAxis.XLim = [ts(1)-.5 mainAxis.XLim(2)];
@@ -170,7 +172,7 @@ fig.Visible = 'on';
             if mainAxis.XLim(2) < ts(2)
                 mainAxis.XLim = [mainAxis.XLim(1) ts(2)+0.5];
             end
-        end
+        
     end
 
     function fileSlider_callback(~,~)
@@ -252,8 +254,8 @@ fig.Visible = 'on';
 
     function permCrop_callback(~,~)
         cropstr = permCropB.String;
-        if cropstr == '1';
-            cropstr = [];
+        if strcmp(cropstr,'1')
+            cropstr = '';
         end
         [x, ~] = ginput(2);
         cropfp = sprintf('%s\\CropFiles%s\\%s.crop', path, cropstr, name);
@@ -571,8 +573,10 @@ fig.Visible = 'on';
         %One on new: 43, 845
         %Hyb?
         %'XWLC PL(nm), 50D 40R 35H' 'XWLC SM(pN), 700D 450R 500H' 'kT (pN nm)' 'Rise/bp (nm/bp)'...
-        pl = 50;
-        sm = 1200;
+        %Psor30: 50 500; 4% incr.
+        %Psor100: 45 370; 8% incr.
+        pl = 45;
+        sm = 370;
         npb = 0.34;
         stepdata.contour = cellfun(@(x,y) x ./ XWLC(y, pl, sm, 4.14)./ npb, stepdata.extension, stepdata.force, 'uni', 0);
         stepdata.cut.contour = cellfun(@(x,y) x ./ XWLC(y, pl, sm, 4.14)./ npb, stepdata.cut.extension, stepdata.cut.force, 'uni', 0);

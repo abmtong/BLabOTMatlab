@@ -15,8 +15,9 @@ if nargin < 2 || isempty(P)
     P = 60;
 end
 if nargin < 1 || isempty(F)
-    F = 25;
+    F = 0.1:0.1:45;
 end
+
 
 switch method
     case 2 %phage, legacy
@@ -41,4 +42,10 @@ switch method
             + F./S;
     otherwise %pure theory
         outXpL = 1-.5*(kT./F/P).^.5 + F/K;
+end
+
+if nargin < 1
+    figure Name XWLC
+    plot(outXpL,0.1:0.1:45)
+end
 end

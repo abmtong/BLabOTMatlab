@@ -1,26 +1,41 @@
-function [ccts, xbins, cvel, cfilt, ccrop] = vdist(c, sgp)
+function [ccts, xbins, cvel, cfilt, ccrop] = vdist(c, inOpts)
+%Calculates the velocity pdf of c by using sgolay filtering
 
-if nargin < 2
-    sgp = {1 501}; %seems good for loF
+%outputs: velocity pdf (normalized), velocity bins, trace -> velocity, ...
+%  trace position filtered, trace position cropped (no filter)
+%to e.g. get unnormalized counts, N = sum(cellfun(@length, cvel));
+
+%Definte default options
+opts.sgp = {1 301}; %"Savitsky Golay Params"
+opts.vbinsz = 2; %Velocity BIN SiZe
+opts.Fs = 2500; %Frequency of Sampling
+
+if nargin >= 2
+    opts = handleOpts(opts, inOpts);
 end
-
-vbinsz = 2; %bp/s bin size;
 
 if ~iscell(c)
     c = cell(c);
 end
 
-[cvel, cfilt, ccrop] = cellfun(@(x)sgolaydiff(x, sgp), c, 'uni', 0);
+%Apply @sgolaydiff to input
+[cvel, cfilt, ccrop] = cellfun(@(x)sgolaydiff(x, opts.sgp), c, 'uni', 0);
 
-cvel = cellfun(@(x) double(x)*2500, cvel, 'Uni', 0);
+%Convert velocity from /pt to /s
+cvel = cellfun(@(x) double(x)*opts.Fs, cvel, 'Uni', 0); 
 
+%Concatenate velocities
 cf2 = [cvel{:}];
 
-mincf = floor(min(cf2) / vbinsz) * vbinsz;
-maxcf =  ceil(max(cf2) / vbinsz) * vbinsz;
+%Make hist bounds
+mincf = floor(min(cf2) / opts.vbinsz) * opts.vbinsz;
+maxcf =  ceil(max(cf2) / opts.vbinsz) * opts.vbinsz;
+xbins = mincf:opts.vbinsz:maxcf;
 
-xbins = mincf:vbinsz:maxcf;
-
+%Bin values
 ccts = hist(cf2, xbins);
+%Normalize
+ccts = ccts / sum(ccts) / opts.vbinsz;
 
+% %Debug: plot
 % figure, bar(xbins, ccts);

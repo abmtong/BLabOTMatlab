@@ -30,7 +30,7 @@ end
 
 [inExt, inFor] = trimTrace(inExt, inFor, opts.loF, opts.hiF);
 %bounds
-lb = [1 1 1 -0];
+lb = [1 1 1 -00];
 ub = [1e3 1e4 1e4 00];
 
 fitfcn = @(opts,force)( opts(3) * .34 * XWLC(force, opts(1),opts(2), [], 3) + opts(4) );
@@ -38,10 +38,10 @@ fitfcn = @(opts,force)( opts(3) * .34 * XWLC(force, opts(1),opts(2), [], 3) + op
 %Mute lsqcurvefit
 options=optimoptions(@lsqcurvefit);
 options.Display = 'off';
-%Unmute if verbose
-if nargin >= 4 && verbose
-    options.Display = 'final';
-end
+% %Unmute if verbose
+% if nargin >= 4 && verbose
+%     options.Display = 'final';
+% end
 
 
 %While we plot force-extension, we calculate extension-force
@@ -56,14 +56,14 @@ end
 if nargin >= 4 && verbose
     figure('Name','Force-Ext fit')
     subplot(3,1,[1 2])
-    plot(inExt, inFor, 'Color',[0.7 0.7 0.7])
+    plot(inExt, inFor, 'o', 'Color',[0.7 0.7 0.7])
     hold on
-    range = loF:0.1:hiF;
+    range = opts.loF:0.1:opts.hiF;
     plot(fitfcn(outOpts,range), range, 'Color',[0.3 0.3 1])
     hold off
-        msg = sprintf('PerLen=%0.2fnm, StrMod=%0.2fpN, ConLen=%0.2fbp\n' ,outOpts(1),outOpts(2),outOpts(3));
-    text(inExt(1),hiF,msg)
+        msg = sprintf('PerLen=%0.2fnm, StrMod=%0.2fpN, ConLen=%0.2fbp, Offset=%0.2fnm\n' ,outOpts);
+    text(inExt(1),opts.hiF,msg)
     disp(msg)
     subplot(3,1,3)
-    plot(inExt, outResid)
+    plot(inExt, outResid, 'o')
 end

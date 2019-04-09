@@ -10,6 +10,9 @@ end
 if nargin < 2 || isempty(inPenalty)
     inPenalty = [];
 end
+if ~iscell(inContour)
+    inContour = {inContour};
+end
 
 %Pass inPenalty as single to instead use it as a penalty factor (or however @AFindSteps handles singles)
 

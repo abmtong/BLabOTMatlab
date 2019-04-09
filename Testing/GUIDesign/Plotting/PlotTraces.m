@@ -9,6 +9,7 @@ isInt = @(x) isnumeric(x) && rem(x,1) == 0;
 %InputParser parameters
 addOptional(p, 'FilterRank', 10, isInt )
 addParameter(p, 'PlotUncropped', 0, isBool )
+addParameter(p, 'CropStr', '', @ischar )
 addParameter(p, 'SelectFiles', 0, isBool )
 addParameter(p, 'NormContour', 0, isBool )
 addParameter(p, 'TimeShift', 3, isInt )
@@ -16,6 +17,7 @@ addParameter(p, 'Name','', @ischar)
 addParameter(p, 'Axis', [], @(x)isgraphics(x,'axes'))
 addParameter(p, 'Path', [], @ischar)
 addParameter(p, 'NameTraces', 1, isBool);
+addParameter(p, 'PlotCut', 1, isBool);
 %Parse inputs, assign to var.s
 parse(p, varargin{:})
 res = p.Results;
@@ -29,9 +31,11 @@ filterRank = res.FilterRank;
 name = res.Name;
 ax = res.Axis;
 path = res.Path;
+plotCut = res.PlotCut;
+cropstr = res.CropStr;
 
 thispath = fileparts(which('PlotTraces'));
-addpath([thispath filesep 'StepFind_KV']);
+addpath([thispath  filesep '..' filesep 'StepFind_KV']);
 
 if selFiles
     [files, path] = uigetfile('C:\Data\phage*.mat','MultiSelect','on');
@@ -79,7 +83,7 @@ for i = 1:length(files);
         crop = [0 inf];
     else %Load crop
         name = files{i}(6:end-4); %Extracts * from phage*.mat
-        cropfp = sprintf('%s\\CropFiles\\%s.crop', path, name);
+        cropfp = sprintf('%s\\CropFiles%s\\%s.crop', path, cropstr, name);
         fid = fopen(cropfp);
         if fid == -1
             fprintf('Crop not found for %s\n', name)
@@ -97,6 +101,21 @@ for i = 1:length(files);
     con = stepdata.contour;
     tim = stepdata.time;
     
+    %stitch together plot sections if plotCut
+    if plotCut
+        if isfield(stepdata, 'cut')
+            conc = stepdata.cut.contour;
+            timc = stepdata.cut.time;
+            con = [con conc]; %#ok<AGROW>
+            tim = [tim timc]; %#ok<AGROW>
+            ts = cellfun(@(x)x(1), tim);
+            [~, ti] = sort(ts);
+            con = con(ti);
+            tim = tim(ti);
+            con = {[con{:}]}; %keep it a cell so later cellfuns still work fine
+            tim = {[tim{:}]};
+        end
+    end
     %Find the cropped start/stop index of each segment of the trace (outside crop -> empty index)
     stInd = cellfun(cellfindfirst(crop(1)), tim,'UniformOutput',false);
     enInd = cellfun(cellfindlast (crop(2)), tim,'UniformOutput',false);

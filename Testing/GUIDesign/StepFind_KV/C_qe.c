@@ -1,5 +1,6 @@
 #include "mex.h"
 #include "math.h"
+#define SUBSREF(x,y,xl,yl) x*xl + y
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {

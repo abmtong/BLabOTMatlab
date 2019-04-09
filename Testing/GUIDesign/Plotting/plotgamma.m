@@ -4,7 +4,7 @@ if nargin < 2
     binsz = 0.01;
 end
 if nargin < 3
-    cutoff = inf;
+    cutoff = max(data);
 end
 
 %make cutoff a integer multiple of binsz

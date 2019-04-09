@@ -1,13 +1,14 @@
 function flipxaxis(ax)
+%Reverses the X axis on a plot
+%Used to make velocities in @phagepause positive
 
 if nargin < 1
     ax = gca;
 end
 
+%For every object in the axis, negate its X values
 ch = ax.Children;
-
-for i = 1:length(ch)
-    c = ch(i);
+for c = ch
     if isa(c, 'matlab.graphics.chart.primitive.Line')
         c.XData = -c.XData;
     elseif isa(c, 'matlab.graphics.primitive.Text')
