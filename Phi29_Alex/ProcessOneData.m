@@ -12,7 +12,7 @@ opts.offTrapX = 1.4;
 opts.offTrapY = 1.05;
 opts.convTrapX = 762;
 opts.convTrapY = 578;
-opts.Fsamp = 50e3;
+opts.Fsamp = 2.5e3;
 opts.gheNames = 1;
 opts.comment = '';
 %Calibration options
@@ -25,6 +25,7 @@ opts.dnaPL = 50;
 opts.dnaSM = 700;
 opts.dnakT = 4.14;
 opts.dnaBp = .34;
+opts.extOffset = 50;
 
 if exist('inOpts','var') && isstruct(inOpts)
     opts = handleOpts(opts, inOpts);
@@ -157,6 +158,8 @@ elseif opts.isPhage ==2
     end
 else %Phage-only processing
     pre = 'Phage';
+    %Remove capsid from extension
+    out.extension = out.extension - opts.extOffset;
     %Convert extension to contour
     out.contour = out.extension ./ XWLC(out.force, opts.dnaPL, opts.dnaSM, opts.dnakT) / opts.dnaBp;
     %Analyze MX to find segments

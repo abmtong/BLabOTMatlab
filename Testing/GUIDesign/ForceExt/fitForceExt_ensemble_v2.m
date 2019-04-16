@@ -1,4 +1,5 @@
-function outfit = fitForceExt_ensemble( inExt, inFor, inOpts, verbose )
+function outfit = fitForceExt_ensemble_v2( inExt, inFor, inOpts, verbose )
+
 
 if nargin < 4
     verbose = 1;
@@ -15,13 +16,18 @@ end
 if ~iscell(inExt)
     inExt = {inExt};
 end
-
 sngfits = cellfun(@(x,y)fitForceExt(x, y, inOpts, 0), inExt, inFor, 'uni', 0);
-%use contour to shift traces
 sngfits = reshape([sngfits{:}], 4, []);
-cons = sngfits(3,:);
-conavg = mean(cons);
-inExt = cellfun(@plus, inExt, num2cell((conavg-cons)*.34), 'Uni', 0);
+sngfits = mean(sngfits, 2);
+
+len = length(inExt);
+extshfts = zeros(1,len);
+for i = 1:len
+    %shift ext for best agreement with ensemble fit
+    calcex = XWLC(inFor{i}, sngfits(1), sngfits(2)) * sngfits(3) * .34;
+    extshfts(i) = mean(calcex - inExt{i});
+end
+inExt = cellfun(@plus, inExt, num2cell(extshfts), 'Uni', 0);
 
 sngfits = mean(sngfits, 2);
 fprintf('Avg Fit: PerLen=%0.2fnm, StrMod=%0.2fpN, ConLen=%0.2fbp, Offset=%0.2fnm\n' ,sngfits);

@@ -30,7 +30,7 @@ end
 
 [inExt, inFor] = trimTrace(inExt, inFor, opts.loF, opts.hiF);
 %bounds
-lb = [1 1 1 -00];
+lb = [1 1 0 -00];
 ub = [1e3 1e4 1e4 00];
 
 fitfcn = @(opts,force)( opts(3) * .34 * XWLC(force, opts(1),opts(2), [], 3) + opts(4) );

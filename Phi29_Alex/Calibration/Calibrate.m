@@ -134,9 +134,6 @@ k = 2*pi*dC*fit(1);
 
 %Plot fit, display values
 if opts.verbose
-    %@smooth causes an artefact for spectra with very high F(1), manifesting as a jump at F(filterwidth/2)
-    %@smooth is slow for bad computers, so maybe replace
-    
     loglog(opts.ax, Fall, Pall, 'Color', .8*[1 1 1])
     hold on
     loglog(opts.ax, Fbf,Pbf,'o','Color',opts.color)

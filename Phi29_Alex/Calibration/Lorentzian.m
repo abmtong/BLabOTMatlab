@@ -10,5 +10,9 @@ Fs = inOpts.Fs;
 nAlias = inOpts.nAlias;
 
 inFF = bsxfun(@plus, inF, Fs*(-nAlias:nAlias)');
+%Pure lorentzian
 % outP = sum( D/2/pi^2./(fc^2+inFF.^2));
+%Lorentzian with just filter 
+% outP = sum( D/2/pi^2./(fc^2+inFF.^2) .* (1 ./ (1+ (inFF/f3).^2)) );
+%Lorentzian with filtered delayed response (usual)
 outP = sum( D/2/pi^2./(fc^2+inFF.^2) .* (al^2 + (1-al^2) ./ (1+ (inFF/f3).^2)) );

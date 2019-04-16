@@ -130,11 +130,13 @@ fig.Visible = 'on';
         %fields: time, dist -> extension, force, trap_sep
         
         %Load the file
-        load([path file],'trace');
-        ContourData = trace;
-        ContourData.extension = ContourData.dist;
-        ContourData = rmfield(ContourData, 'dist');
-        
+        a = load([path file]);
+        afn = fieldnames(a);
+        ContourData = a.(afn{1});
+        if isfield(ContourData, 'dist')
+            ContourData.extension = ContourData.dist;
+            ContourData = rmfield(ContourData, 'dist');
+        end
         name = file(1:end-4);
         cla(mainAxis)
         fig.Name = sprintf('ForExtGUI %s', name);

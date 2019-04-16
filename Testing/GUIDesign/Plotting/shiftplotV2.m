@@ -1,36 +1,38 @@
-function shiftplotV2()
+function shiftplotV2(gobjs)
 %nudge with WASD
 pan off
 zoom off
 
 global shiftamt
 global curln
+
+
+if nargin < 1
+    ax = gca;
+    fg = ancestor(ax, 'figure');
+    gobjs = get(ax, 'Children');
+    gobjs = gobjs(arrayfun(@(x)isa(x, 'matlab.graphics.chart.primitive.Line'), gobjs));
+else
+    fg = ancestor(gobjs(1), 'figure');
+    ax = ancestor(gobjs(1), 'axes');
+end
 if isempty(shiftamt)
-    shiftamt = [.1 10]; %shift amount in x, y
+    shiftamt = [range(ax.XLim) range(ax.YLim)]/100; %shift amount in x, y
 end
-
-
-ax = gca;
-fg = ancestor(ax, 'figure');
-
-gobjs = get(ax, 'Children');
-gobjs = gobjs(arrayfun(@(x)isa(x, 'matlab.graphics.chart.primitive.Line'), gobjs));
-
-if isempty(curln)
-    curln = gobjs(1);
-end
+curln = gobjs(1);
 
     function keypf(~, edata)
         % global curln
         % global shiftamt
+        shiftamt = [range(ax.XLim) range(ax.YLim)]/100;
         switch edata.Key
-            case 'd'
+            case {'d' 'rightarrow'}
                 curln.XData = curln.XData + shiftamt(1);
-            case 'a'
+            case {'a' 'leftarrow'}
                 curln.XData = curln.XData - shiftamt(1);
-            case 'w'
+            case {'w' 'uparrow'}
                 curln.YData = curln.YData + shiftamt(2);
-            case 's'
+            case {'s' 'downarrow'}
                 curln.YData = curln.YData - shiftamt(2);
             otherwise
         end

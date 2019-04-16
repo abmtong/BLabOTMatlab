@@ -1,6 +1,13 @@
-function [outCons, outExts, outFrcs, outTrNs] = getFCs(cropstr)
+function [outCons, outExts, outFrcs, outTrNs] = getFCs(cropstr, newxwlc)
 if nargin < 1
     cropstr = '';
+end
+%newxwlc changes con to have new XWLC params, defined by {PL, SM}
+if nargin >1
+    %might input [PL, SM] instead, if so fix for user
+    if ~iscell(newxwlc)
+        newxwlc = num2cell(newxwlc);
+    end
 end
 
 [files, path] = uigetfile('C:\Data\phage*.mat','MultiSelect','on');
@@ -44,8 +51,8 @@ for i = 1:length(files)
     indend = cellfun(@(x)find(x<crop(2),1,'last'), stepdata.time,'UniformOutput',0);
     con = cellfun(@(ce,st,en)ce(st:en),stepdata.contour, indsta, indend, 'UniformOutput',0);
     outCons = [outCons con]; %#ok<AGROW>
-    outTrNs = [outTrNs ones(1,length(con)) * i];
-    if nargout > 1 %convert to extension, from contour
+    outTrNs = [outTrNs ones(1,length(con)) * i]; %#ok<AGROW>
+    if nargout > 1 || nargin > 1 %convert to extension, from contour
         %Con = Ext/XWLC/.34, so Ext = Con*XWLC*.34
         frc = cellfun(@(ce,st,en)ce(st:en),stepdata.force, indsta, indend, 'UniformOutput',0);
         ext = cellfun(@(c,f)c .* XWLC(f, 60, 550, 4.14) *.34, con, frc, 'Uni', 0);
@@ -55,8 +62,12 @@ for i = 1:length(files)
 end
 outTrNs = outTrNs(~cellfun(@isempty,outCons));
 outCons = outCons(~cellfun(@isempty,outCons));
-if nargout>1
+
+if nargout>1|| nargin > 1
     outExts = outExts(~cellfun(@isempty,outExts));
     outFrcs = outFrcs(~cellfun(@isempty,outFrcs));
+end
+if nargin > 1
+    outCons = cellfun(@(x, f) x ./ XWLC(f, newxwlc{:}, 4.14) / .34, outExts, outFrcs, 'uni', 0);
 end
 end

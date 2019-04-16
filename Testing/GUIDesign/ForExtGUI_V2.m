@@ -13,11 +13,11 @@ addpath ([thispath '\StepFind_KV\'])   %Filtering
 path = 'C:\Data';
 file = 'ForceExtensionMMDDYYN00.mat';
 name = 'mmddyyN00';
-if exist('GUIsettings.mat', 'file')
-    load('GUIsettings.mat', 'path');
+if exist('GUIsettingsFX.mat', 'file')
+    load('GUIsettingsFX.mat', 'path');
 else
-    c = 'Settings file for PhageGUI'; %#ok<*NASGU> - A lot of uicontrol handles will be unused, too - OK
-    save('GUIsettings.mat', 'c');
+    c = 'Settings file for ForExtGUI'; %#ok<*NASGU> - A lot of uicontrol handles will be unused, too - OK
+    save('GUIsettingsFX.mat', 'c');
 end
 
 %Declare variables for static workspace - or just shove everything in a struct
@@ -89,6 +89,8 @@ deciFact  = uicontrol('Parent', panlef, 'Style', 'edit', 'Units', 'normalized', 
 traceTxt  = uicontrol('Parent', panlef, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .65 1 .05], 'String', '00bp/s, 00pts');
 datTable  = uitable  ('Parent', panlef, 'Units', 'normalized', 'Position', [-.1 .35 1.1 .25], 'Data', zeros(8,1), 'RowName', {'Last' 'PL' 'SM' 'CL' 'OffX' 'Avg' 'PL' 'SM' 'CL' 'OffX'}, 'ColumnName', '');
 clrHists  = uicontrol('Parent', panlef, 'Units', 'normalized', 'Position', [0 .625 1 .025], 'String', 'Clear Data', 'Callback', @clrHists_callback);
+plotCal   = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [0 .3 .5 .05], 'String', 'Plot Cal', 'Callback', @plotCal_callback);
+plotOff   = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [.5 .3 .5 .05], 'String', 'Plot Off', 'Callback', @plotOff_callback);
 
 %Load first file
 loadFile_callback
@@ -105,7 +107,7 @@ fig.Visible = 'on';
             end
             file = f;
             path = p;
-            save('GUIsettings.mat', 'path', '-append')
+            save('GUIsettingsFX.mat', 'path', '-append')
             
             %Format the file slider
             d = dir([path filesep 'ForceExtension*.mat']);
@@ -263,7 +265,7 @@ fig.Visible = 'on';
         timF = windowFilter(@mean, tim, fil, dec);
         extF = windowFilter(@mean, ext, fil, dec);
         frcF = windowFilter(@mean, frc, fil, dec);
-        filtLine = surface(mainAxis, [timF;timF],[frcF;frcF],zeros(2,length(timF)),[extF;extF], 'edgecol', 'interp');
+        filtLine = surface(mainAxis, [timF;timF],[frcF;frcF],zeros(2,length(timF)),[timF;timF], 'edgecol', 'interp');
         filtLine2 = surface(subAxis, [extF;extF],[frcF;frcF],zeros(2,length(extF)),[timF;timF], 'edgecol', 'interp');
     end
     
@@ -373,7 +375,7 @@ fig.Visible = 'on';
             fr = {axc.YData};
             delete(fg)
             frcrng = str2num(frcRange.String); %#ok<ST2NM>
-            fitForceExt_ensemble(ex, fr, struct('loF', frcrng(1), 'hiF', frcrng(2)), 1);
+            fitForceExt_ensemble_v2(ex, fr, struct('loF', frcrng(1), 'hiF', frcrng(2)), 1);
         end
     end
 
@@ -421,6 +423,17 @@ fig.Visible = 'on';
         zoom reset
     end
 
+    function plotCal_callback(~,~)
+        if isfield(stepdata, 'cal')
+            plotcal(ContourData.cal);
+        end
+    end
+
+    function plotOff_callback(~,~)
+        if isfield(stepdata, 'off')
+            plotoff(ContourData.off);
+        end
+    end
         
     function custom01_callback(~,~)
         %Remove this one

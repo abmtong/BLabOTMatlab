@@ -113,13 +113,24 @@ fig.Visible = 'on';
         %vZhijie: Convert Antony's struct -> phage struct
         %struct name is trace -> stepdata
         %fields: time, dist -> contour, force
-        load([path file],'trace');
-        stepdata = trace;
-        stepdata.contour = {stepdata.dist};
+        a = load([path file]);
+        afn = fieldnames(a);
+        stepdata = a.(afn{1});
+        if isfield(stepdata, 'dist')
+            stepdata.extension = {stepdata.dist};
+            stepdata = rmfield(stepdata, 'dist');
+        elseif isfield(stepdata, 'extension')
+            stepdata.extension = {stepdata.extension};
+        end
+        
+        if ~isfield(stepdata, 'contour')
+            stepdata.contour = stepdata.extension;
+        else
+            stepdata.contour = {stepdata.contour};
+        end
         stepdata.time = {stepdata.time};
         stepdata.force = {stepdata.force};
-        stepdata.trap_sep = {stepdata.trap_sep};
-        stepdata = rmfield(stepdata, 'dist');
+%         stepdata.trap_sep = {stepdata.trap_sep};
         
         name = file(1:end-4);
         cla(mainAxis)

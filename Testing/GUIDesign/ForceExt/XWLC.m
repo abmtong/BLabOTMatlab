@@ -9,10 +9,10 @@ if nargin < 4 || isempty(kT)
     kT = 4.14;
 end
 if nargin < 3 || isempty(S)
-    S = 550;
+    S = 700;
 end
 if nargin < 2 || isempty(P)
-    P = 60;
+    P = 50;
 end
 if nargin < 1 || isempty(F)
     F = 0.1:0.1:45;
@@ -41,7 +41,7 @@ switch method
             + C1.^1.62 ./ (3.55+ 3.8* C1.^2.2) ...
             + F./S;
     otherwise %pure theory
-        outXpL = 1-.5*(kT./F/P).^.5 + F/K;
+        outXpL = 1-.5*(kT./F/P).^.5 + F/S;
 end
 
 if nargin < 1

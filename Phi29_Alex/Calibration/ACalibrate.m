@@ -68,11 +68,11 @@ for i = 1:2
     opts.ra = opts.(['ra' I]);
     for j = 1:2
         J = c2(j);
+        opts.name = [I J];
+        opts.color = colors{i,j};
+        opts.Sum = opts.(['Sum' I]);
         if opts.verbose
             opts.ax = axes('Position',[-.45+0.5*i, 1.05-0.5*j,  0.43, 0.43]);
-            opts.name = [I J];
-            opts.color = colors{i,j};
-            opts.Sum = opts.(['Sum' I]);
         end
         out.([I J]) = Calibrate(dat.([I J])./dat.(['S' I]), opts);
     end
