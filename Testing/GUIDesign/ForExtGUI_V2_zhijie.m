@@ -13,11 +13,11 @@ addpath ([thispath '\StepFind_KV\'])   %Filtering
 path = 'C:\Data';
 file = 'ForceExtensionMMDDYYN00.mat';
 name = 'mmddyyN00';
-if exist('GUIsettings.mat', 'file')
-    load('GUIsettings.mat', 'path');
+if exist('GUIsettingsZJ.mat', 'file')
+    load('GUIsettingsZJ.mat', 'path');
 else
     c = 'Settings file for PhageGUI'; %#ok<*NASGU> - A lot of uicontrol handles will be unused, too - OK
-    save('GUIsettings.mat', 'c');
+    save('GUIsettingsZJ.mat', 'c');
 end
 
 %Declare variables for static workspace - or just shove everything in a struct
@@ -103,7 +103,7 @@ fig.Visible = 'on';
             end
             file = f;
             path = p;
-            save('GUIsettings.mat', 'path', '-append')
+            save('GUIsettingsZJ.mat', 'path', '-append')
             
             %Format the file slider
             d = dir([path filesep '*.mat']);

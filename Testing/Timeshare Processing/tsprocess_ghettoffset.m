@@ -54,8 +54,8 @@ calopts.hydro = 0;
 calopts.Fs = 1/calraw.meta.hdr(3);
 calopts.ra = 500; %bead radius, nm. Replace with query window later like @AProcessData
 calopts.nBin = ceil(length(calraw.AX) / 200); %200 total pts in pspec
-calopts.Fmin =  50;
-calopts.Fmax = 2e4;
+calopts.Fmin =  500;
+calopts.Fmax = [];
 calopts.d2o = 0.8;
 fnames = {'AX' 'AY' 'BX' 'BY'};
 sumnms = {'AS' 'AS' 'BS' 'BS'};
@@ -88,11 +88,12 @@ out.cal = cal;
 
 %process offset
 offraw = timeshareread([p f{2}], dtype);
+% offraw = timeshareread_badavgnum([p f{2}], dtype);
 fnames = {'AX' 'AY' 'BX' 'BY'};
 trapdel = offraw.T2F - offraw.T1F;
 %plot MX over time, prompt user to select offset region
 fg=figure; plot(trapdel),
-xlim([1 1e4])
+xlim([1 1e5])
 a=ginput(2);
 a = round(a(1:2));
 delete(fg);
@@ -107,10 +108,11 @@ out.off = off;
 
 %Read data
 datraw = timeshareread([p f{3}], dtype);
+% datraw = timeshareread_badavgnum([p f{3}], dtype);
 %Extract meta
 opts.Fsamp = 1/datraw.meta.hdr(3);
-% opts.convTrapX = 160.2656; %nm/MHz, for Meitner
-opts.convTrapX = 144; %nm/MHz, for Boltz
+opts.convTrapX = 160.2656; %nm/MHz, for Meitner
+% opts.convTrapX = 144; %nm/MHz, for Boltz
 % opts.convGrnX = 1014.982; %nm/V, for Meitner
 opts.raA = 500;
 opts.raB = 500;
@@ -131,8 +133,8 @@ for i = 1:length(fnames)
 end
 
 %Calculate extension  = hypot( TrapDelta + BeadsX, BeadsY) - Bead Radii
-out.extension = hypot( (datraw.T2F-datraw.T1F)*opts.convTrapX  - cal.AX.a*datraw.AX + cal.BX.a*datraw.BX, ...
-                                                               - cal.AY.a*datraw.AY + cal.BY.a*datraw.BY )...
+out.extension = hypot( (datraw.T2F-datraw.T1F)*opts.convTrapX  + cal.AX.a*datraw.AX - cal.BX.a*datraw.BX, ...
+                                                               + cal.AY.a*datraw.AY - cal.BY.a*datraw.BY )...
                        - opts.raA - opts.raB;
 %Calculate total force = hypot( forX, forY ) using differential force (average of forces)
 out.force = hypot((out.forceBX - out.forceAX)/2, ...

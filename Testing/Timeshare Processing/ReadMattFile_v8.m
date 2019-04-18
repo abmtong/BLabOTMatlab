@@ -10,7 +10,12 @@ function data = ReadMattFile_v8(startpath,rootfile)
 %101025 mjc
 
 %open file
-fid = fopen([startpath rootfile],'r','ieee-be')
+if nargin < 1
+    [f, p] = uigetfile('*.dat');
+    fid = fopen([p f],'r','ieee-be');
+else
+    fid = fopen([startpath rootfile],'r','ieee-be');
+end
 
 %read number of header entries following
 fread(fid,1,'float64'); %number of header entries following
@@ -110,8 +115,8 @@ D = (reshape(D,data.nchannels,[]))'; % Varsha why is there an ' at the end
 %convert to voltages
 D = D/3276.7;
 
-data.path = startpath;
-data.file = rootfile;
+% data.path = startpath;
+% data.file = rootfile;
 
 switch data.chanpattern
     case 1      
@@ -302,8 +307,7 @@ if data.trpossaved == 1
         fread(fid,1,'float64');
     end
     
-    %now read data to the end of the file, there are two interlaced trap
-    %positions (assumed for now)
+    %now read dasumed for now)
     F = fread(fid,inf,'uint64');%might work
     
     %reshape to separate traps 1 and 2

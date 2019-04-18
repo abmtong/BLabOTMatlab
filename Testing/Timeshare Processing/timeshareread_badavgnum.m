@@ -1,7 +1,16 @@
-function [dat, cmt] = timeshareread(infp, dtype)
+function [dat, cmt] = timeshareread_badavgnum(infp, dtype, avgnum)
 %Rewrite of ReadMattFile v8
 %Reads a timeshared data file (usually named YYMMDD_NNN.dat, also reads associated _pos, _fl data if available
 %Outputs a struct with fieldnames = detector names (raw QPD / etc. signals)
+
+
+%I accidentally used avg num = 27, which is bad because it writes a different number of data.
+%To fix: Each channel is read 20k elements at a time, so avgnum needs to divide evenly this number.
+% If it isn't, then the reshapes will add zeros = add numbers, also it loses register meaning you can't just reshape the entire matrix anymore.
+% The end result is that 740 timepoints (9620 pts) get written, then of the 741st, only 10 pts get written (of 13), and they're only 20/27ths of the magnitude (bc they've been averaged with zeros
+% So, for every 9630 pts of data, rescale the last 10 by 27/20 and add 3 zeros. (this is PSD XYS, which we don't care about anyway - probs better to replace with the t-1 values, but eh)
+% For the trap MHz, the result is we get 740 timepoints fine, then just trap 1, at 20/27ths the value. So every 1461 pts, rescale the last pt and add a 90 for trap 2.
+
 
 if nargin < 1 || isempty(infp)
     [f, p] = uigetfile('*.dat');
@@ -14,6 +23,10 @@ end
 if nargin < 2
     dtype = 'int16'; %for meitner; boltzmann is single
     %seems like the Boltzmann VI was altered to , upon averaging, convert the input int16s (2 bytes) to singles (4 bytes) for.. reasons?
+end
+
+if nargin < 3
+    avgnum = 27; %cant figure out what causes it, so vOv
 end
 
 %open file, big-endian
@@ -65,12 +78,28 @@ cmt = fread(fid, cmtlen, '*char')';
 %read PSD data (int16 -> [-10, 10]: can be stored as single-precison float)
 data = fread(fid, dtype); %flzr is int16, boltz is single
 fclose(fid);
-%shape data into nchannels rows
-% data = reshape(data, chnn, []);
-%Sometimes data isn't a multiple of chnn.... so just force it to be
-nrow = floor(numel(data)/chnn);
-data = reshape(data(1:nrow*chnn), chnn, nrow);
 
+%if 20k % avgnum ~=0, saves data incorrectly
+%seems to save 740 rows (9620 elements), then 10 with bad averaging, then continues
+data = reshape(data, 9630, []);
+data(9620:9630,:) = data(9620:9630,:) * 27/20; %rescale last row, which assumedly is an avg between data and 0s that were added to expand the matrix on LV reshape
+data(9633,:) = 0; %add 3 rows
+data = data(:);
+
+
+
+
+% %to fix, process in 20k chunks
+% nsaved = floor(20e3 / avgnum) * avgnum;
+% data = reshape(data(1: floor(numel(data)/20e3) * 20e3), 20e3, []);
+% data = data(1: floor(20e3/avgnum)*avgnum, :);
+% figure, mesh(data)
+% %shape data into nchannels rows
+% figure, mesh(data)
+% nrow = floor(numel(data)/chnn);
+% data = reshape(data(1:nrow*chnn), chnn, nrow);
+
+data = reshape(data(:), chnn, []);
 len = size(data, 2);
 
 %convert to volts
@@ -166,8 +195,15 @@ if any(hdr(13) == [2 3])
         poshdrlen = fread(posfid, 1, 'double');
         poshdr = fread(posfid, poshdrlen, 'double');
         posdat = fread(posfid, 'uint64');
-        posdat = single(reshape(posdat, 2, []) *49.152e6*6/1e6/2^48); %conversion factor, copied directly from M.Comstock
+        posdat = single(posdat *49.152e6*6/1e6/2^48); %conversion factor, copied directly from M.Comstock
         %these values for e.g. passive data may be off by ~eps (the granularity of the int->MHz conversion). Can consider doing round(num * 1e5) / 1e5, but error is O(1e-5), insignificant
+        
+        %Bad avg num: 740, then scale, then readd missed T2 value
+        posdat = reshape(posdat, 1481, []);
+        posdat(1482,:) = posdat(1480,:);
+        posdat(1481,:) = posdat(1481,:) * 27 / 20;
+        posdat = reshape(posdat(:),2,[]);
+        
         dat.T1F = posdat(1,:);
         dat.T2F = posdat(2,:);
         fclose(posfid);

@@ -21,10 +21,10 @@ end
 %set up opts
 calopts.hydro = 0;
 calopts.Fs = 1/calraw.meta.hdr(3);
-calopts.ra = 1100; %bead radius, nm. Replace with query window later like @AProcessData
-calopts.nBin = ceil(length(calraw.AX) / 1000); %200 total pts in pspec
+calopts.ra = 500; %bead radius, nm. Replace with query window later like @AProcessData
+calopts.nBin = ceil(length(calraw.AX) / 200); %200 total pts in pspec
 calopts.Fmin =  50;
-calopts.Fmax = 5e3;
+calopts.Fmax = [];
 fnames = {'AX' 'AY' 'BX' 'BY'};
 sumnms = {'AS' 'AS' 'BS' 'BS'};
 
@@ -54,8 +54,8 @@ for i = 1:length(fnames)
     calopts.name = fnames{i};
     calopts.Sum = mean( calraw.(sumnms{i}) );
 %     cal.(fnames{i}) = tscalibrate( calraw.(fnames{i})(1e4:end), calopts);
-    cal.(fnames{i}) = tscalibrate( calraw.(fnames{i}) ./ calraw.(sumnms{i}), calopts);
-%     cal.(fnames{i}) = Calibrate( calraw.(fnames{i}) ./ calraw.(sumnms{i}), calopts);
+%     cal.(fnames{i}) = tscalibrate( calraw.(fnames{i}) ./ calraw.(sumnms{i}), calopts);
+    cal.(fnames{i}) = Calibrate( calraw.(fnames{i}) ./ calraw.(sumnms{i}), calopts);
 %     cal.(fnames{i}) = Calibrate( calraw.(fnames{i}), calopts);
     
 end

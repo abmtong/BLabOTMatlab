@@ -75,6 +75,7 @@ deciFactT = uicontrol('Parent', panlef, 'Style', 'text', 'Units', 'normalized', 
 deciFact  = uicontrol('Parent', panlef, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .8 .5 .05], 'String', '2', 'Callback', @refilter_callback);
 plotCal   = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [0 .7 .5 .05], 'String', 'Plot Cal', 'Callback', @plotCal_callback);
 plotOff   = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [.5 .7 .5 .05], 'String', 'Plot Off', 'Callback', @plotOff_callback);
+plotRaw   = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [0 .65 .5 .05], 'String', 'Plot Raw', 'Callback', @plotRaw_callback);
 %Load first file
 loadFile_callback
 
@@ -425,6 +426,11 @@ fig.Visible = 'on';
         end
     end
 
+    function plotRaw_callback(~,~)
+        plotraw(stepdata)
+        xlim(mainAxis.XLim)
+    end
+
     function custom01_callback(~,~)
         %{
         customB1.String = 'ConSec';
@@ -588,8 +594,8 @@ fig.Visible = 'on';
         %'XWLC PL(nm), 50D 40R 35H' 'XWLC SM(pN), 700D 450R 500H' 'kT (pN nm)' 'Rise/bp (nm/bp)'...
         %Psor30: 50 500; 4% incr.
         %Psor100: 45 370; 8% incr.
-        pl = 50;
-        sm = 400;
+        pl = 40;
+        sm = 700;
         npb = 0.34;
         stepdata.contour = cellfun(@(x,y) x ./ XWLC(y, pl, sm, 4.14)./ npb, stepdata.extension, stepdata.force, 'uni', 0);
         stepdata.cut.contour = cellfun(@(x,y) x ./ XWLC(y, pl, sm, 4.14)./ npb, stepdata.cut.extension, stepdata.cut.force, 'uni', 0);

@@ -110,7 +110,7 @@ Guess = [Fcg, Dg, .3, opts.Fnyq/2];
 
 %Assign lb and ub
 lb = [0 0 0 Fcg];
-ub = [10*Fcg 10*Dg 1 opts.Fs];
+ub = [10*Fcg 10*Dg 1 opts.Fs*10];
 
 %Optimize in log-space
 lPbf = log(Pbf);
