@@ -149,6 +149,8 @@ fig.Visible = 'on';
                 loadCrop.String = 'Crop not found';
 %                 fprintf('Crop not found for %s\n', name)
                 return
+            else
+                loadCrop.String = 'Load Crop';
             end
             
             ts = textscan(fid, '%f');
@@ -198,7 +200,7 @@ fig.Visible = 'on';
         
         %Plot force on bottom. Don't use cla to keep current window.
         arrayfun(@delete,subAxis.Children)
-        cellfun(@(x,y)plot(subAxis, x, y, 'Color', [.7 .7 .7]), stepdata.time, stepdata.force)
+        cellfun(@(x,y)plot(subAxis, x, y, 'Color', .7 * [1 1 1]), stepdata.time, stepdata.force)
         plotCell(subAxis, timF, forF)
         
         %Plot contour on top
@@ -208,7 +210,7 @@ fig.Visible = 'on';
 %         fulti mF = cellfun(@(x)windowFilter(@mean, x, [], 2),stepdata.time,'UniformOutput',0);
 %         cellfun(@(x,y)plot(mainAxis, x, y, 'Color', [.7 .7 .7]), fultimF, fulconF, 'UniformOutput', false);
         %/Hijack
-        cellfun(@(x,y)plot(mainAxis, x, y, 'Color', [.7 .7 .7]), stepdata.time, stepdata.contour, 'UniformOutput', false);
+        cellfun(@(x,y)plot(mainAxis, x, y, 'Color', .7 * [1 1 1]), stepdata.time, stepdata.contour, 'UniformOutput', false);
         filtLine = plotCell(mainAxis, timF, conF);
         
         %If cut segments are saved, plot in gray
@@ -500,7 +502,7 @@ fig.Visible = 'on';
 %         concrop = [concrop{:}];
         concrop = concrop(~cellfun(@isempty, concrop));
         
-        fils  = [5 10 25 40];
+        fils  = [3 5 10 25];
         binsz = .1;
         pfils = [1 5 10] * .1/binsz;
         pfils = round(pfils);
@@ -566,12 +568,18 @@ fig.Visible = 'on';
         pan on
         %}
         
+
+        customB3.String = 'ScaleFCs';
+        str = permCropB.String;
+        if strcmp(str, '1')
+            str = '';
+        end
+        tmp = FCrescale([path file], str);
+        if ~isempty(tmp)
+            stepdata = tmp;
+            refilter_callback
+        end
         %{
-        customB3.String = 'PlotCals';
-        plotcal(stepdata.cal);
-        %}
-        
-        
         
         customB3.String = 'Recalc Contour';
         %XWLC fcn
@@ -585,6 +593,9 @@ fig.Visible = 'on';
                 + C1.^1.62 ./ (3.55+ 3.8* C1.^2.2) ...
                 + F./S;
         end
+        
+        %}
+        
         %Recalc XWLC
         %DNA: PL=50, SM=700,nm/bp = 0.34
         %GheD: 30, 1200
@@ -594,12 +605,12 @@ fig.Visible = 'on';
         %'XWLC PL(nm), 50D 40R 35H' 'XWLC SM(pN), 700D 450R 500H' 'kT (pN nm)' 'Rise/bp (nm/bp)'...
         %Psor30: 50 500; 4% incr.
         %Psor100: 45 370; 8% incr.
-        pl = 40;
-        sm = 700;
-        npb = 0.34;
-        stepdata.contour = cellfun(@(x,y) x ./ XWLC(y, pl, sm, 4.14)./ npb, stepdata.extension, stepdata.force, 'uni', 0);
-        stepdata.cut.contour = cellfun(@(x,y) x ./ XWLC(y, pl, sm, 4.14)./ npb, stepdata.cut.extension, stepdata.cut.force, 'uni', 0);
-        refilter_callback
+%         pl = 40;
+%         sm = 700;
+%         npb = 0.34;
+%         stepdata.contour = cellfun(@(x,y) x ./ XWLC(y, pl, sm, 4.14)./ npb, stepdata.extension, stepdata.force, 'uni', 0);
+%         stepdata.cut.contour = cellfun(@(x,y) x ./ XWLC(y, pl, sm, 4.14)./ npb, stepdata.cut.extension, stepdata.cut.force, 'uni', 0);
+%         refilter_callback
     end
 
     function printFig_callback(~,~)

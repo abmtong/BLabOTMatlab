@@ -1,4 +1,6 @@
-function edthing(inx,iny, binsz)
+function edthingv2(inx,iny, binsz)
+%now just add vectors
+
 tic
 if nargin < 1
     inx = randn(1,1e7); %100kHz * 100s = 1e7 pts
@@ -6,8 +8,16 @@ if nargin < 1
 end
 if nargin < 3
 %     binsz = 0.5e-1;
-    binsz = range(inx)/50;
+    binsz = range(inx) / 50;
 end
+%get diff coords
+dinx = diff(inx);
+diny = diff(iny);
+dinr = sqrt(dinx.^2 + diny.^2);
+dinxh = dinx ./ dinr;
+dinyh = diny ./ dinr;
+% dinxh = dinx;
+% dinyh = diny;
 
 %shift indata to natural coords
 inx = floor(inx / binsz);
@@ -23,30 +33,15 @@ xr = max(inx);
 yr = max(iny);
 
 len = length(inx);
-dirs = complex(zeros(1,len-1));
 outc = zeros(xr,yr);
-outd = complex(zeros(xr,yr));
+outdx = zeros(xr,yr);
+outdy = zeros(xr,yr);
+
 
 for i = 1:len-1
-    %shallow slope = l/r, steep = u/d
-    isud = abs ( ( iny(i+1) - iny(i) ) / (inx(i+1) - inx(i)) ) > 1;
-    if isud
-        %check if up or down
-        if iny(i+1) > iny(i) %up
-            dirs(i) = 1i;
-        else
-            dirs(i) = -1i;
-        end
-    else
-        % check if left or right
-        if inx(i+1) > inx(i) %right
-            dirs(i) = 1+0i;
-        else %left
-            dirs(i) = -1+0i;
-        end
-    end
     outc(inx(i), iny(i)) = outc(inx(i), iny(i)) + 1;
-    outd(inx(i), iny(i)) = outd(inx(i), iny(i)) + dirs(i);
+    outdx(inx(i), iny(i)) = outdx(inx(i), iny(i)) + dinxh(i);
+    outdy(inx(i), iny(i)) = outdy(inx(i), iny(i)) + dinyh(i);
     if mod(i,1e6) == 0
         fprintf('|');
     end
@@ -60,9 +55,11 @@ yy = (yy'+yoff-1)*binsz;
 %should probably normalize d by n, e.g. d = d ./ n
 
 %norm d so largest arrow is length 1
-outd = outd / max(abs(outd(:)));
+mxd = sqrt( max( max( outdx .^2 + outdy.^2 ) ) );
+outdx = outdx / mxd;
+outdy = outdy / mxd;
 
 figure, surface(xx, yy, zeros(size(xx)), outc, 'EdgeColor', 'none');
-hold on, quiver(xx+binsz/2,yy+binsz/2, real(outd), imag(outd));
+hold on, quiver(xx+binsz/2,yy+binsz/2, outdx, outdy);
 axis square
 toc

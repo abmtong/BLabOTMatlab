@@ -1,5 +1,7 @@
 function saveall
 
+fprintf('Saving...')
+
 folnam = datestr(now, 'yymmdd_HHMMSS');
 
 mkdir(folnam);
@@ -14,3 +16,5 @@ gr=gr.Children;
 for i = 1:length(gr)
     savefig(gr(i), [folnam filesep 'fig' sprintf('%02d',i) '.fig'])
 end
+
+fprintf(' Done.\n')

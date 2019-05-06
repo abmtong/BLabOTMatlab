@@ -40,7 +40,7 @@ if nargin<2 || isempty(inModel) %generate model guess
     %Step probabilities for first 3 and last step
 %     a.ds1 = ones(1, length(binsz:binsz:maxstep)) + 0.05 * randi(10,1,length(binsz:binsz:maxstep));
 %     a.ds2 = ones(1, length(binsz:binsz:maxstep)) + 0.05 * randi(10,1,length(binsz:binsz:maxstep));
-    aseedsd = 3;
+    aseedsd = 1;
     a.ds1 = normpdf( binsz:binsz:maxstep, 2.5, aseedsd); %seeding - otherwise the two states wouldn't diverge
     a.ds2 = normpdf( binsz:binsz:maxstep, 1.1, aseedsd);
     

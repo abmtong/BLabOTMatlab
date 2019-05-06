@@ -6,7 +6,7 @@ end
 
 %declare options:
 %opts for @vdist
-opts.sgp = {1 401}; %Savitsky Golay Params
+opts.sgp = {1 301}; %Savitsky Golay Params
 opts.vbinsz = 2; %Velocity BIN SiZe
 opts.Fs = 2500; %Frequency of Sampling
 %opts for this fcn
@@ -22,6 +22,10 @@ rawcon = getFCs(incropstr);
 %calculate velocity dist (filtered by sgolay)
 [vpdf, x] = vdist(rawcon, opts);
 x = -x*.34; %xform to positive velocity, nm
+vmin = -10;
+vmax = 100;
+xf = x(x>vmin & x < vmax);
+vf = vpdf(x>vmin & x < vmax);
 
 %fit two gaussians, taken from phagepause
 
@@ -36,7 +40,7 @@ ub = [0 inf 1 inf inf 1];
 %Fit using @lsqcurvefit
 lsqopts = optimoptions('lsqcurvefit');
 lsqopts.Display = 'none';
-fit = lsqcurvefit(bigauss, xg, x, vpdf, lb, ub, lsqopts);
+fit = lsqcurvefit(bigauss, xg, xf, vf, lb, ub, lsqopts);
 fp = bigauss(fit, x);
 
 %assign, plot

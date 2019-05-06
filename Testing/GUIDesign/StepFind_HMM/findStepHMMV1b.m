@@ -36,7 +36,7 @@ if ~isfield(inModel, 'a')
     %search from 0 to 25bp step, seed with gaussian (high sig = essentially flat fcn)
     maxstep = 15;
     guessmean = 2.5;
-    guesssig = 2;
+    guesssig = 100;
     %a: search from 0 to maxstep
     a = normpdf(0:binsz:maxstep, guessmean, guesssig);
 %     a=ones(1,length(0:binsz:maxstep));

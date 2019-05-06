@@ -1,10 +1,13 @@
-function getFCsHMM(aseed, cropstr)
+function getFCsHMM(aseed, cropstr, maxlen)
 
 if nargin < 1
     aseed = [];
 end
 if nargin < 2
     cropstr = '';
+end
+if nargin < 3
+    maxlen = inf;
 end
 
 %
@@ -55,15 +58,23 @@ for i = 1:length(files)
     %save in output file
     for j = 1:length(indsta)
         if ~isempty(con{j})
-            %name file ['pHMM' MMDDYYN## {extra stuff might be here} S##P##.mat]
-            outname = sprintf('pHMM%sS%02d.mat', file(6:end-4), j);
-            fcdata = [];
-            fcdata.con = con{j};
-            fcdata.frc = frc{j};
-            fcdata.tim = tim{j};
-            fcdata.opts = opts;
-            fcdata.aseed = aseed;
-            save([outpath filesep outname], 'fcdata')
+            c = con{j};
+            f = frc{j};
+            t = tim{j};
+            n = length(c);
+            np = n/maxlen+1;
+            inds = round( linspace(1, n, np+1) );
+            for k = 1:np
+                %name file ['pHMM' MMDDYYN## {extra stuff might be here} S##P##.mat]
+                outname = sprintf('pHMM%sS%02dP%02d.mat', file(6:end-4), j, k);
+                fcdata = [];
+                fcdata.con = c(inds(k):inds(k+1));
+                fcdata.frc = f(inds(k):inds(k+1));
+                fcdata.tim = t(inds(k):inds(k+1));
+                fcdata.opts = opts;
+                fcdata.aseed = aseed;
+                save([outpath filesep outname], 'fcdata')
+            end
         end
     end
 end

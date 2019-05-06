@@ -1,5 +1,5 @@
 function ForExtGUI_V2()
-%PhageGUI, but now programmatic - GUIDE has bad limitations/bugs
+%ForceGUI, but now programmatic - GUIDE has bad limitations/bugs
 
 %Add paths
 thispath = fileparts(mfilename('fullpath'));
@@ -424,13 +424,13 @@ fig.Visible = 'on';
     end
 
     function plotCal_callback(~,~)
-        if isfield(stepdata, 'cal')
+        if isfield(ContourData, 'cal')
             plotcal(ContourData.cal);
         end
     end
 
     function plotOff_callback(~,~)
-        if isfield(stepdata, 'off')
+        if isfield(ContourData, 'off')
             plotoff(ContourData.off);
         end
     end

@@ -208,8 +208,9 @@ ub2 = max( [ub(1:end-1); ub(2:end)] , [] , 1);
 wid2 = ub2-lb2+1;
 maxwid2 = max(wid2);
 %make 2d a
-widaa = min(hei, (length(a)+1)/2);
-aa = spdiags( repmat(a(ahalf+1+(-widaa+1:widaa-1)), lena, 1), -widaa:widaa, hei, hei);
+widaa = min(hei, ahalf);
+% aa = spdiags( repmat(a(ahalf+1+(-widaa+1:widaa-1)), hei, 1), -widaa:widaa, hei, hei);
+aa = spdiags( repmat(a, hei, 1), -widaa:widaa , hei, hei);
 xi = zeros(hei);
 
 
@@ -303,7 +304,7 @@ figure, plot(tr, 'Color', [.7 .7 .7 ]), hold on, plot(y(st))
 %}
 
 %make a into a matrix
-widaa = min(maxwid2, (lena+1)/2);
+widaa = min(maxwid2, (lena-1)/2);
 aa = spdiags( repmat(newa(ahalf+1+(-widaa:widaa)) , maxwid2, 1), -widaa:widaa, maxwid2, maxwid2);
 %vitterbi for trace fit (mle is pretty much the same and faster, but vitterbi is more proper)
 vitdp = zeros(len-1, maxwid2); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)

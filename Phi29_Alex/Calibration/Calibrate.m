@@ -31,6 +31,7 @@ opts.name = []; %Name of this detector, e.g. 'AX'
 opts.color = [.8 .8 .8]; %Color to plot power spectrum
 opts.verbose = 1;
 opts.Sum = 0;
+opts.lortype = 3; %1 = pure lorentzian, 2 = 1 filter, 3 = filter+timedelay, 4 = 2 filters
 %Assign any overridden values
 if exist('inOpts','var') && isstruct(inOpts)
     fn = fieldnames(inOpts);
@@ -109,8 +110,13 @@ Fall = [Fall{:}]';
 Guess = [Fcg, Dg, .3, opts.Fnyq/2];
 
 %Assign lb and ub
-lb = [0 0 0 Fcg];
-ub = [10*Fcg 10*Dg 1 opts.Fs*10];
+lb = [0 0 0 25000];
+switch opts.lortype
+    case 3
+        ub = [10*Fcg 10*Dg 1 opts.Fs*10];
+    otherwise
+        ub = [10*Fcg 10*Dg opts.Fs*10 opts.Fs*10];
+end
 
 %Optimize in log-space
 lPbf = log(Pbf);

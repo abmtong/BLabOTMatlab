@@ -17,7 +17,7 @@ for i = 1:2
     for j = 1:2
         J = c2(j);
         tmp = cal.([I J]);
-        ax = axes(fg, 'Position',[-.45+0.5*i, 1.05-0.5*j,  0.43, 0.43]);
+        ax = axes(fg, 'Position',[-.45+0.5*i, 1.05-0.5*j+.1,  0.43, 0.33]);
         loglog(ax, tmp.Fall, tmp.Pall, 'Color', .8 * [1 1 1])
         hold on
         loglog(ax, tmp.F, tmp.P, 'o', 'Color', tmp.opts.color);
@@ -31,5 +31,17 @@ for i = 1:2
         %         'FontSize',12);
         ax.XLim = [tmp.F(1)*.9, tmp.F(end)*1.1];
         ax.YLim = [Pmin*.9, Pmax*1.1];
+        
+        %plot residual
+        ax2 = axes(fg, 'Position', [-.45+0.5*i, 1.05-0.5*j,  0.43, 0.10]);
+        ax2.XScale = 'log';
+        hold on
+        box on
+        line(ax2, [tmp.F(1), tmp.F(end)], [1 1], 'LineWidth', 2, 'Color', 'k');
+%         semilogx(ax2, tmp.Fall, Lorentzian(tmp.fit, tmp.Fall', tmp.opts) ./ tmp.Pall','Color', .8*[1 1 1] );
+        semilogx(ax2, tmp.F, Lorentzian(tmp.fit, tmp.F, tmp.opts) ./ tmp.P, 'o', 'Color', tmp.opts.color );
+        ax2.XLim = [tmp.F(1)*.9, tmp.F(end)*1.1];
+        linkaxes([ax ax2], 'x');
+        ax2.YLim = [.9 1.1];
     end
 end

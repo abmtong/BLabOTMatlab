@@ -95,7 +95,7 @@ while iter <= nitermax
             fcdata.hmm(end+1) = newres;
             %save
             save(infilepath, 'fcdata')
-            outflag = 1;
+            outflag = fcdata.hmmfinished;
             iter = iter + 1;
             prelgp = newres.logp;
             %exit if sotpatlogp is flagged

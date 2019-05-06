@@ -18,6 +18,8 @@ addParameter(p, 'Axis', [], @(x)isgraphics(x,'axes'))
 addParameter(p, 'Path', [], @ischar)
 addParameter(p, 'NameTraces', 1, isBool);
 addParameter(p, 'PlotCut', 1, isBool);
+addParameter(p, 'Ymult', 1, @isnumeric);
+
 %Parse inputs, assign to var.s
 parse(p, varargin{:})
 res = p.Results;
@@ -33,6 +35,7 @@ ax = res.Axis;
 path = res.Path;
 plotCut = res.PlotCut;
 cropstr = res.CropStr;
+ymult = res.Ymult;
 
 thispath = fileparts(which('PlotTraces'));
 addpath([thispath  filesep '..' filesep 'StepFind_KV']);
@@ -100,7 +103,6 @@ for i = 1:length(files);
     load([path filesep files{i}],'stepdata');
     con = stepdata.contour;
     tim = stepdata.time;
-    
     %stitch together plot sections if plotCut
     if plotCut
         if isfield(stepdata, 'cut')
@@ -146,10 +148,10 @@ for i = 1:length(files);
         conf = windowFilter(@mean, conf, [], filterRank) + dCon;
         timf = windowFilter(@mean, timf, [], filterRank) +numPlotted*dT-offsetT;
         if plotText
-            text(double(timf(1)),double(conf(1)),files{i}(6:end-4))
+            text(double(timf(1)),double(conf(1))*ymult,files{i}(6:end-4))
             plotText = 0;
         end
-        plot(ax, timf, conf,'Color',col)
+        plot(ax, timf, conf*ymult,'Color',col)
     end
     drawnow
     
