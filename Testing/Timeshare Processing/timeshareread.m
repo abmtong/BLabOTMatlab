@@ -147,10 +147,11 @@ if any(hdr(13) == [1 3])
         dat.Fl = uint16(fldat)';
         %check to make sure no values overflew
         if any(dat.Fl == intmax('uint16'))
-            dat.FL = uint16(fldat);
+            dat.Fl = fldat;
             warning('Fluorescence values in file %s unexpectedly high, saving as uint64', n);
         end
         fclose(flfid);
+        meta.flhdr = flhdr;
     else
         warning('fluorescence data for file %s was expected but not found', n)
     end
@@ -171,6 +172,7 @@ if any(hdr(13) == [2 3])
         dat.T1F = posdat(1,:);
         dat.T2F = posdat(2,:);
         fclose(posfid);
+        meta.poshdr = poshdr;
     else
         warning('trap pos data for file %s was expected but not found', n)
     end

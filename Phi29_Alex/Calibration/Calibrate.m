@@ -107,15 +107,22 @@ Fall = [Fall{:}]';
 %Estimate Fc, D using a Lorentzian without the instrument's 'filter'
 [Fcg, Dg] = FitLorentzian(Fbf, Pbf);
 % Guess = [Fcg, Dg, 1, 0];
-Guess = [Fcg, Dg, .3, opts.Fnyq/2];
 
 %Assign lb and ub
-lb = [0 0 0 25000];
+
 switch opts.lortype
-    case 3
+    case 3 %time delay
+        lb = [0 0 0 0];
         ub = [10*Fcg 10*Dg 1 opts.Fs*10];
-    otherwise
+        Guess = [Fcg, Dg, .3, opts.Fnyq/2];
+    case 5 %Fc D al f0 g0 f1 g1
+        lb = [0 0 0 0 0 0 0];
+        ub = [10*Fcg, 10*Dg, 1 inf inf inf inf];
+        Guess = [Fcg, Dg, .3, opts.Fnyq/2, .5, opts.Fnyq/3, .5 ];
+    otherwise %just first order filters
+        lb = [0 0 0 25000];
         ub = [10*Fcg 10*Dg opts.Fs*10 opts.Fs*10];
+        Guess = [Fcg, Dg, .3, opts.Fnyq/2];
 end
 
 %Optimize in log-space

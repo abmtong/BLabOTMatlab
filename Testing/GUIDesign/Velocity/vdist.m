@@ -15,7 +15,7 @@ if nargin >= 2
 end
 
 if ~iscell(c)
-    c = cell(c);
+    c = {c};
 end
 
 %Apply @sgolaydiff to input
@@ -33,7 +33,11 @@ maxcf =  ceil(max(cf2) / opts.vbinsz) * opts.vbinsz;
 xbins = mincf:opts.vbinsz:maxcf;
 
 %Bin values
-ccts = hist(cf2, xbins);
+% ccts = hist(cf2, xbins); lets move away from @hist
+ccts = histcounts(cf2, xbins);
+%@histcounts uses them as edges, so convert to centers
+xbins = ( xbins(1:end-1) + xbins(2:end) ) /2; 
+
 %Normalize
 ccts = ccts / sum(ccts) / opts.vbinsz;
 

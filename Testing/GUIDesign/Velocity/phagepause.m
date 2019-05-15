@@ -29,7 +29,8 @@ end
 
 %Filter the inputs
 [p, x, dvel, dfil, dcrop] = vdist(data, opts);
-[~, ~, ~, ffil, ~] = vdist(fdata, opts);
+% [~, ~, ~, ffil, ~] = vdist(fdata, opts);
+[~, ffil, ~] = cellfun(@(x)sgolaydiff(x, opts.sgf), fdata, 'uni', 0);
 
 %Fit vel pdf to two gaussians [fiddle with sgf filter width to make the peaks nice)
 % Peaks are the paused and translocating sections
@@ -53,7 +54,7 @@ fp = bigauss(fit, x);
 
 
 %Fit just the 0 peak
-dv = 10;
+dv = 11;
 inds = find(x == -dv):find(x==dv);
 fit2 = lsqcurvefit(npdf, [0 30 0.3], x(inds), p(inds),[], [], lsqopts);
 % %Consider fitting the second peak only after the zero peak is fit (worse)
@@ -77,19 +78,18 @@ fp = npdf(fit2, x);
 fpp=fp./p;
 % figure, plot(x, fpp)
 % xlim([0 inf])
-pthr = 0.6;
+pthr = 0.1;
 vthri = find( x > 0 & fpp < pthr, 1, 'first');
 vthr = x (vthri);
 % vthr = 40;
 isbt = cellfun(@(x) x > vthr, dvel, 'uni', 0);
 
 %take the translocation peak and compare it to the rest
-%lsqcurvefit might switch the two peaks, make sure it's the leftmost peak
-ind = 1 + 3 * (fit(1)<fit(4));
-tlg = normpdf(x, fit(ind), fit(ind+1))*fit(ind+2);
+% ind = 4;
+tlg = normpdf(x, fit(4), fit(5))*fit(6);
 tlgp = tlg ./ p;
 % figure, plot(x, tlgp)
-pthr = 0.6;
+pthr = 0.8;
 vthrp = find( x < 0 & tlgp > pthr, 1, 'last');
 vthrp = x(vthrp);
 % vthrp = -40;
@@ -130,13 +130,13 @@ for i = 1:len
         continue
     end
     %join backtracks that are separated very small in time & remove overlapping ones (just rm overlap if minpts = 0
-    minpts = 200; %minimum pts
+    minpts = 0; %minimum pts
     keepind =indEnd(1:end-1) + minpts < indSta(2:end);
     indSta = indSta([true keepind]);
     indEnd = indEnd([keepind true]);
     
     %ignore backtracks that are very small
-    minsz = 000;
+    minsz = 050;
     keepind = (indEnd - indSta) > minsz;
     indSta = indSta(keepind);
     indEnd = indEnd(keepind);
@@ -153,8 +153,8 @@ for i = 1:len
     outf{i} = tmpf;
     
     %plot every 10th for debug
-    if 0 %~mod(i,10)
-        figure, plot(dfil{i}), hold on
+    if ~mod(i,10)
+        figure, plot(dfil{i}), hold on 
         isbttl = double([isbt{i}]) - double([istl{i}]);
         surface([1:length(isbttl);1:length(isbttl)],[dfil{i};dfil{i}],zeros(2,length(isbttl)),[isbttl;isbttl] ,'edgecol', 'interp')
 

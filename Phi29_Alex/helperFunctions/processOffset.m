@@ -1,5 +1,5 @@
 function out = processOffset(filepath)
-%Reads an OffsetV2 file
+%Reads an OffsetV2 file. Not used in AProcessData
 
 %Pick from UI if no file given
 if nargin < 1

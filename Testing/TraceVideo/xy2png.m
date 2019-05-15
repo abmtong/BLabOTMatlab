@@ -18,7 +18,7 @@ fig.Position = [100 100 640 480];
 ax1 = axes;
 hold (ax1,'on')
 ax1.ClippingStyle = 'rectangle';
-ax1.XLim = [1250 1450];
+ax1.XLim = [0 1e4];
 ax1.YLim = [0 20];
 ax1.FontSize = 16;
 
