@@ -14,9 +14,9 @@ end
 x = sort(indat);
 y = (1:length(x)) /length(x);
 
-%fit to the ccdf
+%fit to the cdf
 fitfcn = @(x0, x) 1-exp(-x0(1)\(x-x0(2)));
-fit = lsqcurvefit(fitfcn, [mean(abs(x) ) , x(1)], x, y);
+fit = lsqcurvefit(fitfcn, [mean(abs(x)) , x(1)], x, y);
 
 %plot result if just testing (no args)
 if nargin < 1 || nargin > 1 && verbose

@@ -1,7 +1,11 @@
-function [out, outf] = phagepause(data, fdata, inOpts)
+function [bts, out, outf] = phagepauseV2(data, fdata, inOpts)
 %Takes in data, and determines whether the phage is paused, translocating, or backtracking at a given pt
 %Generates stats on backtrack segments
 %Based on Ronen's polymerase pausing code
+
+%V2: cleanup / optimize / formalize opts code
+% %V2: BT = [non-transloc section that contains a bt area] - i.e. they start when tloc ends and end when tloc starts
+% %  Check if this gives (significantly) different numbers
 
 if nargin < 2 || isempty(fdata)
     fdata = cellfun(@(x) 0 * x, data, 'uni', 0);
@@ -22,6 +26,9 @@ opts.Fs = 2500;
 %zero peak velocity thresh.
 %bt minpts
 %bt minsz
+opts.pthr = 0.8;
+opts.thr = 0.1;
+opts.zwid = 11;
 
 if nargin >= 3
     opts = handleOpts(opts, inOpts);
@@ -101,7 +108,10 @@ if opts.verbose.traces
     dfilp = [dfil{:}];
     % dcropp = [dcrop{:}];
     figure, %plot(dcropp,'Color', [.7 .7 .7]), hold on
-    surface([1:length(dfilp);1:length(isbtp)],[dfilp;dfilp],zeros(2,length(dfilp)),[isbtp;isbtp] ,'edgecol', 'interp')
+    %     surface([1:length(dfilp);1:length(isbtp)],[dfilp;dfilp],zeros(2,length(dfilp)),[isbtp;isbtp] ,'edgecol', 'interp')
+    %this plot is usually of a lot of numbers - downsample by 10 (or arb. no.)
+    dsamp = 10;
+    surface([1:dsamp:length(dfilp);1:dsamp:length(isbtp)],[dfilp(1:dsamp:end);dfilp(1:dsamp:end)],zeros(2,ceil(length(dfilp)/dsamp)),[isbtp(1:dsamp:end);isbtp(1:dsamp:end)] ,'edgecol', 'interp')
 end
 
 fprintf('Velocity threshs %0.2f %0.2f\n', vthr, vthrp)
@@ -135,8 +145,8 @@ for i = 1:len
     indSta = indSta([true keepind]);
     indEnd = indEnd([keepind true]);
     
-    %ignore backtracks that are very small
-    minsz = 050;
+    %ignore backtracks that are short
+    minsz = 050; %pts
     keepind = (indEnd - indSta) > minsz;
     indSta = indSta(keepind);
     indEnd = indEnd(keepind);
@@ -160,9 +170,9 @@ for i = 1:len
 
         yl = get(gca, 'YLim');
         for j=1:length(tmp)
-            %draw blue lines for starts, green lines for ends
-            line(indSta(j) * [1 1], yl)
-            line(indEnd(j) * [1 1], yl, 'Color', 'g')
+            %draw green lines for starts, red lines for ends
+            line(indSta(j) * [1 1], yl, 'Color', 'g')
+            line(indEnd(j) * [1 1], yl, 'Color', 'r')
         end
     end
 end
