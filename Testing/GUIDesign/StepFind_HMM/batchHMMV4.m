@@ -36,6 +36,17 @@ if lowprocesspriority
 end
 
 
+% %start parpool with up to numCores workers (fewer if fewer files were selected)
+% pp = parcluster('local');
+% pp.NumWorkers = min(pp.NumWorkers, length(f));
+% %get default / already running parpool, and check if we need to remake the parcluster
+% ppp = gcp;
+% if ppp.NumWorkers ~= pp.NumWorkers
+%     delete(gcp('nocreate'));
+%     parpool(pp,pp.NumWorkers);
+% end
+    
+
 
 %outflag = -1 (error), 0 (unconverged), 1(converged)
 outflags = zeros(1,len);

@@ -1,4 +1,5 @@
 function [stps, dwls, stpsmle, dwlsmle] = hmmhist(inst, nitermax, useopt)
+%reads hmm data, plots hist of step sizes (instead of sum of trns matrix)
 
 if nargin < 1 || isempty(inst)
     [f, p] = uigetfile('.\pHMM*.mat','MultiSelect','on');

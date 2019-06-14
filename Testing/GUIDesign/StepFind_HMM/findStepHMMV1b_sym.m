@@ -51,7 +51,7 @@ end
 
 %guess sig if not supplied
 if ~exist('sig', 'var')
-    sig = sqrt(estimateNoise(tr));
+    sig = sqrt(estimateNoise(tr)) *.7; %start with a conservative guess
 end
 
 %make trace increasing, minimum point binsz
@@ -331,6 +331,7 @@ ms = ms + lb' -1;
 %assign output structure
 out.a = newa;
 out.sig = newsig;
+% out.sig = sig; %dont update sig
 out.pi = newpi;
 out.fit = y(st);
 out.fitmle = y(ms);

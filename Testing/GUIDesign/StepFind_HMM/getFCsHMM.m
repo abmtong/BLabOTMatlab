@@ -13,8 +13,8 @@ end
 %
 %Based off of @Iterate_GatherFCs
 %Get files
-[files, path] = uigetfile('C:\Data\phage*.mat','MultiSelect','on');
 %Check to make sure files were selected
+[files, path] = uigetfile('C:\Data\phage*.mat','MultiSelect','on');
 if ~path
     return
 end

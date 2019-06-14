@@ -76,7 +76,7 @@ for i = 1:n
     str = [str stra];%#ok<AGROW>
     for j = 1:m
         plot(x, gauss([out(i,j*2), out(i,1)*relmean(j), out(i,j*2+1)],x))
-        strb = sprintf(' Relmean: %0.2f, Mean: %0.2f, Amp: %0.2f, SD: %0.1f\n', relmean(j), relmean(j)*out(i,1), out(i,j*2:j*2+1));
+        strb = sprintf(' Relmean: %0.2f, Mean: %0.2f, Amp: %0.3f, SD: %0.1f\n', relmean(j), relmean(j)*out(i,1), out(i,j*2:j*2+1));
         str = [str strb]; %#ok<AGROW>
     end
 end
@@ -87,5 +87,5 @@ y = fitfcn(out, x);
 textxind = find(x > x(ind) & y < texty/2,1,'first');
 plot(x, y, 'Color','k')
 
-text(x(textxind), texty*9, str)
+text(x(textxind), texty*.9, str)
 end

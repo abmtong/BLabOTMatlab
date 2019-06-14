@@ -1,5 +1,7 @@
 function [sorted, ind] = sort_phage(infilenames)
 %Sorts phage filenames. Generally, sorts cell strings of similar formatting with dates in the form of mmddyy and other numbers <=65408
+%Algorithm: Extracts numbers from infilenames, converts the numbers to one unicode char (0-65535), then uses native @sort
+% Made to fix the misordering of N100 before N11 [since phage's filenaming is %02d]
 
 sortfilenames = cell(size(infilenames));
 for i = 1:length(infilenames)

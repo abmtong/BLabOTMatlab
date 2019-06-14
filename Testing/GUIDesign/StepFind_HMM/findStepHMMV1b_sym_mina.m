@@ -1,4 +1,4 @@
-function out = findStepHMMV1b(inTrace, inModel, verbose)
+function out = findStepHMMV1b_sym_mina(inTrace, inModel, verbose)
 %Fits a HMM that models a staircase
 %Let's assume no backtracking - can do if we define a center for a / do symmetric
 %If there is sufficient backtracking, some probabilties will go to zero - errors
@@ -19,7 +19,7 @@ if nargin < 1
 end
 
 stT = tic;
-binsz = 0.1;
+binsz = 2; %%<You can fool with this to set how fine-grained the states are
 tr = double(inTrace);
 len = length(tr);
 
@@ -28,36 +28,30 @@ if nargin < 3 || isempty(verbose)
 end
 
 if nargin<2 || isempty(inModel) %generate model guess
-    inModel = [];
-end
-
-%trns matrix
-if ~isfield(inModel, 'a')
     %search from 0 to 25bp step, seed with gaussian (high sig = essentially flat fcn)
-    maxstep = 15;
+    maxstep = 150; %%< you can fool with this to determine the maximum step size the program will look for
     guessmean = 2.5;
-    guesssig = 100;
+    guesssig = 200;
     %a: search from 0 to maxstep
-    a = normpdf(0:binsz:maxstep, guessmean, guesssig);
+    a = normpdf(-maxstep:binsz:maxstep, guessmean, guesssig);
 %     a=ones(1,length(0:binsz:maxstep));
     %guess transition prob is 1/100
-    pstep = 0.001;
-    a(2:end) = a(2:end)/sum(a(2:end)) *pstep;
-    a(1) = 1-pstep;
+    pstep = 0.0001; %%<you can fool with this to determine the starting stepping probability
+    a((end+1)/2) = 1/pstep;
+    a = a/sum(a);
 else %given model, i.e. the output of this fcn.
     a = inModel.a;
+    if isfield(inModel, 'sig')
+        sig = inModel.sig;
+    end
+    if isfield(inModel, 'pi')
+        pi = inModel.pi;
+    end
 end
 
-%sd noise
-if ~isfield(inModel, 'sig')
-    sig = sqrt(estimateNoise(tr,[],2));
-else
-    sig = inModel.sig;
-end
-
-%starting state (default assigned below)
-if isfield(inModel, 'pi')
-    pi = inModel.pi;
+%guess sig if not supplied
+if ~exist('sig', 'var')
+    sig = sqrt(estimateNoise(tr))*2*5; %%you can increase this to make it "artifically more noisy" to fit fewer steps on the first iteration, the reverse if you decrease this
 end
 
 %make trace increasing, minimum point binsz
@@ -66,8 +60,11 @@ tr = prepTrHMM(tr, binsz);
 y = (1:ceil(max(tr)/binsz))*binsz;
 hei = length(y);
 
+ahalf = (length(a)-1)/2;
+
 %define upper, lower bdys in terms of y-indicies
-maxdif = max(abs(diff(tr))); %maybe add a max(maxdif, sig*2) or smth
+maxdif = max(abs(diff(tr)));
+maxdif = max(maxdif, length(a));
 ub = min(  ceil((tr+maxdif)/binsz), hei);
 lb = max( floor((tr-maxdif)/binsz), 1);
 wid = ub-lb+1;
@@ -123,7 +120,7 @@ al(1,:) = al(1,:)/scal2(1);
 for i = 2:len
     %start with altemp = full alpha(t-1)
     altemp = conv(altemp, a);
-    altemp = altemp(1:hei) .* npdf2(i);%is the 1:hei necessary?
+    altemp = altemp(ahalf+1:ahalf+hei) .* npdf2(i);%is the 1:hei necessary?
     al(i,1:wid(i)) = altemp(lb(i):ub(i));
     scal2(i) = sum(al(i,:));
     al(i,:) = al(i,:)/scal2(i);
@@ -158,7 +155,7 @@ lena = length(a);
 for i = len-1:-1:1
     %start with betemp = full beta(t+1)
     betemp = conv(betemp.*npdf2(i+1), a(end:-1:1));
-    betemp = betemp(lena:end) / scal2(i);
+    betemp = betemp(end-hei-ahalf+1:end-ahalf) / scal2(i);
     be(i,1:wid(i)) = betemp(lb(i):ub(i));
 end
 
@@ -211,8 +208,11 @@ ub2 = max( [ub(1:end-1); ub(2:end)] , [] , 1);
 wid2 = ub2-lb2+1;
 maxwid2 = max(wid2);
 %make 2d a
-aa = spdiags( repmat(a, hei, 1), 0:lena-1, hei, hei);
+widaa = min(hei, ahalf);
+% aa = spdiags( repmat(a(ahalf+1+(-widaa+1:widaa-1)), hei, 1), -widaa:widaa, hei, hei);
+aa = spdiags( repmat(a, hei, 1), -widaa:widaa , hei, hei);
 xi = zeros(hei);
+
 
 % figure%**debug
 % ax1 = subplot(3,1,[1 2]);
@@ -265,13 +265,13 @@ newpi(lb(1):ub(1)) = ga(1,1:wid(1));
 %new a
 newa = zeros(size(a));
 [B, d] = spdiags(xi);
-d = d(d>=0); %find why d is negative sometimes - I assume when P underflows (backtracking?)
-if(any(d<0))
-    fprintf('d < 0 on this trace')
-end
+% d = d(d>=0); %find why d is negative sometimes - I assume when P underflows (backtracking?)
+% if(any(d<0))
+%     fprintf('d < 0 on this trace')
+% end
 B = sum(B,1);
 for j = 1:length(d)
-    newa(d(j)+1) = newa(d(j)+1) + B(j);
+    newa(d(j)+ahalf+1) = newa(d(j)+ahalf+1) + B(j);
 end
 newa = newa/sum(newa);
 
@@ -304,7 +304,8 @@ figure, plot(tr, 'Color', [.7 .7 .7 ]), hold on, plot(y(st))
 %}
 
 %make a into a matrix
-aa = spdiags( repmat(newa, maxwid2, 1), 0:lena-1, maxwid2, maxwid2);
+widaa = min(maxwid2, (lena-1)/2);
+aa = spdiags( repmat(newa(ahalf+1+(-widaa:widaa)) , maxwid2, 1), -widaa:widaa, maxwid2, maxwid2);
 %vitterbi for trace fit (mle is pretty much the same and faster, but vitterbi is more proper)
 vitdp = zeros(len-1, maxwid2); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
 vitsc = npdf2(1).^2;
@@ -334,7 +335,6 @@ out.pi = newpi;
 out.fit = y(st);
 out.fitmle = y(ms);
 out.logp = sum(log(scal2)) + log(sum(al(end,:)));
-out.binsz = binsz;
 
 if verbose == 1
     %plot trace, likeliest state, vitterbi state in grey/blue/red respectively
@@ -345,12 +345,14 @@ if verbose == 1
     %write stats
     yl = ylim;
     yp = 0.9 * yl(2) + 0.1 * yl(1);
-    text(0,yp,sprintf('trnsprb %0.04f, sig %0.2f, logp %0.2f', 1-newa(1), out.sig, out.logp))
+    text(0,yp,sprintf('trnsprb %0.04f, sig %0.2f, logp %0.2f', 1-newa((end+1)/2), out.sig, out.logp))
     %plot a
-    subplot(3, 1, 3), plot( (1:length(a)-1)*binsz, newa(2:end) / (1-newa(1)) )
+    plota = newa;
+    plota((end+1)/2)=0;
+    subplot(3, 1, 3), plot( -150:2:150, plota)
     %Finds steps from 0 to 25, but some can be 0; find last nonzero
-    xm = find(newa > 1e-5, 1, 'last');
-    xlim([0 xm*binsz])
+%     xm = find(newa > 1e-5, 1, 'last');
+%     xlim([0 xm*binsz])
 %     set(gca, 'YScale', 'log')
     %output stats to command window
     fprintf('%s took %0.2fs, logp=%0.2f\n', mfilename, toc(stT), out.logp)

@@ -9,10 +9,11 @@ tim = 0;
 for i = 1:length(incon)
     con =incon{i};
     con = con-con(1);
-    plot( tim + (1:length(con))/2500 + toff(i), con + coff(i), 'Color', [.7 .7 .7])
+    ttmp = tim + (1:length(con))/2500;
+    plot( ttmp + toff(i), con + coff(i), 'Color', [.7 .7 .7])
     cf = windowFilter(@mean, con, filt, 1);
-    plot( tim+(1:length(con))/2500 + toff(i), cf + coff(i), 'Color', col)
-    tim = tim + length(con)/2500;
+    plot( ttmp + toff(i), cf + coff(i), 'Color', col)
+    tim = tim + ttmp(end);
 end
 
 axis tight

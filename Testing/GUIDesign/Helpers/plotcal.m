@@ -6,7 +6,12 @@ function plotcal(fg, cal)
 if nargin == 1
     cal = fg;
     scrsz = get(groot, 'ScreenSize');
-    fg = figure('Name', cal.file, 'Position', [scrsz(3:4)*.2 scrsz(3:4)*.6]);
+    if isfield(cal.opts, 'lortype')
+        lorstr = num2str(cal.opts.lortype);
+    else
+        lorstr = '3(?)';
+    end
+    fg = figure('Name', sprintf('%s Calibration, lortype %s',cal.file,lorstr), 'Position', [scrsz(3:4)*.2 scrsz(3:4)*.6]);
 end
 
 %Char arrays for naming structs
@@ -34,6 +39,10 @@ for i = 1:2
                     sprintf(' %s \n fc: %0.0fHz \n D: %0.3f\n al: %0.3f\n f3: %0.1f \n \\alpha: %0.0fnm/NV \n \\kappa: %0.3fpN/nm \n \\alpha*\\kappa: %0.1fpN/NV \n r: %dnm Sum: %0.2fV wV: %0.2e \n ',tmp.opts.name,tmp.fit,tmp.a,tmp.k,tmp.a*tmp.k, tmp.opts.ra, tmp.opts.Sum, tmp.opts.wV),...
                     'FontSize',12);
             end
+        else %assume lortype = 3
+            text(tmp.F(1),(Pmin^2*Pmax)^.33,...
+                sprintf(' %s \n fc: %0.0fHz \n D: %0.3f\n al: %0.3f\n f3: %0.1f \n \\alpha: %0.0fnm/NV \n \\kappa: %0.3fpN/nm \n \\alpha*\\kappa: %0.1fpN/NV \n r: %dnm Sum: %0.2fV wV: %0.2e \n ',tmp.opts.name,tmp.fit,tmp.a,tmp.k,tmp.a*tmp.k, tmp.opts.ra, tmp.opts.Sum, tmp.opts.wV),...
+                'FontSize',12);
         end
         %         sprintf(' %s \n \\itf_{c}\\rm: %0.0fHz \n \\alpha: %0.0fnm/NV \n \\kappa: %0.3fpN/nm \n \\alpha*\\kappa: %0.1fpN/NV',opts.name,fit(1),a,k,a*k),...
         %         'FontSize',12);

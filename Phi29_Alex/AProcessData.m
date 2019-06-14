@@ -117,6 +117,9 @@ for i = 1:length(fnames)
     opts.(fnames{i}) = resp(i);
 end
 
+%Calibration lorentzian type (see @Lorentzian)
+opts.cal.lortype = 3;
+
 %Check if custom options field was changed, and assign the options if they were
 if ~strcmp(defaults{end}, custresp)
     custoptcell = eval(custresp);

@@ -59,9 +59,13 @@ ctot = avgcon(ind1) - avgcon(ind2);
 ttot = avgtim(ind1) - avgtim(ind2);
 
 %get avg vel of good part in bp/s
-[vp, vx] = vdist(con);
+% [vp, vx] = vdist(con);
+% vbar = sum(vp .* vx / sum(vp));
+
 % vbar = sum(vp(vx<0) .* vx(vx<0) / sum (vp(vx<0)));
-vbar = sum(vp .* vx / sum(vp));
+
+vbar = cellfun(@(x)sgolaydiff(x, {1 101}), con, 'un', 0);
+vbar = mean([vbar{:}])*2500; %Fs
 
 factor = (ctot/ttot) / vbar;
 

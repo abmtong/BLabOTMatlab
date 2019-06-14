@@ -19,6 +19,7 @@ opts.comment = '';
 opts.cal.verbose=1;
 opts.cal.Fs = 62.5e3;
 opts.cal.d2o = 0;
+opts.cal.lortype = 3;
 %Phage options
 opts.isPhage = 0;
 opts.dnaPL = 50;

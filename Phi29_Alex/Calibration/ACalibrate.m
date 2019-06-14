@@ -6,6 +6,7 @@ function out = ACalibrate( filepath, inOpts )
 opts.raA = 1000/2;
 opts.raB = 1000/2;
 opts.verbose = 1;
+opts.lortype = 3;
 
 %Process inOpts param
 if exist('inOpts','var') && isstruct(inOpts)

@@ -37,7 +37,7 @@ end
 %Filter the inputs
 [p, x, dvel, dfil, dcrop] = vdist(data, opts);
 % [~, ~, ~, ffil, ~] = vdist(fdata, opts);
-[~, ffil, ~] = cellfun(@(x)sgolaydiff(x, opts.sgf), fdata, 'uni', 0);
+[~, ffil, fcrop] = cellfun(@(x)sgolaydiff(x, opts.sgf), fdata, 'uni', 0);
 
 %Fit vel pdf to two gaussians [fiddle with sgf filter width to make the peaks nice)
 % Peaks are the paused and translocating sections
@@ -120,6 +120,7 @@ fprintf('Velocity threshs %0.2f %0.2f\n', vthr, vthrp)
 len=length(dcrop);
 out = cell(1,len);
 outf = cell(1,len);
+
 for i = 1:len
     if isempty(isbt{i})
         continue
@@ -178,14 +179,14 @@ for i = 1:len
 end
 
 %get stats on these bits
-tmp = [out{:}];
-tmpf = [outf{:}];
+bt = [out{:}];
+btf = [outf{:}];
 
-len = length(tmp);
+len = length(bt);
 bts = zeros(4,len); %dt dc vel f0
 for i = 1:len
-    xt = tmp{i};
-    bts(:,i) = [ length(xt) / 2500, max(xt)-min(xt), 0, tmpf{i}(1) ];
+    xt = bt{i};
+    bts(:,i) = [ length(xt) / 2500, max(xt)-min(xt), 0, btf{i}(1) ];
 end
 
 bts(3,:) = bts(2,:) ./ bts(1,:);
@@ -238,4 +239,62 @@ sumbp = cellfun(@(x)x(1)-min(x), df);
 sumbp = sum(sumbp);
 
 fprintf( '%0.2f events per kb\n' , 1000 * sum([szs{:}]) / sumbp);
+
+
+%collect tloc runs
+len = length(dcrop);
+tl = cell(1,len);
+tlf = cell(1,len);
+for i = 1:len
+    %start of tloc is istl 0 -> 1
+    indSta = find(diff(istl{i}) == -1);
+    %end of tloc is istl 1 -> 0
+    indEnd = [find(diff(istl{i}) == -1) length(istl{i})];
+    
+    if istl{i}(1)
+        indSta = [1 indSta]; %#ok<AGROW>
+    end
+    
+    hei = length(indSta);
+    tmptl = cell(1, hei);
+    tmptlf = cell(1, hei);
+    for j = 1:hei
+        tmptl{j} = dcrop{i}(indSta(j):indEnd(j));
+        tmptlf{j} = fcrop{i}(indSta(j):indEnd(j));
+    end
+    tl{i} = tmptl;
+    tlf{i} = tmptlf;
+end
+
+%unpack
+tl = [tl{:}];
+tlf = [tlf{:}];
+tl = tl(~cellfun(@isempty, tl));
+tlf = tlf(~cellfun(@isempty, tlf));
+
+tlheis = cellfun(@range, tl);
+
+%get forces
+tlf0 = cellfun(@(x) x(1), tlf);
+
+%do PWD of 5-15pN ones that span at least 50bp
+sumPWDV1b(tl(tlf0 > 5 & tlf0 < 15 & tlheis > 50));
+tmpfg = gcf;
+tmpfg.Name = 'PWD Tloc';
+
+btheis = cellfun(@range, bt);
+btf0 = cellfun(@(x) x(1), btf);
+%do PWD of bt, too why not
+sumPWDV1b(bt(btf0 > 5 & btf0 < 15 & btheis > 50));
+tmpfg2 = gcf;
+tmpfg2.Name = 'PWD Bt';
+
+
+
+        
+    
+
+
+
+
 

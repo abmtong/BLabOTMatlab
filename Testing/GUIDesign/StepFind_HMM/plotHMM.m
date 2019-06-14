@@ -44,10 +44,10 @@ if ind == 0
     ind = min(itermax, length(fcdata.hmm));
 end
 hold on
-plot(fcdata.hmm(ind).fit, 'Color', 'g')
 if ~all(diff(fcdata.hmm(ind).fitmle) == 0)
-    plot(fcdata.hmm(ind).fitmle, 'Color', 'r')
+    plot(fcdata.hmm(ind).fitmle, 'Color', 'b')
 end
+plot(fcdata.hmm(ind).fit, 'Color', 'r')
 
 if nargout > 0
     out = diff(fcdata.hmm(ind).fit);

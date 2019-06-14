@@ -16,6 +16,7 @@ if nargin < 2 || isempty(P)
 end
 if nargin < 1 || isempty(F)
     F = 0.1:0.1:45;
+    testplot=1;
 end
 
 
@@ -44,8 +45,8 @@ switch method
         outXpL = 1-.5*(kT./F/P).^.5 + F/S;
 end
 
-if nargin < 1
-    figure Name XWLC
+if testplot
+    figure('Name', sprintf('XWLC %dnm %dpN', P, S));
     plot(outXpL,0.1:0.1:45)
 end
 end

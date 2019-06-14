@@ -35,14 +35,23 @@ end
 if nargin<2 || isempty(inModel) %generate model guess
     maxstep = 25;
     %Transition probabilities for dwell and burst
-    a.dp = .01; %changing this is enough to differentiate the states, ish; but also introduces artifacts?
-    a.bp = .01;
+    a.dp = .000001; %changing this is enough to differentiate the states, ish; but also introduces artifacts?
+    a.bp = .0001;
     %Step probabilities for first 3 and last step
 %     a.ds1 = ones(1, length(binsz:binsz:maxstep)) + 0.05 * randi(10,1,length(binsz:binsz:maxstep));
 %     a.ds2 = ones(1, length(binsz:binsz:maxstep)) + 0.05 * randi(10,1,length(binsz:binsz:maxstep));
-    aseedsd = 1;
-    a.ds1 = normpdf( binsz:binsz:maxstep, 2.5, aseedsd); %seeding - otherwise the two states wouldn't diverge
-    a.ds2 = normpdf( binsz:binsz:maxstep, 1.1, aseedsd);
+
+%     aseedsd = 1000;
+%     a.ds1 = normpdf( binsz:binsz:maxstep, 2.5, aseedsd); %seeding - otherwise the two states wouldn't diverge
+%     a.ds2 = normpdf( binsz:binsz:maxstep, 2.5, aseedsd);xcf
+    ax = binsz:binsz:maxstep;
+    a.ds1 = zeros(size(ax));
+    a.ds2 = zeros(size(ax));
+    
+    %zero out non-2.5 step, only allowing 2.5 +- 0.3 steps
+    a.ds1(ax > 2.1 & ax < 2.9) = 1;
+    a.ds2(ax > 2.1 & ax < 2.9) = 1;
+    
     
     a.ds1 = a.ds1 / sum(a.ds1);
     a.ds2 = a.ds2 / sum(a.ds2);

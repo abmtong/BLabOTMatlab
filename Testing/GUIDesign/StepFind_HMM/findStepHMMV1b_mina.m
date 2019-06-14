@@ -1,4 +1,4 @@
-function out = findStepHMMV1b(inTrace, inModel, verbose)
+function out = findStepHMMV1b_mina(inTrace, inModel, verbose)
 %Fits a HMM that models a staircase
 %Let's assume no backtracking - can do if we define a center for a / do symmetric
 %If there is sufficient backtracking, some probabilties will go to zero - errors
@@ -10,6 +10,8 @@ function out = findStepHMMV1b(inTrace, inModel, verbose)
 
 %inModel has required fields: a; and optional fields: mu, pi
 
+
+
 if nargin < 1
     %set to perfect signal, sd given
     sd = 1;
@@ -19,7 +21,7 @@ if nargin < 1
 end
 
 stT = tic;
-binsz = 0.1;
+binsz = 1;
 tr = double(inTrace);
 len = length(tr);
 
@@ -31,10 +33,12 @@ if nargin<2 || isempty(inModel) %generate model guess
     inModel = [];
 end
 
+%%setup default model (transition matrix a, noise sig, starting condition pi)
+
 %trns matrix
 if ~isfield(inModel, 'a')
     %search from 0 to 25bp step, seed with gaussian (high sig = essentially flat fcn)
-    maxstep = 15;
+    maxstep = 25;
     guessmean = 2.5;
     guesssig = 100;
     %a: search from 0 to maxstep
@@ -60,14 +64,18 @@ if isfield(inModel, 'pi')
     pi = inModel.pi;
 end
 
+%%xform data to be more "useable"
+
 %make trace increasing, minimum point binsz
 tr = prepTrHMM(tr, binsz);
 %define state grid
 y = (1:ceil(max(tr)/binsz))*binsz;
 hei = length(y);
 
+%%define upper and lower bounds to determine which states are considered at each time point
+
 %define upper, lower bdys in terms of y-indicies
-maxdif = max(abs(diff(tr))); %maybe add a max(maxdif, sig*2) or smth
+maxdif = max(abs(diff(tr)));
 ub = min(  ceil((tr+maxdif)/binsz), hei);
 lb = max( floor((tr-maxdif)/binsz), 1);
 wid = ub-lb+1;
@@ -104,6 +112,8 @@ for i = 2:len
 end
 toc
 %}
+
+%%calculate alpha, the "forward variable"
 
 %alpha, whole-width way
 al = zeros(len,widmx);
@@ -150,6 +160,8 @@ end
 toc
 %}
 
+%%calculate beta, the "backwards predictor" 
+
 %beta, whole-width way
 be = zeros(len,widmx);
 betemp = ones(1,hei)/scal2(len);
@@ -162,7 +174,7 @@ for i = len-1:-1:1
     be(i,1:wid(i)) = betemp(lb(i):ub(i));
 end
 
-%calculate gamma
+%%calculate gamma
 ga = al .* be;
 ga = bsxfun(@rdivide, ga, sum(ga,2));
 
@@ -204,7 +216,7 @@ xi = bsxfun(@rdivide, xi, sum(sum(xi,3),2));
 toc
 %}
 
-%calculate xi
+%%calculate xi
 %make new lb/ub which is the extermer of the two of i and i+1
 lb2 = min( [lb(1:end-1); lb(2:end)] , [] , 1);
 ub2 = max( [ub(1:end-1); ub(2:end)] , [] , 1);
@@ -262,6 +274,8 @@ newa2 = newa2/sum(newa2);
 newpi = zeros(1,hei);
 newpi(lb(1):ub(1)) = ga(1,1:wid(1));
 
+%%from xi, calculate new alpha by summing over diagonals
+
 %new a
 newa = zeros(size(a));
 [B, d] = spdiags(xi);
@@ -275,7 +289,7 @@ for j = 1:length(d)
 end
 newa = newa/sum(newa);
 
-%new sig
+%%new sig
 newsig = zeros(1,len);
 for i = 1:len
     newsig(i) = sum( ga(i,1:wid(i)) .* (tr(i) - y(lb(i):ub(i))).^2 );
@@ -303,6 +317,8 @@ end
 figure, plot(tr, 'Color', [.7 .7 .7 ]), hold on, plot(y(st))
 %}
 
+%%do vitterbi fit by finding the most probable previous point for every point and then assembling via backtracking
+
 %make a into a matrix
 aa = spdiags( repmat(newa, maxwid2, 1), 0:lena-1, maxwid2, maxwid2);
 %vitterbi for trace fit (mle is pretty much the same and faster, but vitterbi is more proper)
@@ -323,6 +339,8 @@ for i = len-1:-1:1
     st(i) = vitdp(i,st(i+1)-lb2(i)+1);
 end
 
+%%do MLE fit
+
 %assemble memory-less path (max over gamma)
 [~, ms] = max(ga,[],2);
 ms = ms + lb' -1;
@@ -334,7 +352,6 @@ out.pi = newpi;
 out.fit = y(st);
 out.fitmle = y(ms);
 out.logp = sum(log(scal2)) + log(sum(al(end,:)));
-out.binsz = binsz;
 
 if verbose == 1
     %plot trace, likeliest state, vitterbi state in grey/blue/red respectively
@@ -351,7 +368,7 @@ if verbose == 1
     %Finds steps from 0 to 25, but some can be 0; find last nonzero
     xm = find(newa > 1e-5, 1, 'last');
     xlim([0 xm*binsz])
-%     set(gca, 'YScale', 'log')
+    set(gca, 'YScale', 'log')
     %output stats to command window
     fprintf('%s took %0.2fs, logp=%0.2f\n', mfilename, toc(stT), out.logp)
 elseif verbose == 2

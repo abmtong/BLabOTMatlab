@@ -36,7 +36,7 @@ switch lortype
         outP = sum( D/2/pi^2./(fc^2+inFF.^2) .* (al^2 + (1-al)^2 * c^2 .* ( g0^2 ./ (1+ (inFF/f0).^2) + g1^2 ./ (1+ (inFF/f1).^2) + 2 * g0 * g1 * (1+ (inFF.^2/f0/f1)) ./ (1+ (inFF/f1).^2) ./ (1+ (inFF/f0).^2) ) ...
             + 2 * al * (1-al) * c * ( g0 ./ (1+ (inFF/f0).^2) + g1 ./ (1+ (inFF/f1).^2) ) ) );
     case 6
-        %Lorentzian with filtered delayed response with diffn diffusion modes
+        %Lorentzian with filtered delayed response with n diffusion modes
         %need n f's and g's appended after al
         fg = inParams(4:end);
         fg = reshape(fg, 2, []);
