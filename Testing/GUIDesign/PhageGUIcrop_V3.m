@@ -72,10 +72,23 @@ panlef.BackgroundColor = [1 1 1]; %make it white
 fileSlider= uicontrol('Parent', panlef, 'Style', 'slider', 'Units', 'normalized', 'Position', [0 .90 1 .1], 'Callback', @fileSlider_callback);
 txtSlider = uicontrol('Parent', panlef, 'Style', 'text', 'Units', 'normalized', 'Position', [.15 .901 .7 .05], 'String', '1');
 clrGraph  = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [0 .875 1 .025], 'String', 'Clear Graph', 'Callback', @clrGraph_callback);
-filtFactT = uicontrol('Parent', panlef, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .85 .5 .025], 'String', 'Filt Fact');
-filtFact  = uicontrol('Parent', panlef, 'Style', 'edit', 'Units', 'normalized', 'Position', [0 .8 .5 .05], 'String', '10', 'Callback', @refilter_callback);
-deciFactT = uicontrol('Parent', panlef, 'Style', 'text', 'Units', 'normalized', 'Position', [.5 .85 .5 .025], 'String', 'Dec Fact');
-deciFact  = uicontrol('Parent', panlef, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .8 .5 .05], 'String', '2', 'Callback', @refilter_callback);
+
+panFil = uipanel(panlef, 'Position', [0 .8 1 .075]);
+filtFactT = uicontrol('Parent', panFil, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .67 .5 .33], 'String', 'Filt Fact');
+filtFact  = uicontrol('Parent', panFil, 'Style', 'edit', 'Units', 'normalized', 'Position', [0 .0 .5 .67], 'String', '10', 'Callback', @refilter_callback);
+deciFactT = uicontrol('Parent', panFil, 'Style', 'text', 'Units', 'normalized', 'Position', [.5 .67 .5 .33], 'String', 'Dec Fact');
+deciFact  = uicontrol('Parent', panFil, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .0 .5 .67], 'String', '2', 'Callback', @refilter_callback);
+
+panConMx= uipanel(panlef, 'Position', [0 .725 1 .075]);
+conMinT = uicontrol(panConMx, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .67 .5 .33], 'String', 'Y Min');
+conMin  = uicontrol(panConMx, 'Style', 'edit', 'Units', 'normalized', 'Position', [0 .0 .5 .67], 'String', '0', 'Callback', @fixLimit_callback);
+conMaxT = uicontrol(panConMx, 'Style', 'text', 'Units', 'normalized', 'Position', [.5 .67 .5 .33], 'String', 'Y Max');
+conMax  = uicontrol(panConMx, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .0 .5 .67], 'String', '4000', 'Callback', @fixLimit_callback);
+
+panPlotX = uipanel(panlef, 'Position', [0 .65 1 .075]);
+plotCal   = uicontrol(panPlotX,                  'Units', 'normalized', 'Position', [0 .5 .5 .5], 'String', 'Plot Cal', 'Callback', @plotCal_callback);
+plotOff   = uicontrol(panPlotX,                  'Units', 'normalized', 'Position', [.5 .5 .5 .5], 'String', 'Plot Off', 'Callback', @plotOff_callback);
+plotRaw   = uicontrol(panPlotX,                  'Units', 'normalized', 'Position', [0 0 .5 .5], 'String', 'Plot Raw', 'Callback', @plotRaw_callback);
 
 radioKDF  = uibuttongroup('Parent', panlef,              'Units', 'normalized', 'Position', [0 .55 1 .1], 'SelectionChangedFcn', @refilter_callback);
 radioKDF1 = uicontrol(radioKDF, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0 .66 1 .34], 'String', 'No KDF', 'Callback', []);
@@ -85,9 +98,8 @@ radioKDF2t= uicontrol(radioKDF, 'Style', 'edit', 'Units', 'normalized', 'Positio
 radioKDF3t= uicontrol(radioKDF, 'Style', 'edit', 'Units', 'normalized', 'Position', [.7 0   .3 .33], 'String', '1', 'Callback', @refilter_callback);
 radioKDF2.Value = true;
 
-plotCal   = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [0 .7 .5 .05], 'String', 'Plot Cal', 'Callback', @plotCal_callback);
-plotOff   = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [.5 .7 .5 .05], 'String', 'Plot Off', 'Callback', @plotOff_callback);
-plotRaw   = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [0 .65 .5 .05], 'String', 'Plot Raw', 'Callback', @plotRaw_callback);
+
+
 %Load first file
 loadFile_callback
 
@@ -405,9 +417,11 @@ fig.Visible = 'on';
 %         clim = [min(cellfun(@min, stepdata.contour)), max(cellfun(@max, stepdata.contour))];
         flim = [min(cellfun(@min, stepdata.force)), max(cellfun(@max, stepdata.force))];
 %         clim = [2500 5000];
-        clim = [min(cellfun(@grabmin, stepdata.contour, stepdata.force)), max(cellfun(@grabmax, stepdata.contour, stepdata.force))];
+        cmin = max(str2double(conMin.String), min(cellfun(@grabmin, stepdata.contour, stepdata.force)));
+        cmax = min(str2double(conMax.String), max(cellfun(@grabmax, stepdata.contour, stepdata.force)));
+        clim = [cmin cmax];
         if length(clim) ~= 2
-            clim = [0 6000];
+            clim = [0 6000]; %fallback if it messes up
         end
         zoom out
         xlim(mainAxis, tlim)
