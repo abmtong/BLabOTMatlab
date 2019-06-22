@@ -5,11 +5,14 @@ function outcol = getcol(i, n, opt)
 %usage: usually for plotting traces with an ordered color sequence (instead of matlab's default color order, which is not obviously sequential)
 %     e.g. cellfun(@(x, y, col) plot(x, y, 'Color', col), xcell, ycell, getcol(1:length(xcell), 10, 1));
 
-if nargin < 3
-    opt = 1; %saturated colors
+if nargin < 1
+    i=1;
 end
 if nargin < 2
     n = max(i);
+end
+if nargin < 3
+    opt = 1; %saturated colors
 end
 
 %gets rainbow colors defined by these [h, s, v], where h = h0 + i/n

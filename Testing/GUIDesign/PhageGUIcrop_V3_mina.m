@@ -1,4 +1,4 @@
-function PhageGUIcrop_V3()
+function PhageGUIcrop_V3_mina()
 %PhageGUI, but now programmatic - GUIDE has bad limitations/bugs
 
 %Add paths
@@ -29,6 +29,7 @@ timF = [];
 forF = [];
 fil = [];
 dec = [];
+savedSteps = [];
 
 stripes = gobjects(1);
 
@@ -45,11 +46,6 @@ hold(mainAxis,'on')
 hold(mainRAxis,'on')
 subAxis  = axes(panaxs, 'Position', [.05 .05 .80 .2]);
 hold(subAxis, 'on')
-subRAxisB= axes(panaxs, 'Position', [.85, .05, .14, .1]);
-subRAxisT= axes(panaxs, 'Position', [.85, .15, .14, .1]);
-hold(subRAxisT, 'on')
-hold(subRAxisB, 'on')
-
 linkaxes([mainAxis, subAxis], 'x')
 linkaxes([mainAxis, mainRAxis], 'y')
 
@@ -86,9 +82,9 @@ deciFact  = uicontrol(panFil, 'Style', 'edit', 'Units', 'normalized', 'Position'
 
 panConMx= uipanel(panlef, 'Position', [0 .725 1 .075]);
 conMinT = uicontrol(panConMx, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .67 .5 .33], 'String', 'Y Min');
-conMin  = uicontrol(panConMx, 'Style', 'edit', 'Units', 'normalized', 'Position', [0 .0 .5 .67], 'String', '0', 'Callback', @fixLimit_callback);
+conMin  = uicontrol(panConMx, 'Style', 'edit', 'Units', 'normalized', 'Position', [0 .0 .5 .67], 'String', '-inf', 'Callback', @fixLimit_callback);
 conMaxT = uicontrol(panConMx, 'Style', 'text', 'Units', 'normalized', 'Position', [.5 .67 .5 .33], 'String', 'Y Max');
-conMax  = uicontrol(panConMx, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .0 .5 .67], 'String', '4000', 'Callback', @fixLimit_callback);
+conMax  = uicontrol(panConMx, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .0 .5 .67], 'String', 'inf', 'Callback', @fixLimit_callback);
 
 panPlotX = uipanel(panlef, 'Position', [0 .65 1 .075]);
 plotCal   = uicontrol(panPlotX,                  'Units', 'normalized', 'Position', [0 .5 .5 .5], 'String', 'Plot Cal', 'Callback', @plotCal_callback);
@@ -114,7 +110,7 @@ fig.Visible = 'on';
     function loadFile_callback(~,~, f, p)
         if nargin < 4
             %Prompt the user to select a file
-            [f, p] = uigetfile([path filesep 'phage*.mat'], 'MultiSelect','off','Pick a Phi29 Trace');
+            [f, p] = uigetfile([path filesep '*.mat'], 'MultiSelect','off','Pick a Phi29 Trace');
             if ~p; %No file selected, do nothing
                 return
             end
@@ -122,7 +118,7 @@ fig.Visible = 'on';
             path = p;
             save('GUIsettings.mat', 'path', '-append')
             %Format the slider
-            d = dir([path filesep 'phage*.mat']);
+            d = dir([path filesep '*.mat']);
             d = {d.name};
             len = length(d);
             %Sort, so it's by day then by N##
@@ -166,7 +162,6 @@ fig.Visible = 'on';
     end
 
     function loadCrop_callback(~,~)
-        cropT = [];
         %Create path of crop file
         cropstr = permCropB.String;
 %         i = str2double(cropstr);
@@ -183,9 +178,9 @@ fig.Visible = 'on';
                 loadCrop.String = 'Load Crop';
             end
             
-            cropT = textscan(fid, '%f');
+            ts = textscan(fid, '%f');
             fclose(fid);
-            cropT = cropT{1};
+            ts = ts{1};
             
             %Delete old lines
             if ~isempty(cropLines{1,1})
@@ -195,16 +190,16 @@ fig.Visible = 'on';
             %Draw a line at the start/end crop bdys
             mainYLim = mainAxis.YLim;
             subYLim = subAxis.YLim;
-            cropLines{1,1} = line(mainAxis,cropT(1) * [1 1], mainYLim, 'Color', 'r');
-            cropLines{1,2} = line(mainAxis,cropT(2) * [1 1], mainYLim, 'Color', 'r');
-            cropLines{1,3} = line(subAxis ,cropT(1) * [1 1], subYLim, 'Color', 'r');
-            cropLines{1,4} = line(subAxis ,cropT(2) * [1 1], subYLim, 'Color', 'r');
+            cropLines{1,1} = line(mainAxis,ts(1) * [1 1], mainYLim, 'Color', 'r');
+            cropLines{1,2} = line(mainAxis,ts(2) * [1 1], mainYLim, 'Color', 'r');
+            cropLines{1,3} = line(subAxis ,ts(1) * [1 1], subYLim, 'Color', 'r');
+            cropLines{1,4} = line(subAxis ,ts(2) * [1 1], subYLim, 'Color', 'r');
             
-            if mainAxis.XLim(1) > cropT(1)
-                mainAxis.XLim = [cropT(1)-.5 mainAxis.XLim(2)];
+            if mainAxis.XLim(1) > ts(1)
+                mainAxis.XLim = [ts(1)-.5 mainAxis.XLim(2)];
             end
-            if mainAxis.XLim(2) < cropT(2)
-                mainAxis.XLim = [mainAxis.XLim(1) cropT(2)+0.5];
+            if mainAxis.XLim(2) < ts(2)
+                mainAxis.XLim = [mainAxis.XLim(1) ts(2)+0.5];
             end
         
     end
@@ -243,7 +238,7 @@ fig.Visible = 'on';
         
         %Plot contour on top
         arrayfun(@delete,mainAxis.Children)
-        %Hijacked for Moffit POV (1.25kHz raw data)
+        %Hijacked for Moffit POV
 %         fulconF = cellfun(@(x)windowFilter(@mean, x, [], 2),stepdata.contour,'UniformOutput',0);
 %         fulti mF = cellfun(@(x)windowFilter(@mean, x, [], 2),stepdata.time,'UniformOutput',0);
 %         cellfun(@(x,y)plot(mainAxis, x, y, 'Color', [.7 .7 .7]), fultimF, fulconF, 'UniformOutput', false);
@@ -253,65 +248,35 @@ fig.Visible = 'on';
         
         %plot KDF if asked to
         arrayfun(@delete, mainRAxis.Children)
-        arrayfun(@delete, subRAxisT.Children)
-        arrayfun(@delete, subRAxisB.Children)
-        %gather contour together, apply crop to con if exists
-        if radioKDF2.Value || radioKDF3.Value
+        if radioKDF2.Value
+            %calculate KDF
             cons = [conF{:}];
-            tims = [timF{:}];
-            loadCrop_callback
-            if ~isempty(cropT)
-                cons = cons(tims > cropT(1) & tims < cropT(2));
-            end
             hbinsz = 0.1;
-            if radioKDF2.Value
-                %calc kdf by histcounts
-                minc = floor(min(cons)/hbinsz);
-                maxc = ceil(max(cons)/hbinsz);
-                histx = (minc:maxc) * hbinsz;
-                histy = histcounts(cons, histx);
-                histxx = histx(1:end-1) + hbinsz/2;
-                histy = smooth(histy, str2double(radioKDF2t.String) );
-                plot(mainRAxis, histy, histxx, 'Color', 'b');
-            elseif radioKDF3.Value
-                %calc kdf, can either use a user-input gaussian width or one based on @estimateNoise
-                [histy, histxx] = kdf(cons, hbinsz, str2double(radioKDF3t.String)); %estimateNoise(cons)/
-                plot(mainRAxis, histy, histxx, 'Color', 'b');
-                
-                %kdf should be smooth, so use findpeaks to get peak size
-                [pkhei, pkloc] = findpeaks(double(histy), double(histxx));
-                pkcen = (pkloc(1:end-1) + pkloc(2:end))/2;
-                pkheis = mean([pkhei(1:end-1); pkhei(2:end)], 1);
-                pkdsts = diff(pkloc);
-                arrayfun(@(x,y,z)text(mainRAxis,y,x,sprintf('%0.2f',z), 'Clipping', 'on'), pkcen, pkheis, pkdsts)
-                
-                %plot lines peak-to-peak
-                %             arrayfun(@(x1,x2,y1,y2) line(mainRAxis, [x1 x2], [y1 y2]), pkhei(1:end-1), pkhei(2:end), pkloc(1:end-1), pkloc(2:end))
-                
-                %plot lines from 0 to peak v1
-                %             arrayfun(@(x,y) line(mainRAxis, [0 x], [y y]), pkhei, pkloc)
-                
-                %plot lines from 0 to peak as one long line (better for ui?)
-                lx = [pkloc; pkloc; pkloc];
-                lx = lx(:);
-                ly = [zeros(size(pkhei)); pkhei; zeros(size(pkhei))];
-                ly = ly(:);
-                line(mainRAxis, ly, lx);
-                
-                %Calculate step size histogram
-                binsz = .1;
-                xs = (-1:ceil(20/binsz)+1) * binsz;
-                cts = histcounts(pkdsts, xs);
-                %plot on both subR axes
-                bar(subRAxisT, xs(1:end-1)+binsz/2, cts)
-                bar(subRAxisB, xs(1:end-1)+binsz/2, cts)
-                %on top, plot 0-5
-                xlim(subRAxisT, [0 5])
-                %on bottom, 0-20
-                xlim(subRAxisB, [0 20])
-            end
-            mainRAxis.XTickLabel = [];
+            
+            %         %calc kdf by histcounts
+            minc = floor(min(cons)/hbinsz);
+            maxc = ceil(max(cons)/hbinsz);
+            histx = (minc:maxc) * hbinsz;
+            histy = histcounts(cons, histx);
+            histxx = histx(1:end-1) + hbinsz/2;
+            histy = smooth(histy, str2double(radioKDF2t.String));
+            plot(mainRAxis, histy, histxx, 'Color', 'b');
+        elseif radioKDF3.Value
+            %calculate KDF
+            cons = [conF{:}];
+            hbinsz = 0.1;
+            %             %decimate this down to ~1e4 pts max to make it "quick"
+            %             lck = length(cons);
+            %             lfact = ceil(length(cons)/1e4);
+            %             cons=windowFilter(@mean, cons, [], lfact);
+            
+            %calc kdf with @kdf, takes a long time
+            [histy, histxx] = kdf(cons, hbinsz, str2double(radioKDF3t.String)); %estimateNoise(cons)/
+            
+            plot(mainRAxis, histy, histxx, 'Color', 'b');
         end
+        mainRAxis.XTickLabel = [];
+        
         %If cut segments are saved, plot in gray
         if isfield(stepdata, 'cut')
             cconF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.cut.contour,'UniformOutput',0);
@@ -328,6 +293,9 @@ fig.Visible = 'on';
         assignin('base','guiCf',conF);
         assignin('base','guiTf',timF);
         assignin('base','guistepdata',stepdata);
+        
+        save(sprintf('.\\SavedSteps%s', datestr(now, 'yymmddHHMMSS')), 'savedSteps')
+        savedSteps = [];
     end
 
     function clrGraph_callback(~,~)
@@ -348,9 +316,9 @@ fig.Visible = 'on';
 
     function measLine_callback(~,~)
         [x, y] = ginput(2);
-        dx = abs(diff(x));
-        dy = abs(diff(y));
-        
+        dx = (diff(x));
+        dy = (diff(y));
+        savedSteps = [savedSteps dy];
         line(x,y)
         text(x(end),y(end),sprintf('(dx,dy,m) = (%0.2f, %0.2f, %0.2f)\n',dx,dy,dy/dx), 'Clipping', 'on')
     end
@@ -473,14 +441,14 @@ fig.Visible = 'on';
     end
 
     function m = grabmin(c, f)
-        m = double(min(c(f>1)));
+        m = double(min(c(f>5)));
         if isempty(m)
             m = 1e4;
         end
     end
 
     function m = grabmax(c, f)
-        m = double(max(c(f>1)));
+        m = double(max(c(f>5)));
         if isempty(m)
             m = 0;
         end
@@ -547,6 +515,8 @@ fig.Visible = 'on';
         guiConSec = stepdata.contour{fcyc}( stepdata.time{fcyc} > tstart & stepdata.time{fcyc} < tend );
         assignin('base', 'guiConSec', guiConSec);
         %}
+
+
 
         customB1.String = 'AspectRatio';
         xl = mainAxis.XLim;

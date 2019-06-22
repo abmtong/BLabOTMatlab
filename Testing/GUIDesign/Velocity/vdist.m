@@ -5,7 +5,7 @@ function [ccts, xbins, cvel, cfilt, ccrop] = vdist(c, inOpts)
 %  trace position filtered, trace position cropped (no filter)
 %to e.g. get unnormalized counts, N = sum(cellfun(@length, cvel));
 
-%Definte default options
+%Define default options
 opts.sgp = {1 301}; %"Savitsky Golay Params"
 opts.vbinsz = 2; %Velocity BIN SiZe
 opts.Fs = 2500; %Frequency of Sampling

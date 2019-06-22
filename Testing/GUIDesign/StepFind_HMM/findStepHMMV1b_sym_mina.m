@@ -19,7 +19,7 @@ if nargin < 1
 end
 
 stT = tic;
-binsz = 2; %%<You can fool with this to set how fine-grained the states are
+binsz = 1; %%<You can fool with this to set how fine-grained the states are
 tr = double(inTrace);
 len = length(tr);
 
@@ -29,7 +29,7 @@ end
 
 if nargin<2 || isempty(inModel) %generate model guess
     %search from 0 to 25bp step, seed with gaussian (high sig = essentially flat fcn)
-    maxstep = 150; %%< you can fool with this to determine the maximum step size the program will look for
+    maxstep = 50; %%< you can fool with this to determine the maximum step size the program will look for
     guessmean = 2.5;
     guesssig = 200;
     %a: search from 0 to maxstep
@@ -51,7 +51,7 @@ end
 
 %guess sig if not supplied
 if ~exist('sig', 'var')
-    sig = sqrt(estimateNoise(tr))*2*5; %%you can increase this to make it "artifically more noisy" to fit fewer steps on the first iteration, the reverse if you decrease this
+    sig = sqrt(estimateNoise(tr)) * 5; %%you can increase this to make it "artifically more noisy" to fit fewer steps on the first iteration, the reverse if you decrease this
 end
 
 %make trace increasing, minimum point binsz
@@ -349,7 +349,7 @@ if verbose == 1
     %plot a
     plota = newa;
     plota((end+1)/2)=0;
-    subplot(3, 1, 3), plot( -150:2:150, plota)
+    subplot(3, 1, 3), plot( -50:1:50, plota)
     %Finds steps from 0 to 25, but some can be 0; find last nonzero
 %     xm = find(newa > 1e-5, 1, 'last');
 %     xlim([0 xm*binsz])
