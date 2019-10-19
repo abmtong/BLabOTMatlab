@@ -13,3 +13,6 @@ startupfolders = {...
     'Testing/GUIDesign/Plotting'};
 cellfun(@(x)addpath([startupbasepath filesep x]), startupfolders);
 clear startupbasepath startupfolders
+
+format shortG
+format compact

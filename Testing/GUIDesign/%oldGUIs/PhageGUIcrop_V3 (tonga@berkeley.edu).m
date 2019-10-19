@@ -22,7 +22,6 @@ end
 stepdata = [];
 cropLines = cell(1,4);
 stepLines = {[] []};
-kvlines = {};
 filtLine = [];
 cropT = [];
 conF = [];
@@ -42,7 +41,6 @@ panaxs = uipanel('Position', [.1 0 .9 .95]);
 panaxs.BackgroundColor = [1 1 1]; %make it white
 mainAxis = axes(panaxs, 'Position', [.05 .31 .80 .68]);
 mainRAxis = axes(panaxs, 'Position', [.85 .31 .14 .68]); 
-
 hold(mainAxis,'on')
 hold(mainRAxis,'on')
 subAxis  = axes(panaxs, 'Position', [.05 .05 .80 .2]);
@@ -97,13 +95,12 @@ plotCal   = uicontrol(panPlotX, 'Units', 'normalized', 'Position', [0  .5 .5 .5]
 plotOff   = uicontrol(panPlotX, 'Units', 'normalized', 'Position', [.5 .5 .5 .5], 'String', 'Plot Off', 'Callback', @plotOff_callback);
 plotRaw   = uicontrol(panPlotX, 'Units', 'normalized', 'Position', [0  0  .5 .5], 'String', 'Plot Raw', 'Callback', @plotRaw_callback);
 
-radioKDF  = uibuttongroup(panlef,                       'Units', 'normalized', 'Position', [0 .55 1 .1 ], 'SelectionChangedFcn', @kdf_callback);
-radioKDF1 = uicontrol(radioKDF, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0 .66 5 .34], 'String', 'No KDF', 'Callback', []);
+radioKDF  = uibuttongroup(panlef,                       'Units', 'normalized', 'Position', [0 .55 1 .1 ], 'SelectionChangedFcn', @refilter_callback);
+radioKDF1 = uicontrol(radioKDF, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0 .66 1 .34], 'String', 'No KDF', 'Callback', []);
 radioKDF2 = uicontrol(radioKDF, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0 .33 1 .33], 'String', 'KDF Quick', 'Callback', []);
 radioKDF3 = uicontrol(radioKDF, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0 .0  1 .33], 'String', 'KDF Full', 'Callback', []);
-radioKDF4 = uicontrol(radioKDF, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [.5 .66  .5 .34], 'String', 'K-V', 'Callback', []);
-radioKDF2t= uicontrol(radioKDF, 'Style', 'edit', 'Units', 'normalized', 'Position', [.7 .33 .3 .33], 'String', '20', 'Callback', @kdf_callback);
-radioKDF3t= uicontrol(radioKDF, 'Style', 'edit', 'Units', 'normalized', 'Position', [.7 0   .3 .33], 'String', '1', 'Callback', @kdf_callback);
+radioKDF2t= uicontrol(radioKDF, 'Style', 'edit', 'Units', 'normalized', 'Position', [.7 .33 .3 .33], 'String', '20', 'Callback', @refilter_callback);
+radioKDF3t= uicontrol(radioKDF, 'Style', 'edit', 'Units', 'normalized', 'Position', [.7 0   .3 .33], 'String', '1', 'Callback', @refilter_callback);
 radioKDF2.Value = true;
 
 %Load first file
@@ -158,7 +155,6 @@ fig.Visible = 'on';
         txtSlider.String = sprintf('%s\n%d/%d', name, round(fileSlider.Value), fileSlider.Max);
         
         loadCrop.String = 'Load Crop';
-        cropT = [];
         
         %Plot
         refilter_callback
@@ -216,7 +212,15 @@ fig.Visible = 'on';
         loadFile_callback([], [], file, path)
     end
 
-    function refilter_callback(~,~)
+    function refilter_callback(src,~)
+        %don't refilter if we change a KDF filter option but that filter isn't selected
+        if nargin> 1 && isequal(src, radioKDF2t) && ~radioKDF2.Value
+            return
+        end
+        if nargin> 1 && isequal(src, radioKDF3t) && ~radioKDF3.Value
+            return
+        end
+        
         %Filter
         fil = str2num(filtFact.String); %#ok<ST2NM>
         dec = str2double(deciFact.String);
@@ -245,29 +249,7 @@ fig.Visible = 'on';
         cellfun(@(x,y)plot(mainAxis, x, y, 'Color', .7 * [1 1 1]), stepdata.time, stepdata.contour, 'UniformOutput', false);
         filtLine = plotCell(mainAxis, timF, conF);
         
-        %If cut segments are saved, plot in gray
-        if isfield(stepdata, 'cut')
-            cconF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.cut.contour,'UniformOutput',0);
-            ctimF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.cut.time,'UniformOutput',0);
-            cforF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.cut.force,'UniformOutput',0);
-            cellfun(@(x,y)plot(mainAxis,x,y,'Color',[.7 .7 .7]), stepdata.cut.time, stepdata.cut.contour)
-            cellfun(@(x,y)plot(subAxis,x,y,'Color',[.7 .7 .7]), stepdata.cut.time, stepdata.cut.force)
-            cellfun(@(x,y)plot(mainAxis,x,y,'Color',[.2 .2 .2]), ctimF, cconF)
-            cellfun(@(x,y)plot(subAxis,x,y,'Color',[.2 .2 .2]), ctimF, cforF)
-        end
-        locNoise_callback
-        kdf_callback
-    end
-
-    function kdf_callback(src,~)
-        %don't refilter if we change a KDF filter option but that filter isn't selected
-        if nargin> 1 && isequal(src, radioKDF2t) && ~radioKDF2.Value
-            return
-        end
-        if nargin> 1 && isequal(src, radioKDF3t) && ~radioKDF3.Value
-            return
-        end
-                %plot KDF if asked to
+        %plot KDF if asked to
         cla(mainRAxis)
         cla(subRAxisT)
         cla(subRAxisB)
@@ -290,30 +272,22 @@ fig.Visible = 'on';
                 histy = smooth(histy, str2double(radioKDF2t.String) );
                 plot(mainRAxis, histy, histxx, 'Color', 'b');
             elseif radioKDF3.Value
-                %calc kdf, can either use a user-input gaussian width or one based on @estimateNoise (input then is a scale factor)
+                %calc kdf, can either use a user-input gaussian width or one based on @estimateNoise
                 [histy, histxx] = kdf(cons, hbinsz, str2double(radioKDF3t.String)); %estimateNoise(cons)/
                 plot(mainRAxis, histy, histxx, 'Color', 'b');
                 
-                %kdf should be smooth, so use findpeaks to get peak locations for step size
-                pkhei = findpeaks(double(histy), double(histxx));
-                trhei = findpeaks(-double(histy), double(histxx));
-                %Set MinPeakProminence to be the median peak difference
-                medpk = median(pkhei);
-                medtr = -median(trhei);
-                mpp = (medpk - medtr) / 2;
-                [pkhei, pkloc] = findpeaks(double(histy), double(histxx), 'MinPeakProminence', mpp);
+                %kdf should be smooth, so use findpeaks to get peak size
+                [pkhei, pkloc] = findpeaks(double(histy), double(histxx));
                 pkcen = (pkloc(1:end-1) + pkloc(2:end))/2;
                 pkheis = mean([pkhei(1:end-1); pkhei(2:end)], 1);
                 pkdsts = diff(pkloc);
                 arrayfun(@(x,y,z)text(mainRAxis,y,x,sprintf('%0.2f',z), 'Clipping', 'on'), pkcen, pkheis, pkdsts)
                 
-                %plot lines peak-to-peak
-                %             arrayfun(@(x1,x2,y1,y2) line(mainRAxis, [x1 x2], [y1 y2]), pkhei(1:end-1), pkhei(2:end), pkloc(1:end-1), pkloc(2:end))
-                
+
                 %plot lines from 0 to peak v1
-                %             arrayfun(@(x,y) line(mainRAxis, [0 x], [y y]), pkhei, pkloc)
+%               arrayfun(@(x,y) line(mainRAxis, [0 x], [y y]), pkhei, pkloc)
                 
-                %plot lines from 0 to peak as one long line (better for ui?)
+                %plot lines from 0 to peak as one long line (better for ui responsiveness?)
                 lx = [pkloc; pkloc; pkloc];
                 lx = lx(:);
                 ly = [zeros(size(pkhei)); pkhei; zeros(size(pkhei))];
@@ -321,28 +295,16 @@ fig.Visible = 'on';
                 line(mainRAxis, ly, lx);
                 
                 %Calculate step size histogram
-                
-                sm=1;
-                if sm %use 0.1 bin size, then smooth
-                    binsz = .1;
-                else %use f-d rule, gives large bins
-                    binfd = iqr(pkdsts) * 2 * length(pkdsts)^(-1/3);
-                    binsz = ceil(binfd * 10)/10;
-                end
-                
-                xs = -10*binsz:binsz:21+binsz;
+                binsz = .1;
+%                 xs = (-1:ceil(20/binsz)+1) * binsz;
+                xs = -1:0.1:21;
                 xs = xs - binsz/2; %shift by binsz/2 bc step sizes might differ by eps
                 cts = histcounts(pkdsts, xs);
                 %plot on both subR axes
                 xp = xs(1:end-1)+ binsz/2;
-                if sm
-                    ctss = smooth(cts, 5)';
-                else
-                    ctss = cts;
-                end
-                bar(subRAxisT, xp, ctss, 'EdgeColor', 'none')
+                bar(subRAxisT, xp, cts, 'EdgeColor', 'none')
                 axis(subRAxisT, 'tight')
-                bar(subRAxisB, xp, ctss, 'EdgeColor', 'none')
+                bar(subRAxisB, xp, smooth(cts,5), 'EdgeColor', 'none')
                 axis(subRAxisB, 'tight')
                 %on top, plot 0-5
                 xlim(subRAxisT, [0 5])
@@ -350,72 +312,36 @@ fig.Visible = 'on';
                 xlim(subRAxisB, [0 20])
                 
                 %Fit gaussian
-                %                 gauss = @(x0, x) exp( -(x-x0(1)).^2 / 2 / x0(2) ) * x0(3);
-                %                 lsqopts = optimoptions('lsqcurvefit');
-                %                 lsqopts.Display = 'none';
-                %                 lb = [0 0 0];
-                %                 ub = [20 20 length(cts)];
-                %                 fit = lsqcurvefit(gauss, [10 2 max(cts)], xp, cts, lb, ub, lsqopts);
+                gauss = @(x0, x) exp( -(x-x0(1)).^2 / 2 / x0(2) ) * x0(3);
+                lsqopts = optimoptions('lsqcurvefit');
+                lsqopts.Display = 'none';
+                lb = [0 0 0];
+                ub = [20 20 length(cts)];
+                fit = lsqcurvefit(gauss, [10 2 max(cts)], xp, cts, lb, ub, lsqopts);
+                plot(subRAxisT, xp, gauss(fit, xp));
+                plot(subRAxisB, xp, gauss(fit, xp));
+                text(subRAxisB, 0, 1.5*mean(get(subRAxisB, 'ylim')), sprintf('%0.2f +- %0.2f (%0.2f)', fit(1), fit(2), fit(3)/sqrt(length(pkdsts))))
                 
-                [fit, gauss] = fitgauss_iter2(xp(2:end-1), ctss(2:end-1), [-2 .5]);
-                if isempty(gauss) %could not fit
-                    return
-                end
-                cellfun(@(x)plot(subRAxisT, xp, gauss(x, xp)), fit);
-                cellfun(@(x)plot(subRAxisB, xp, gauss(x, xp)), fit);
-                %display fit stats as text.
-                fitm = reshape([fit{:}], 3, [])';
-                cellfun(@(x) text(subRAxisB, x(1), 1.1*gauss(x, x(1)), sprintf('%0.2f+-%0.2f', x(1), x(2)), 'HorizontalAlignment', 'left'), fit)
-                cellfun(@(x) text(subRAxisT, x(1), 1.1*gauss(x, x(1)), sprintf('%0.2f+-%0.2f', x(1), x(2)), 'HorizontalAlignment', 'left'), fit)
-                %                     text(subRAxisB, 20, mean(get(subRAxisB, 'ylim')), sprintf('gauss can''t be fit \n(probably too few N)'), 'HorizontalAlignment', 'right')
             end
             mainRAxis.XTickLabel = [];
-        elseif radioKDF4.Value
-            cellfun(@delete,kvlines)
-            %For speed, apply K-V only if cropped
-            if ~isempty(cropT)
-                cf = cellfun(@(x,y) y(x > cropT(1) & x < cropT(2)), stepdata.time, stepdata.contour, 'Un', 0);
-                tf = cellfun(@(x,y) y(x > cropT(1) & x < cropT(2)), stepdata.time, stepdata.time, 'Un', 0);
-            else
-                return
-            end
-%             wid = str2double(radioKDF2t.String);
-%             pf = single(str2double(radioKDF3t.String));
-            wid = 5;
-            pf = single(5);
-            cf = cellfun(@(x)windowFilter(@mean, x, [], wid), cf, 'un',0);
-            tf = cellfun(@(x)windowFilter(@mean, x, [], wid), tf, 'un',0);
-            %Remove empty
-            cf(cellfun(@isempty,cf)) = [];
-            tf(cellfun(@isempty,tf)) = [];
-            
-            [~, ~, trs, sszs] = BatchKV(cf, pf, 500, 0);
-            kvlines = cellfun(@(x,y)plotkv(mainAxis, x, y, 'LineWidth', 1, 'Color', 'r'),tf,trs, 'Un',0);
-            %Calculate step size histogram
-            binsz = .1;
-            xs = -1:0.1:21;
-            xs = xs - binsz/2; %shift by binsz/2 bc step sizes might differ by eps
-            cts = histcounts(sszs, xs);
-            %plot on both subR axes
-            xp = xs(1:end-1)+ binsz/2;
-            ctss = smooth(cts, 5)';
-%             ctss = cts;
-            bar(subRAxisT, xp, ctss, 'EdgeColor', 'none')
-            axis(subRAxisT, 'tight')
-            bar(subRAxisB, xp, ctss, 'EdgeColor', 'none')
-            axis(subRAxisB, 'tight')
-            %on top, plot 0-5
-            xlim(subRAxisT, [0 5])
-            %on bottom, 0-20
-            xlim(subRAxisB, [0 20])
         end
+        %If cut segments are saved, plot in gray
+        if isfield(stepdata, 'cut')
+            cconF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.cut.contour,'UniformOutput',0);
+            ctimF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.cut.time,'UniformOutput',0);
+            cforF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.cut.force,'UniformOutput',0);
+            cellfun(@(x,y)plot(mainAxis,x,y,'Color',[.7 .7 .7]), stepdata.cut.time, stepdata.cut.contour)
+            cellfun(@(x,y)plot(subAxis,x,y,'Color',[.7 .7 .7]), stepdata.cut.time, stepdata.cut.force)
+            cellfun(@(x,y)plot(mainAxis,x,y,'Color',[.2 .2 .2]), ctimF, cconF)
+            cellfun(@(x,y)plot(subAxis,x,y,'Color',[.2 .2 .2]), ctimF, cforF)
+        end
+        locNoise_callback
     end
 
     function toWorksp_callback(~,~)
         assignin('base','guiCf',conF);
         assignin('base','guiTf',timF);
         assignin('base','guistepdata',stepdata);
-        assignin('base','guicropT',cropT);
     end
 
     function clrGraph_callback(~,~)
@@ -449,11 +375,6 @@ fig.Visible = 'on';
             cropstr = '';
         end
         [x, ~] = ginput(2);
-        %If crop is ended by pressing enter, skip cropping
-        if length(x) ~= 2
-            return
-        end
-        
         cropfp = sprintf('%s\\CropFiles%s\\%s.crop', path, cropstr, name);
         cropp = fileparts(cropfp);
         if ~exist(cropp, 'dir')
@@ -475,10 +396,6 @@ fig.Visible = 'on';
     function trimTrace_callback(~,~)
         [x,~] = ginput(2);
         x = sort(x);
-        
-        if length(x) ~= 2
-            return
-        end
         
         ln1 = line([1 1]*x(1), [0 1e4]);
         ln2 = line([1 1]*x(2), [0 1e4]);
@@ -531,14 +448,14 @@ fig.Visible = 'on';
                     end
                 end
                 
-%                 switch questdlg('Edit comment?','Comment?','Yes','No', 'No');
-%                     case 'Yes'
-%                         resp = inputdlg('Comment', 'Enter new comment', [1,80], {trcNotes.String});
-%                         if ~isempty(resp)
-%                             trcNotes.String = resp{1};
-%                             stepdata.comment = trcNotes.String;
-%                         end
-%                 end
+                switch questdlg('Edit comment?','Comment?','Yes','No', 'No');
+                    case 'Yes'
+                        resp = inputdlg('Comment', 'Enter new comment', [1,80], {trcNotes.String});
+                        if ~isempty(resp)
+                            trcNotes.String = resp{1};
+                            stepdata.comment = trcNotes.String;
+                        end
+                end
                 save([path file], 'stepdata')
                 loadFile_callback([], [], file, path)
             case 'No'
@@ -822,9 +739,6 @@ fig.Visible = 'on';
 
 %%%%Helpers
     function varargout = plotCell(ax, x, y)
-        %Wrote this before I could write:
-        %out = cellfun(@(xx,yy) plot(ax, xx, yy), x, y, 'Un', 0);
-        %But this one handles color, too, so ok
         out = cell(1,length(x));
         for i = 1:length(x)
             out{i} = plot(ax, x{i}, y{i}, 'Color', getColor(i));

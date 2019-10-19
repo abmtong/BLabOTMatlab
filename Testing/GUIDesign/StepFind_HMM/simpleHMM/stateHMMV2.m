@@ -12,6 +12,7 @@ else
     ns = inModel.ns;
 end
 
+
 %generate missing model stuffs
 if ~isfield(inModel, 'a')
     a = ones(ns)/1e4 + diag(ones(1,ns));

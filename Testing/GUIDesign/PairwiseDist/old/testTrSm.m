@@ -11,8 +11,8 @@ end
 startCon = 8000;
 
 %define staircase sizes (repeats the matrix)
-st = [2.5 2.5 2.5 1.1];
-% st = 2.5*ones(1,4);
+% st = [2.5 2.5 2.5 1.1];
+st = 2.5*ones(1,4);
 % st = 8.6 /4 * ones(1,4);
 
 %step lengths (s) - normally distributed (probably should use e.g. gamma dist, but w/e)

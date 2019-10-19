@@ -2,7 +2,6 @@ function ax= stacknplots(xcell, ycell)
 
 lims = [.1 .1 .8 .8]; %xstart ystart xlen ylen
 
-
 n = length(ycell);
 ax = gobjects(1, n);
 ycell = ycell(end:-1:1);

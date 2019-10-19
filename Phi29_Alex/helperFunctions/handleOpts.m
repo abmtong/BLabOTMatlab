@@ -1,6 +1,10 @@
 function oldOpts = handleOpts(oldOpts, newOpts)
 %More careful version of options handler (normally, just end after the first else) that checks for fieldname vailidity.
 
+if isempty(newOpts)
+    return
+end
+
 fnNew = fieldnames(newOpts);
 fnOld = fieldnames(oldOpts);
 

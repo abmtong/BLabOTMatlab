@@ -7,4 +7,4 @@ for i = 1:len
     out(i) = circshift(iny, i-1)' * iny;
 end
 
-out = out / out(1);
+% out = out / out(1);

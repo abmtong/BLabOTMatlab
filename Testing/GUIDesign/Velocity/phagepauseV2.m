@@ -17,7 +17,7 @@ opts.verbose.traces = 1;
 opts.verbose.output = 1;
 
 %vdist opts
-opts.sgf = {1 301};
+opts.sgp = {1 301};
 opts.vbinsz = 2;
 opts.Fs = 2500;
 
@@ -37,7 +37,7 @@ end
 %Filter the inputs
 [p, x, dvel, dfil, dcrop] = vdist(data, opts);
 % [~, ~, ~, ffil, ~] = vdist(fdata, opts);
-[~, ffil, fcrop] = cellfun(@(x)sgolaydiff(x, opts.sgf), fdata, 'uni', 0);
+[~, ffil, fcrop] = cellfun(@(x)sgolaydiff(x, opts.sgp), fdata, 'uni', 0);
 
 %Fit vel pdf to two gaussians [fiddle with sgf filter width to make the peaks nice)
 % Peaks are the paused and translocating sections
@@ -289,7 +289,19 @@ sumPWDV1b(bt(btf0 > 5 & btf0 < 15 & btheis > 50));
 tmpfg2 = gcf;
 tmpfg2.Name = 'PWD Bt';
 
+%Plot dist.s
+sdx = .1;
+ddx = 10;
+vdx = 20;
 
+[scts, sbdys]= arrayfun(@(z,zz) nhistc(bts(1,bts(4,:)>z & bts(4,:)< zz),sdx), fbins(1:end-1), fbins(2:end), 'Uni', 0);
+[dcts, dbdys]= arrayfun(@(z,zz) nhistc(bts(2,bts(4,:)>z & bts(4,:)< zz),ddx), fbins(1:end-1), fbins(2:end), 'Uni', 0);
+[vcts, vbdys]= arrayfun(@(z,zz) nhistc(bts(3,bts(4,:)>z & bts(4,:)< zz),vdx), fbins(1:end-1), fbins(2:end), 'Uni', 0);
+
+figure
+subplot(3,1,1), hold on, cellfun(@plot, sbdys, scts)
+subplot(3,1,2), hold on, cellfun(@plot, dbdys, dcts)
+subplot(3,1,3), hold on, cellfun(@plot, vbdys, vcts)
 
         
     

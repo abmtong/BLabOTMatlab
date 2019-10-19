@@ -6,9 +6,15 @@ function outData = windowFilter( filterFcn, inData, inHalfWidth, inDecimate )
 narginchk(3,4)
 
 %input must be vector
-if ~isvector(inData)
+if size(inData,1)~=1
     inData = inData(:)';
-    warning('@windowFilter requires a vector input: ''%s'' has been reshaped to a row vector', inputname(2))
+    warning('@windowFilter requires a 1xn vector input: ''%s'' has been reshaped to a row vector', inputname(2))
+end
+
+%Catch empty vectors
+if isempty(inData)
+    outData = [];
+    return
 end
 
 %Default decimation factor
@@ -16,12 +22,24 @@ if nargin < 4 || isempty(inDecimate)
     inDecimate = 1;
 end
 
+%If just decimating, short circuit
+if inHalfWidth == 0
+    outData = inData(inDecimate:inDecimate:end);
+    return
+end
+
 %Override for @mean to use @filter (implementation taken from @smooth)
+% Could also do this for other filters that can use @filter, but edge cases need to be different
+%  I don't use non-@mean filters anyway, so w/e
 % Not using @smooth because that requires a toolbox
+%Might be slower if inDecimate is large, bc filters the whole thing first?
 if isequal(filterFcn, @mean)
-    %if inHalfWidth is empty, use inDec
+    %if inHalfWidth is empty, use inDec. Make odd.
     if isempty(inHalfWidth)
         inHalfWidth = floor(inDecimate/2);
+    end
+    if inHalfWidth * 2 - 1 > length(inData)
+        inHalfWidth = length(inData) / 2 - 1;
     end
     width = 2*inHalfWidth+1;
     len=length(inData);
@@ -34,13 +52,6 @@ if isequal(filterFcn, @mean)
     outData = outData(inDecimate:inDecimate:end);
     return
 end
-
-%If just decimating, short circuit
-if inHalfWidth == 0
-    outData = inData(inDecimate:inDecimate:end);
-    return
-end
-
 
 %Calculate the output length, preserve size and type
 len = length(inData);

@@ -1,6 +1,8 @@
 function [sd, outcon, factor] = FCrescale( inpf, cropstr, medfrc )
 %Rescale ext so the FCs align, i.e. the distance moved by the mirror matches the distance moved by the phage
-%inputs: cropped time/force/contour and force
+%inputs: stepdata filepath, crop string, median force to use as reference
+
+%At the same force, the change in extension = change in mirror movement
 
 if nargin < 1
     [f, p] = uigetfile('phage*.mat');

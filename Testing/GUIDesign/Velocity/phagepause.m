@@ -1,4 +1,4 @@
-function [out, outf] = phagepause(data, fdata, inOpts)
+function [bts, out, outf] = phagepause(data, fdata, inOpts)
 %Takes in data, and determines whether the phage is paused, translocating, or backtracking at a given pt
 %Generates stats on backtrack segments
 %Based on Ronen's polymerase pausing code
@@ -13,7 +13,7 @@ opts.verbose.traces = 1;
 opts.verbose.output = 1;
 
 %vdist opts
-opts.sgf = {1 301};
+opts.sgp = {1 301};
 opts.vbinsz = 2;
 opts.Fs = 2500;
 
@@ -30,7 +30,7 @@ end
 %Filter the inputs
 [p, x, dvel, dfil, dcrop] = vdist(data, opts);
 % [~, ~, ~, ffil, ~] = vdist(fdata, opts);
-[~, ffil, ~] = cellfun(@(x)sgolaydiff(x, opts.sgf), fdata, 'uni', 0);
+[~, ffil, ~] = cellfun(@(x)sgolaydiff(x, opts.sgp), fdata, 'uni', 0);
 
 %Fit vel pdf to two gaussians [fiddle with sgf filter width to make the peaks nice)
 % Peaks are the paused and translocating sections
@@ -57,6 +57,8 @@ fp = bigauss(fit, x);
 dv = 11;
 inds = find(x == -dv):find(x==dv);
 fit2 = lsqcurvefit(npdf, [0 30 0.3], x(inds), p(inds),[], [], lsqopts);
+
+% fit2 = fit(1:3);
 % %Consider fitting the second peak only after the zero peak is fit (worse)
 % fit3 = lsqcurvefit(npdf, [-100 20 .6], x, p-npdf(fit2, x));
 
@@ -153,7 +155,7 @@ for i = 1:len
     outf{i} = tmpf;
     
     %plot every 10th for debug
-    if ~mod(i,10)
+    if ~mod(i,1e111)
         figure, plot(dfil{i}), hold on 
         isbttl = double([isbt{i}]) - double([istl{i}]);
         surface([1:length(isbttl);1:length(isbttl)],[dfil{i};dfil{i}],zeros(2,length(isbttl)),[isbttl;isbttl] ,'edgecol', 'interp')
@@ -212,15 +214,30 @@ btm2=[btm2{:}];
 btml2=[btml2{:}];
 btme2=[btme2{:}];
 
-figure, subplot(3,1,1), errorbar(bts2(1,:), btv2(1,:)), hold on,  errorbar(bts2(1,:), bte2(1,:))
-subplot(3,1,2), errorbar(bts2(2,:), btv2(2,:)), hold on,  errorbar(bts2(2,:), bte2(2,:))
-subplot(3,1,3), errorbar(bts2(3,:), btv2(3,:)), hold on,  errorbar(bts2(3,:), bte2(3,:))
+figure, subplot(3,1,1), hold on, errorbar(bts2(1,:), btv2(1,:)), hold on,  errorbar(bts2(1,:), bte2(1,:))
+subplot(3,1,2), hold on, errorbar(bts2(2,:), btv2(2,:)), hold on,  errorbar(bts2(2,:), bte2(2,:))
+subplot(3,1,3), hold on, errorbar(bts2(3,:), btv2(3,:)), hold on,  errorbar(bts2(3,:), bte2(3,:))
 
 %median-based calcs
 % figure, subplot(3,1,1), errorbar(btm2(1,:), btml2(1,:)), hold on,  errorbar(btm2(1,:), btme2(1,:))
 % subplot(3,1,2), errorbar(btm2(2,:), btml2(2,:)), hold on,  errorbar(btm2(2,:), btme2(2,:))
 % subplot(3,1,3), errorbar(btm2(3,:), btml2(3,:)), hold on,  errorbar(btm2(3,:), btme2(3,:))
 
+% bw=2*iqr(bts)*numel(X)^(-1/3);
+
+%Plot dist.s
+sdx = .1;
+ddx = 10;
+vdx = 20;
+
+[scts, sbdys]= arrayfun(@(z,zz) nhistc(bts(1,bts(4,:)>z & bts(4,:)< zz),sdx), fbins(1:end-1), fbins(2:end), 'Uni', 0);
+[dcts, dbdys]= arrayfun(@(z,zz) nhistc(bts(2,bts(4,:)>z & bts(4,:)< zz),ddx), fbins(1:end-1), fbins(2:end), 'Uni', 0);
+[vcts, vbdys]= arrayfun(@(z,zz) nhistc(bts(3,bts(4,:)>z & bts(4,:)< zz),vdx), fbins(1:end-1), fbins(2:end), 'Uni', 0);
+
+figure
+subplot(3,1,1), hold on, cellfun(@plot, sbdys, scts)
+subplot(3,1,2), hold on, cellfun(@plot, dbdys, dcts)
+subplot(3,1,3), hold on, cellfun(@plot, vbdys, vcts)
 
 %n events per bp
 df = dfil(~cellfun(@isempty, dfil));

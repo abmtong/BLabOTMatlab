@@ -1,6 +1,9 @@
-function [outInd, outMea, outTra, stepDist] = BatchKV(inContour, inPenalty, maxSteps, verbose)
+function [outInd, outMea, outTra, stepDist] = BatchKV(inContour, inPenalty, maxSteps, verbose, validate)
 %inContour now a cell array of contours
 
+if nargin < 5 || isempty(validate)
+    validate = 0;
+end
 if nargin < 4 || isempty(verbose)
     verbose = 1;
 end
@@ -18,9 +21,11 @@ end
 
 startT = tic;
 hei = length(inContour);
+conshft = cell(1,hei);
 %Shift inContour so plot is nice (magnitude of inContour is irrelevant)
 for i = 1:hei
-    inContour{i} = 9e3+ inContour{i} - inContour{i}(1) - i*20;
+    conshft{i} = 9e3 - inContour{i}(1) - i*20;
+%     inContour{i} = inContour{i} + conshft(i);
 end
 
 %Progress Meter
@@ -31,22 +36,28 @@ fprintf('[\n')
 %K-V is fast enough that ppool is usually unnecessary (Time saved < ppool start time) - only parfor if a ppool is already up
 ppool = gcp('nocreate');
 if isempty(ppool)
-    [outInd, outMea, outTra] = cellfun(@(x)AFindStepsV4(x, inPenalty, maxSteps, 3), inContour, 'Uni', 0);
+    [outInd, outMea, outTra] = cellfun(@(x)AFindStepsV5(x, inPenalty, maxSteps, 3), inContour, 'Uni', 0);
 else
     parfor i = 1:hei
-        [outInd{i}, outMea{i}, outTra{i}] = AFindStepsV4(inContour{i}, inPenalty, maxSteps, 3);
+        [outInd{i}, outMea{i}, outTra{i}] = AFindStepsV5(inContour{i}, inPenalty, maxSteps, 3);
     end
 end
 fprintf('\b]\n')
 
 %Calculate step size histogram
-stepDist = cellfun(@(x)-diff(x), outMea,'Uni',0);
+if validate
+    [~, stepDist] = cellfun(@kvxfit, outInd, outMea, inContour, 'Un', 0);
+    stepDist = cellfun(@(x)-x, stepDist, 'un',0);
+else
+    stepDist = cellfun(@(x)-diff(x), outMea,'Uni',0);
+end
 stepDist = [stepDist{:}];
-stepN = length(stepDist);
-stepNp = length(stepDist(stepDist>0));
-newP = normHist(stepDist, 0.25);
-
+    
 if verbose
+    stepN = length(stepDist);
+    stepNp = length(stepDist(stepDist>0));
+    newP = normHist(stepDist, 0.25);
+    
     figure('Name',sprintf('%s {%s [%s]}', mfilename, inputname(1), sprintf('%0.3f ',inPenalty)));
     %Plot step size distribution
     subplot(3,1,[1 2]);
@@ -55,8 +66,8 @@ if verbose
     cols =    arrayfun(@(x)hsv2rgb([mod(x,1)  1 .6]), 2/3 + (1:length(inContour))/10 ,'Uni', 0);
     colsraw = arrayfun(@(x)hsv2rgb([mod(x,1) .3 .8]), 2/3 + (1:length(inContour))/10 ,'Uni', 0);
     
-    cellfun(@(x,c)plot(x, 'Color', c), inContour, colsraw)
-    cellfun(@(x,c)plot(x, 'Color', c), outTra, cols)
+    cellfun(@(x,y,c)plot(x+y, 'Color', c), inContour, conshft, colsraw)
+    cellfun(@(x,y,c)plot(x+y, 'Color', c), outTra, conshft, cols)
     
     subplot(3,1,3);
     x = newP(:,1);

@@ -2,7 +2,10 @@ function ngood = hellfirecalc()
 aff = {'CHC' 1000; 'CHD' 1000; 'Soc' 1000; 'DMG' 1500; 'El%+' 250; 'El%-' 750; 'AD' 1000; 'CDR' 1000; 'RCR' 1000;...
        'AS' 1000; 'Vit' 10000; 'Lf%' 1000; 'Arm' 1000; 'AR' 1000; 'L/s' 1000; 'L/h' 1000};
 n = 1e6;
-%n = {n(noCHC) n(noCHD) n(noSoc) n(noEl%) n(all))
+
+%ngood = {n(noCHC) n(noCHD) n(noSoc) n(noEl%) n(3))
+%  ^this is wrong, just take n(3), since Hellfires auto-roll STR/DEX/INT meaning that must be rolled off
+%  This is also why n(noEl%) is zero, because each of the noXX ones have two missing affixes
 %listed in order of most needed > least needed
 cfstr = {'Soc' 'CHD' 'CHC' 'El%+'};
 ngood = zeros(1,length(cfstr)+1);
