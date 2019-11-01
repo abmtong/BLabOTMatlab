@@ -591,7 +591,7 @@ fig.Visible = 'on';
         %Plot the local noise levels every so-and-so points
         netlen = sum(cellfun(@length, stepdata.time));
         if netlen > 1e5
-            noiwin = netlen/1e2;
+            noiwin = round(netlen/1e2);
         else
             noiwin = 500;
         end
