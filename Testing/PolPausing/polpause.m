@@ -52,15 +52,32 @@ bins = floor(min(dextF)/binsz)*binsz:binsz:ceil(max(dextF)/binsz)*binsz;
 vbin =histcounts(dextF, bins);
 bincents = (bins(1:end-1) + bins(2:end))/2;
 figure, bar(bincents, vbin)
-%Fit a gaussian to the pause population: those where velocity < velocity threshold
-vthrg = 2;
-dextFc = dextF(abs (dextF) < vthrg );
-nc = length(dextFc);
-gs = fitdist(dextFc(:), 'normal');
-gsy = pdf(gs, bins) * nc * mean(diff(bins));
-hold on, plot(bins, gsy)
+
+method = 2;
+if method == 1
+    %Fit a gaussian to the pause population: those where velocity < velocity threshold
+    vthrg = .5;
+    dextFc = dextF( abs(dextF) < vthrg );
+    nc = length(dextFc);
+    gs = fitdist(dextFc(:), 'normal');
+    gsy = pdf(gs, bins) * nc * mean(diff(bins));
+    hold on, plot(bins, gsy)
+    mu = gs.mu;
+else
+    %Fit a gaussian to the pause pop: gauss centered at 0, fit to LHS
+    vthrg = .5;
+    vc = vbin(bincents <= vthrg);
+    xc = bincents(bincents <= vthrg);
+    lsqopts = optimoptions('lsqcurvefit', 'Display', 'none');
+    fitfcn = @(x0,x)x0(1)*normpdf(x,0,x0(2));
+    ft = lsqcurvefit(fitfcn, [max(vc)*6,std(vc)], xc, vc, [],[],lsqopts);
+    mu = 0;
+    hold on, plot(bincents, fitfcn(ft, bincents))
+end
+
+
 %Take the sum of the LHS of the gaussian, and double this to get the integral of the gaussian
-mu = gs.mu;
+
 pausesLHS = dextF(dextF < mu);
 pausesRHS = 2*mu - pausesLHS;
 pauses = [pausesLHS pausesRHS];
@@ -130,8 +147,8 @@ pshei = arrayfun(@(x, y) mean(extF(x:y)), indSta, indEnd);
 
 figure, hist(pslen, 100);
 
-extractedpauses = pslen( minpos < pshei & pshei < maxpos);
-pauseyouwant = max(pslen);
+% extractedpauses = pslen( minpos < pshei & pshei < maxpos);
+% pauseyouwant = max(pslen);
 
 figure, plot(ext, 'Color', [.7 .7 .7]), hold on
 surface([1:length(extF);1:length(extF)],[extF;extF],zeros(2,length(extF)),[tf;tf] ,'edgecol', 'interp')

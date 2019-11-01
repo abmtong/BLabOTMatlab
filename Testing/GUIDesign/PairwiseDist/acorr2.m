@@ -8,9 +8,9 @@ end
 iny = iny(:)'; %row vector
 len = length(iny);
 out = zeros(1, len);
-iny2 = iny.^2;%pre-square, to avoid recalculating per iter
 
 if method == 1 %scale by norm, good
+    iny2 = iny.^2;%pre-square, to avoid recalculating per iter
     for i = 1:len
         out(i) = iny(i:end) * iny(1:end-i+1)' / sqrt( sum( iny2(i:end)) * sum(iny2(1:end-i+1))); %scale by magnitude (A*B/sqrt A*A B*B)
     end
@@ -24,4 +24,4 @@ else %dont scale, bad
     end
 end
 out = out/out(1);
-out(isnan(out)) = 0; %if edges of iny are 0, then out(end) will be NaN. Just zero out instead
+out(isnan(out)) = 0; %if edges of iny are 0, then out(end) will be NaN if method == 1. Just zero out instead

@@ -1,5 +1,8 @@
 function [outInd, outMea, outTra, stepDist] = BatchKV(inContour, inPenalty, maxSteps, verbose, validate)
-%inContour now a cell array of contours
+%Does batch operation using AFindSteps. Same inputs as @AFindStepsV5, except the first argument is a cell array of contours.
+%   Plots a results summary with a step size distribution, disable with verbose = 0.
+%   input: validate = 1 makes @kvxfit run on the found steps.
+%See documentation in @AFindStepsV5, @kvxfit
 
 if nargin < 5 || isempty(validate)
     validate = 0;

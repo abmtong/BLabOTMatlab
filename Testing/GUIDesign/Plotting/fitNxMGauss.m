@@ -1,4 +1,4 @@
-function fitNxMGauss(guessmean, relmean, onlypos)
+function fitNxMGauss(guessmean, relmean, xl)
 %Fits gaussians with mean guessmean x relmeans
 
 %length(guessmean) is the number of gaussians to fit
@@ -8,19 +8,16 @@ end
 if nargin<2  || isempty(relmean)
     relmean = 1;
 end
-if nargin < 3 || isempty(onlypos)
-    onlypos = 1;
+if nargin < 3 || isempty(xl)
+    xl = [0 inf];
 end
 
 ax = gca;
 x = ax.Children(end).XData;
 p = ax.Children(end).YData;
-if onlypos
-    keepind = x>0;
-    x = x(keepind);
-    p = p(keepind);
-end
-
+keepind = x>xl(1) & x < xl(2);
+x = x(keepind);
+p = p(keepind);
 
 %Make row vectors
 x = double(x(:)');

@@ -1,5 +1,6 @@
 function tdelay(inx)
 %given pt X, plot where it is after N pts
+%Theory from M.Woodside's stuff
 
 %declare time delays
 t = 10+(0:100:1e3);

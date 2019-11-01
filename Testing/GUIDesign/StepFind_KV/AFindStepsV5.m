@@ -1,5 +1,24 @@
 function [outInd, outMean, outTra] = AFindStepsV5(inContour, inPenalty, maxSteps, verbose )
-%Applies the Klafut-Visscher stepfinding algorithm to input trace inContour.
+%%Applies the Klafut-Visscher stepfinding algorithm (doi:10.1016/j.cpc.2008.06.008)
+%Inputs:
+%   inContour: the data to stepfind on
+%   inPenalty: the penalty for adding a step, see details below
+%   maxSteps: the maximum steps the algorithm can find. Exists mainly for memory preallocation.
+%   verbose: What status message to plot to the command window: 0 = none, 1 = full, 2 = bar
+%Outputs:
+%   outInd: the array of step boundary indicies, i.e. the ith step start at index outInd(i) and ends at outInd(i+1)
+%   outMean: the array of step heights, i.e. the ith step has height outMean(i)
+%   outTra: the staircase found by the algorithm, length(outTra) = length(inContour)
+%How to use:
+%   e.g. [~, ~, outTra] = AFindStepsV5(inCon,single(5)); figure, plot(inCon), hold on, plot(outTra)
+%       will do stepfinding and plot the original trace + stepfinding results.
+%   It is suggested to filter the data before stepfinding.
+%   However, you will probably want to mess with inPenalty in order to make the algorithm find more/less steps.
+%       Most often, inPenalty is passed as single(n), where n is a 'penalty multiplier',
+%           meaning the penalty is n times the default one decided by the K-V algorithm.
+%       A good value to start at is single(5). Increase to find fewer steps, decrease to find more steps.
+
+%Changelog:
 %V4: Modifying @findStepsChSq code to do K-V, as earlier versions are inefficient
 %V5: Search is now completely in C, speedup of ~40%
 

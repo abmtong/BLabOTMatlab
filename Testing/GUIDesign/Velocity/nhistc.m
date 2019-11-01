@@ -16,7 +16,7 @@ end
 bins = binsz * ( floor(min(y)/binsz):ceil(max(y)/binsz));
 
 if length(bins) < 3
-    warning('bad binsz')
+    warning('bad binsz in nhistc')
     outp = 0;
     outx = 0;
     outsd = 0;

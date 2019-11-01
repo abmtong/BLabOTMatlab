@@ -3,6 +3,8 @@ function [out, outraw] = sfkk(con, inOpts, verbose)
 %combine kdfsfind and kvxfit
 %keep steps that were good by kvxfit and match to one from kdfsfind
 
+%out = [outraw.dwts; outraw.dwtfs; outraw.burkv; outraw.burkdf]'
+
 %if con is a cell, change to batch ver.
 if iscell(con)
     if nargin == 1
@@ -21,7 +23,7 @@ end
 
 
 %Options
-opts.fil = {[], 5}; %Params for @windowFilter
+opts.fil = {20, 1}; %Params for @windowFilter
 opts.kvopts = {single(5)}; %K-V params {pf, nsteps, verbose}
 opts.kdfopts = {.1, 1}; %kdf params {dy, ysd}
 opts.maxdist = 2.5; %Maximum distance betwen kdf and kv steps
@@ -48,7 +50,7 @@ kvxtf = kvxfit(in, me, conF);
 kvxtf = kvxtf & -diff([inf me]) < 0;
 
 %do kdf fit
-kdfpos = kdfsfind(con, opts.kdfopts{:});
+kdfpos = kdfsfind(con, 'binsz', opts.kdfopts{1}, 'kdfsd', opts.kdfopts{2});
 
 %kdfpos is sorted, but we want reverse sort
 kdfpos = fliplr(kdfpos);

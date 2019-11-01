@@ -5,7 +5,7 @@ function [outInd, outMean, outTra] = AFindStepsV4(inContour, inPenalty, maxSteps
 %This algorithm requires a lot of calculations of quadratic error, it's the speed bottleneck (done ~ O(length(inContour)*log(maxSteps)) times)
 %So, calculate Quadratic Error, sum((mean(A)-A).^2), quickly with @C_qe (MEX file)
 %Speed: Empirically goes as x^2.74 (Only considering @C_qe, theoretical is O(x^2 logx) - assuming QE is O(x^2), which needs to be done log(numSteps) times)
-%Speed of C_qe seems equal to speed of C_qe_single, I guess bc im running a x64 OS
+%Speed of C_qe seems equal to speed of C_qe_single - why? should be 2x faster in single than double
 
 %C_qe requires double; data is saved as single.
 if ~isa(inContour, 'double')
