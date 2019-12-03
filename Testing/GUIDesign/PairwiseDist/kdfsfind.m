@@ -1,4 +1,4 @@
-function [pkloc, ssz, histfit] = kdfsfind(incon, varargin)
+function [pkloc, ssz, histfit, dws] = kdfsfind(incon, varargin)
 %Find steps using the 'kdf' method: Find peak location by looking at kdf
 
 
@@ -12,6 +12,7 @@ addParameter(ip, 'histdec', 2); %Step histogram decimation factor
 addParameter(ip, 'histfil', 5); %Filter width for step histogram
 addParameter(ip, 'kdfmpp', .5); %Multiplier to kdf MinPeakProminence
 addParameter(ip, 'histfitx', [0 15]); %X range to fit histfit to
+addParameter(ip, 'rmburst', 1); %Remove bursts in kdfdwellfind
 parse(ip, incon, varargin{:});
 
 fpre = ip.Results.fpre;
@@ -21,6 +22,7 @@ histdec = ip.Results.histdec;
 histfil = ip.Results.histfil;
 kdfmpp = ip.Results.kdfmpp;
 histfitx = ip.Results.histfitx;
+rmburst = ip.Results.rmburst;
 
 %Generating fit requires batch operation, so send into batch mode if not
 if nargout > 2 && ~iscell(incon)
@@ -64,6 +66,55 @@ if iscell(incon)
     histfit.fit = gfit;
     histfit.x = xx;
     histfit.y = yy;
+    
+    %Get dwells with @kdfdwfindHMM if asked for
+    if nargout > 3
+        %Minimum pkloc size for stepfinding = 3 (since we remove first, last dwell)
+        ki = cellfun(@length, pkloc) >= 3;
+        if rmburst
+            dblind = ceil((1:2* max(cellfun(@length, pkloc)))/2); %[1 1 2 2 3 3 ...]
+            %Place a step in-between each step to serve as the burst time
+            pklocd = cellfun(@(x)mean([ x( dblind(1:length(x)*2-1)); x(dblind(2:length(x)*2)) ], 1), pkloc, 'un', 0);
+            %i.e. pkloc -> pkloc([1 1.5 2 2.5 3 3.5 ...]); where 1.5 = avg of 1 and 2
+        else
+            pklocd = pkloc;
+        end
+        %To find steps, do HMM with found step positions, arbitrarily low noise [-> whatever is 'best']
+        nois = 3.0; %Cant be too low, else hmm errors (probability -> 0)
+        dwf = cellfun(@(x,y)kdfdwfindHMM(x,struct('mu',y,'sig',nois),0), cellfun(@(x)windowFilter(@mean, x, 3,1), incon(ki), 'un',0), pklocd(ki));
+        %Extract fit staircases
+        dwff = [dwf.finish];
+        dwtr = {dwff.fit};
+        
+%         figure, plot([incon{ki}]), hold on, plot([dwtr{:}])
+        
+        %Extract indicies
+        oi = cellfun(@tra2ind, dwtr, 'Un', 0);
+        %Dwell time = diff(ind)
+        oid = cellfun(@diff, oi, 'un', 0);
+        %Separate burst times, if applicable
+        if rmburst
+            oib = cellfun(@(x) x(2:2:end), oid, 'un', 0);
+            oid = cellfun(@(x) x(1:2:end), oid, 'un', 0);
+        end
+        %Remove first, last dwell since they might not be accurate
+        dws = cellfun(@(x) x(2:end-1), oid, 'Un', 0);
+        %Gather
+        dws = [dws{:}];
+        dws(dws<.01)=[];
+        %Convert pts to time
+        Fs = 2.5e3; %hard-coded Fs
+        dws=dws/Fs;
+        %Calculate histogram
+        fitgamma(dws)
+        if rmburst
+            bus = cellfun(@(x) x(2:end-1), oib, 'Un', 0);
+            bus = [bus{:}];
+            bus = bus/2.5e3;
+            [yy2,xx2] = nhistc(bus, 10/Fs);
+            figure, plot(xx2,yy2)
+        end
+    end
     return
 end
 
@@ -83,7 +134,3 @@ mpp = (medpk - medtr) * kdfmpp;
 [~, pkloc] = findpeaks(double(histy), double(histxx), 'MinPeakProminence', mpp);
 
 ssz = diff(pkloc);
-
-%Can I find dwells?
-%...could HMM this I guess, with lc as steps
-% Or could KV this with known nsteps? accept if they overlap? Ghe-like

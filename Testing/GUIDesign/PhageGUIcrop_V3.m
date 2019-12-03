@@ -1,5 +1,5 @@
 function PhageGUIcrop_V3()
-%PhageGUI, but now programmatic - GUIDE has bad limitations/bugs
+%PhageGUI: For viewing phage .mat files.
 
 %Add paths
 thispath = fileparts(mfilename('fullpath'));
@@ -18,7 +18,7 @@ else
     save('GUIsettings.mat', 'c');
 end
 
-%Declare variables for static workspace - or just shove everything in a struct [less readable]
+%%Declare variables for static workspace - or just shove everything in a struct [less readable]
 stepdata = [];
 cropLines = cell(1,4);
 stepLines = {[] []};
@@ -111,7 +111,7 @@ loadFile_callback
 
 fig.Visible = 'on';
 
-%%%%Callbacks
+%%Callbacks
     function loadFile_callback(~,~, f, p)
         if nargin < 4
             %Prompt the user to select a file

@@ -8,7 +8,6 @@ addpath ([thispath '\Helpers\'])       %Filename sorter
 addpath ([thispath '\ForceExt\'])      %XWLC
 addpath ([thispath '\StepFind_KV\'])   %Filtering
 
-
 %Load settings file (or create one)
 path = 'C:\Data';
 file = 'ForceExtensionMMDDYYN00.mat';

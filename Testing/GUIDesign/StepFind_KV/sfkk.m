@@ -2,11 +2,13 @@ function [out, outraw] = sfkk(con, inOpts, verbose)
 
 %combine kdfsfind and kvxfit
 %keep steps that were good by kvxfit and match to one from kdfsfind
+%Lets us remove burst time if we tell kv to be more stringent
 
 %out = [outraw.dwts; outraw.dwtfs; outraw.burkv; outraw.burkdf]'
 
 %if con is a cell, change to batch ver.
 if iscell(con)
+    %Messy if statements here, could use varargin instead to tidy up
     if nargin == 1
         [out, outraw] = cellfun(@(x) sfkk(x), con, 'Un', 0);
     elseif nargin == 2
@@ -17,13 +19,15 @@ if iscell(con)
     
     %Xform out into one matrix
     out = cellfun(@(x) x', out, 'Un', 0);
-    out = [out{:}]';    
+    out = [out{:}]';
+    
+    fitgamma(out(out(:,1)>0,1))
+    fitgamma(out(out(:,2)>0,2))
     return
 end
 
-
 %Options
-opts.fil = {20, 1}; %Params for @windowFilter
+opts.fil = {10, 1}; %Params for @windowFilter for kvf
 opts.kvopts = {single(5)}; %K-V params {pf, nsteps, verbose}
 opts.kdfopts = {.1, 1}; %kdf params {dy, ysd}
 opts.maxdist = 2.5; %Maximum distance betwen kdf and kv steps
@@ -45,9 +49,11 @@ conF = windowFilter(@mean, con, opts.fil{:});
 
 %do K-V counterfit
 kvxtf = kvxfit(in, me, conF);
-%Also, make negative steps fail the criterion
-% Define the 'owner' of the neg. step as the second dwell
-kvxtf = kvxtf & -diff([inf me]) < 0;
+kvxtf = true(size(kvxtf));
+%Only consider translocation steps (negative step size)
+% Define the 'owner' of the step as the dwell before it
+% Add an inf to make the last dwell bad
+kvxtf = kvxtf & diff([me inf]) < 0;
 
 %do kdf fit
 kdfpos = kdfsfind(con, 'binsz', opts.kdfopts{1}, 'kdfsd', opts.kdfopts{2});
@@ -125,7 +131,7 @@ if verbose
     figure Name KVxfit
     plot(con), hold on
     [xx,yy] = ind2lin(in,me);
-%     cc = repmat(outraw, [2 1]);
+    cc = repmat(outraw, [2 1]);
     cc = cc(:)';
     cc = double(cc);
     surface([xx;xx],[yy;yy],zeros(2,length(xx)),[cc;cc], 'Edgecol', 'interp', 'LineWidth',1)

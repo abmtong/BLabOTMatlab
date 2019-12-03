@@ -1,6 +1,12 @@
-% Add basic paths
-startupbasepath = fileparts(mfilename('fullpath')); %C:\... \MATLAB\
-startupfolders = {...
+%Startup script to add most commonly used folders to the search path
+%I recommend you either start in this folder [so Matlab runs this automatically],
+% or make a shortcut to run this .m file.
+%Do not move this .m file, as paths are constructed relative to this file
+
+%Add paths relative to this folder, so it works regardless of where the code is located
+%Use long names so we can create/delete them without worry of overwriting workspace var.s
+startupbasepath99 = fileparts(mfilename('fullpath')); %C:\... \MATLAB\
+startupfolders99 = {...
     'Phi29_Alex' ...
     'Phi29_Alex/helperFunctions' ...
     'Phi29_Alex/Calibration' ...
@@ -11,8 +17,9 @@ startupfolders = {...
     'Testing/GUIDesign/Helpers' ...
     'Testing/GUIDesign/ForceExt' ...
     'Testing/GUIDesign/Plotting'};
-cellfun(@(x)addpath([startupbasepath filesep x]), startupfolders);
-clear startupbasepath startupfolders
+cellfun(@(x)addpath([startupbasepath99 filesep x]), startupfolders99);
+clear startupbasepath99 startupfolders99
 
-format shortG
-format compact
+%I like these formatting options, so also apply them here
+format shortG %Allows for display of numbers with varying exponents, e.g. [1 1e99]
+format compact %Removes extra line breaks when the command window shows an output

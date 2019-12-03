@@ -11,7 +11,8 @@ elseif ~iscell(sgfpcell)
 end
 
 if nargin < 3
-    samp = [4e3/3 13]; %Input frq, dsamp factor
+%     samp = [4e3/3 13]; %Input frq, dsamp factor - wee
+    samp = [800 1]; %input frq, dsamp factor - wx
 end
 
 if nargin < 4
@@ -53,7 +54,7 @@ vbin =histcounts(dextF, bins);
 bincents = (bins(1:end-1) + bins(2:end))/2;
 figure, bar(bincents, vbin)
 
-method = 2;
+method = 3;
 if method == 1
     %Fit a gaussian to the pause population: those where velocity < velocity threshold
     vthrg = .5;
@@ -63,16 +64,28 @@ if method == 1
     gsy = pdf(gs, bins) * nc * mean(diff(bins));
     hold on, plot(bins, gsy)
     mu = gs.mu;
-else
+elseif method == 2
     %Fit a gaussian to the pause pop: gauss centered at 0, fit to LHS
-    vthrg = .5;
+    vthrg = 0;
     vc = vbin(bincents <= vthrg);
     xc = bincents(bincents <= vthrg);
     lsqopts = optimoptions('lsqcurvefit', 'Display', 'none');
     fitfcn = @(x0,x)x0(1)*normpdf(x,0,x0(2));
     ft = lsqcurvefit(fitfcn, [max(vc)*6,std(vc)], xc, vc, [],[],lsqopts);
     mu = 0;
+    fty = fitfcn(ft, bincents);
+    hold on, plot(bincents, fty)
+elseif method == 3
+    %Fit a gaussian centered at 0 (pause) and one pos (tloc)
+    fitfcn = @(x0,x) x0(1) * normpdf(x,0,x0(2)) + x0(3) * normpdf(x,x0(4),x0(5));
+    gu = [max(vbin)*6, std(vbin), max(vbin), prctile(vbin, 90), std(vbin)];
+    ft = lsqcurvefit(fitfcn, gu, bincents, vbin);
     hold on, plot(bincents, fitfcn(ft, bincents))
+    plot(bincents, normpdf(bincents, 0, ft(2))*ft(1))
+    plot(bincents, normpdf(bincents, ft(4),ft(5))*ft(3))
+    text( 0, ft(1)/ft(2)/sqrt(2*pi), sprintf('Pause peak: Mean %0.2f, SD %0.2f, Time %0.2f%%', 0, ft(2), 100*ft(1)/(ft(3)+ft(1))))
+    text( ft(4), ft(3)/ft(5)/sqrt(2*pi), sprintf('Tloc peak: Mean %0.2f, SD %0.2f, Time %0.2f%%', ft(4), ft(5),100* ft(3)/(ft(3)+ft(1))))
+    mu=0;
 end
 
 

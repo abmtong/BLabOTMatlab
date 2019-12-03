@@ -92,7 +92,8 @@ end
 %W = F-bar * diff(theta)
 dth = (diff(rot));
 tdif = mod((rot - trapp) + pi/2, pi) - pi/2;
-fbar = (tdif(1:end-1) + tdif(2:end))/2;
+% fbar = (tdif(1:end-1) + tdif(2:end))/2;
+fbar = 0.5*sin(2*(tdif(1:end-1) + tdif(2:end))/2);
 W = dth .* fbar * opts.k;
 
 %Reject some areas based on what side of the trap they're in

@@ -9,6 +9,7 @@ for i = 1:len
     naxs(i) = copyobj(axs(i), fg);
     naxs(i).Position = [.1 .9-.2*i .8 .2];
 end
+arrayfun(@(x) set(x,'XTickLabel', {}),naxs(1:3)) 
+
 linkaxes(naxs, 'xy')
-linkaxes(naxs, 'x')
 xlim([-40 80])

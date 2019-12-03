@@ -1,4 +1,4 @@
-function [outInd, outMea, outTra, stepDist] = BatchKV(inContour, inPenalty, maxSteps, verbose, validate)
+function [outInd, outMea, outTra, steps, dwells] = BatchKV(inContour, inPenalty, maxSteps, verbose, validate)
 %Does batch operation using AFindSteps. Same inputs as @AFindStepsV5, except the first argument is a cell array of contours.
 %   Plots a results summary with a step size distribution, disable with verbose = 0.
 %   input: validate = 1 makes @kvxfit run on the found steps.
@@ -49,21 +49,26 @@ fprintf('\b]\n')
 
 %Calculate step size histogram
 if validate
-    [~, stepDist] = cellfun(@kvxfit, outInd, outMea, inContour, 'Un', 0);
-    stepDist = cellfun(@(x)-x, stepDist, 'un',0);
+    [~, steps, dwells] = cellfun(@kvxfit, outInd, outMea, inContour, 'Un', 0);
+    steps = cellfun(@(x)-x, steps, 'un',0);
 else
-    stepDist = cellfun(@(x)-diff(x), outMea,'Uni',0);
+    steps = cellfun(@(x)-diff(x), outMea,'Uni',0);
+    dwells = cellfun(@(x)diff(x), outInd, 'Uni',0);
+    dwells = cellfun(@(x)x(2:end-1), dwells, 'Uni',0);
 end
-stepDist = [stepDist{:}];
-    
+steps = [steps{:}];
+dwells = [dwells{:}];
+Fs = 2.5e3; %hard-coded Fs
+dwells = dwells / Fs;
+
 if verbose
-    stepN = length(stepDist);
-    stepNp = length(stepDist(stepDist>0));
-    newP = normHist(stepDist, 0.25);
+    stepN = length(steps);
+    stepNp = length(steps(steps>0));
+    newP = normHist(steps, 0.25);
     
     figure('Name',sprintf('%s {%s [%s]}', mfilename, inputname(1), sprintf('%0.3f ',inPenalty)));
     %Plot step size distribution
-    subplot(3,1,[1 2]);
+    subplot(3,1,1);
     hold on
     %make plot colors: rainbow starting at blue with period 10
     cols =    arrayfun(@(x)hsv2rgb([mod(x,1)  1 .6]), 2/3 + (1:length(inContour))/10 ,'Uni', 0);
@@ -72,20 +77,44 @@ if verbose
     cellfun(@(x,y,c)plot(x+y, 'Color', c), inContour, conshft, colsraw)
     cellfun(@(x,y,c)plot(x+y, 'Color', c), outTra, conshft, cols)
     
-    subplot(3,1,3);
+    subplot(3,1,2);
     x = newP(:,1);
     bary = newP(:,2);
     bar(x,bary);
     
-    fitdata = stepDist(stepDist>0);
+    fitdata = steps(steps>0);
     logndist = fitdist(fitdata', 'logn');
     hold on
     distx = x(x>0);
-    dataratio = length(fitdata)/length(stepDist);
+    dataratio = length(fitdata)/length(steps);
     disty = pdf(logndist, distx)*dataratio;
     plot(distx, disty, 'LineWidth', 1)
     [maxy, maxx] = max(disty);
     normdist = fitdist(fitdata', 'normal');
     text(distx(maxx)*1.75, maxy*.75, sprintf('Mode: %0.3f\nN: %d, N+: %d\nMu, Sig: %0.3f, %0.3f\nMean: %0.3f\nLogMean: %0.3f\nNormMean: %0.3f', exp(logndist.mu-logndist.sigma^2), stepN, stepNp, logndist.mu,logndist.sigma, exp(logndist.mu + logndist.sigma^2/2), exp(logndist.mu), normdist.mu))
+    
+    %Calculate dwell histogram
+    [yy, xx] = nhistc(dwells, 10/Fs); %Bin size * Fs should be integer
+    %X cutoff
+    prc = 5 * [0 1]; %Percentile cutoff
+    xmn = prctile(dwells, prc(1));
+    xmx = prctile(dwells, 100-prc(2));
+    %Fit to gamma dist (k, th)
+    gamm   = @(x0,x) x0(3) * x.^(x0(1)-1) .* exp(-x/x0(2)) / gamma(x0(1)) /x0(2)^x0(1);
+    lb = [1 0 0];
+    ub = [inf inf 1];
+    gu = [4 .1/4 1]; %Guess k=4, mean = 0.1 = k*th
+    ft = lsqcurvefit(gamm, gu, xx(xx<=xmx & xx >= xmn), yy(xx<=xmx& xx >= xmn), lb, ub);
+    mn = mean(dwells(dwells<=xmx & dwells >= xmn));
+    sd = std(dwells(dwells<=xmx & dwells >= xmn));
+    %Fit with fitdist
+    gamdist = fitdist(dwells(:), 'gamma');
+    %And plot
+    subplot(3,1,3), plot(xx,yy), hold on, plot(xx, gamm(ft, xx)), line( xmx*[1 1], ylim), line( xmn*[1 1], ylim)
+    plot(xx, pdf(gamdist, xx))
+    text( (ft(1)-1) * ft(2), max(yy), sprintf('Gamma with k = %0.2f, th = %0.5f, amp %0.3f', ft))
+    text( (ft(1)-1) * ft(2), max(yy)*.5,sprintf('Naive guess mean: %0.3f, sd: %0.3f, nmin: %0.2f\n', mn, sd, mn^2/sd^2))
+    text( (ft(1)-1) * ft(2), max(yy)*.1,sprintf('Fitdist k = %0.2f, th = %0.5f', gamdist.a, gamdist.b))
+    xlim([0 2*xmx])
 end
 fprintf('BatchKV took %0.2fs\n', toc(startT))

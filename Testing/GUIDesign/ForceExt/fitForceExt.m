@@ -30,8 +30,8 @@ end
 
 [inExt, inFor] = trimTrace(inExt, inFor, opts.loF, opts.hiF);
 %bounds
-lb = [1 1 0 -00];
-ub = [1e3 1e4 1e4 00];
+lb = [1 1 0 -000];
+ub = [1e3 1e4 1e4 000];
 
 fitfcn = @(opts,force)( opts(3) * .34 * XWLC(force, opts(1),opts(2), [], 3) + opts(4) );
 
@@ -45,7 +45,7 @@ options.Display = 'off';
 
 
 %While we plot force-extension, we calculate extension-force
-[outOpts, ~, outResid, exflag] = lsqcurvefit(fitfcn, opts.inGuess, inFor, inExt, lb, ub,options);
+[outOpts, ~, outResid, exflag] = lsqcurvefit(fitfcn, opts.inGuess, inFor, inExt, lb, ub, options);
 
 %Warn for weird exit cases, even if verbose==0
 if exflag ~= 3 %"Standard" exit: change in residual less than fnc tolerance

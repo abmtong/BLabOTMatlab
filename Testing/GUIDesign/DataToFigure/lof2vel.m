@@ -50,7 +50,7 @@ if opts.verbose
     plot(x, npdf(fit(1:3),x), ':', 'LineWidth', 1.5, 'Color', 'k')
     plot(x, npdf(fit(4:6),x), '--', 'LineWidth', 1, 'Color', 'k')
     line(fit(4) * [1 1], [0 max(fp)*2], 'LineStyle', '--', 'LineWidth', 1, 'Color', 'k')
-    fprintf('Speed %0.2f +- %0.2f nm/s, %0.2f pct paused\n', fit(4:5), fit(3))
+    fprintf('Speed %0.2f +- %0.2f (%0.2f SEM) nm/s, %0.2f pct paused\n', fit(4:5), fit(5)/ sqrt(fit(3)*), fit(3))
 end
 %show no cmd line out if not assgnd
 if nargout > 0

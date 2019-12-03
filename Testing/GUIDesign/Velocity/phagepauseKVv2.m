@@ -1,17 +1,16 @@
-function [bts, btrawmat, btdata] = phagepauseKV(data, fdata, inOpts)
+function [bts, btrawmat, btdata] = phagepauseKVv2(data, fdata, inOpts)
 
 if nargin < 2 || isempty(fdata)
     fdata = cellfun(@(x) 10 * ones(size(x)), data, 'uni', 0);
 end
 
-%verbose flags
-opts.verbose.traces = 0; %plot every N traces
-opts.verbose.output = 1;
-%Filter opts: decimation factor
+%Troubleshooting verbose flag
+opts.verbose.traces = 0; %plot every N traces, to show tl/bt sections
+%Filter opts: {filter factor, decimation factor}; args 3 and 4 of @windowFilter
 opts.filwid = {[] 5};
-%KV opts
+%K-V penalty factor
 opts.kvpf = single(8);
-%etc.
+%Sampling frequency, to convert pts to time
 opts.Fs = 2500;
 
 if nargin >= 3
@@ -21,7 +20,6 @@ end
 % %Filter the inputs
 dfil = cellfun(@(x)windowFilter(@mean, x, opts.filwid{:}), data, 'un', 0);
 ffil = cellfun(@(x)windowFilter(@mean, x, opts.filwid{:}), fdata, 'un', 0);
-
 
 %Do K-V stepfinding
 [kvi, kvm, kvt] = BatchKV(dfil, opts.kvpf);
@@ -37,7 +35,11 @@ btstatscell = cell(1,len);
 btrawcell = cell(1,len);
 btdata = cell(1,len);
 %btstats = [force tstart tend ttotal ctotal vtotal vbt];
-%btraw = {inds meas}
+%btrawcell = {inds meas}
+tldata = cell(1,len);
+tldistscell = cell(1,len);
+tlrawcell = cell(1,len);
+%Similarly for tl
 
 for i = 1:len
     if isempty(isbt{i})
@@ -70,7 +72,7 @@ for i = 1:len
     indSta([false tooshort]) = [];
     
 %     %Also need N net bt length, apply this later
-    minlen = -inf;
+    minlen = 5;
     
     %Debug: Plot
     if mod(i,opts.verbose.traces) == 0
@@ -80,13 +82,13 @@ for i = 1:len
     end
     %Get info on bts
     hei = length(indSta);
-    btstats = zeros(hei, 8);
+    btstats = zeros(hei, 9);
     btraw = cell(hei,2);
     btd = cell(1,hei);
     for j = 1:hei
         in = kvi{i}(indSta(j):indEnd(j)+1);
         me = kvm{i}(indSta(j):indEnd(j));
-        frc = median(ffil{i}(in(1):in(end))); %Median force is the frc this occured at ...? or use f0?
+        frc = median(ffil{i}(in(1):in(end))); %Median force is the frc this occured at; since its ffb it shouldn't matter how exactly this is gotten
         dwst = in(2)-in(1);
         dwen = in(end)-in(end-1);
         ttot = in(end)-in(1);
@@ -103,7 +105,7 @@ for i = 1:len
             ctotvn = NaN;
         end
         
-        btstats(j,:) = [frc dwst/opts.Fs dwen/opts.Fs ttot/opts.Fs ctot ctot./ttotv*opts.Fs ctotvn/ttotvn*opts.Fs (ttot-dwen-dwst)/opts.Fs];
+        btstats(j,:) = [frc dwst/opts.Fs dwen/opts.Fs ttot/opts.Fs ctot ctot./ttotv*opts.Fs ctotvn/ttotvn*opts.Fs (ttot-dwen-dwst)/opts.Fs (ttot-dwst)/opts.Fs];
         btraw(j,:) = {in me};
         btd{j} = data{i}(in(1):in(end));
     end
@@ -112,6 +114,43 @@ for i = 1:len
     btrawcell{i} = btraw';
     btdata{i} = btd;
     %^ note the transposes, so [a{:}] works below
+end
+
+%Do a separate loop for tloc sections, since there's some short-circuit continues above that would skip this section
+for i = 1:len
+    %Use same indSta/indEnd
+    %start of backtracks is isbt 0 -> 1
+    indSta = find(diff([0 isbt{i} 0]) == 1);
+    %end of backtracks is isbt 1 -> 0
+    indEnd = find(diff([0 isbt{i} 0]) == -1);
+    
+    %But unlike in bt, do not exit for empty indSta/indEnd to get data on tloc runs
+    
+    %Get info on tlocs
+    hei = length(indSta);
+    tmpddist = cell(1,hei+1);
+    tmpbdist = cell(1,hei+1);
+    tlfrc = zeros(1,hei+1);
+    tldist = zeros(1,hei+1);
+    tlraw = cell(hei+1,2);
+    %Now we end at indSta, start at indEnd
+    % Overlap OK due to shared dwells (we'll remove dwSta and dwEnd later
+    tindSta = [1 indEnd];
+    tindEnd = [indSta length(kvi{i})];
+    % indSta/indEnd should be interior, so the [1 x] and [x len] are ok
+    for j = 1:hei+1
+        in = kvi{i}(tindSta(j):tindEnd(j)+1);
+        me = kvm{i}(tindSta(j):tindEnd(j));
+        tlfrc(i) = median(ffil{i}(in(1):in(end)));
+        tldist(j) = me(end)-me(1);
+        tmp = diff(in);
+        tmpddist{i} = tmp(2:end-1);
+        tmpbdist{i} = diff(me);
+        
+        tlraw(j,:) = {in me};
+    end
+    
+    tlrawcell{i} = tlraw;
 end
 
 %Rearrange cells
@@ -132,6 +171,7 @@ indorder = [4 5 6 2 3 8 7];
 means = cell(1,10);
 stdevs = cell(1,10);
 nns = cell(1,10);
+iscon = 2; %Which plots involve contour, and need a bin to be shifted
 for i = 1:7
     itn = indorder(i);
     [cts, bdys]=arrayfun(@(z,zz) nhistc(bts(bts(:,1)>z & bts(:,1)< zz, itn)), fbins(1:end-1), fbins(2:end), 'Uni', 0);
@@ -139,6 +179,17 @@ for i = 1:7
     stdevs{i} = arrayfun(@(z,zz) std(bts(bts(:,1)>z & bts(:,1)< zz, itn), 'omitnan'), fbins(1:end-1), fbins(2:end), 'Uni', 0);
     nns{i} = arrayfun(@(z,zz) length(bts(bts(:,1)>z & bts(:,1)< zz, itn)), fbins(1:end-1), fbins(2:end), 'Uni', 0);
     
+    if ~isinf(minlen) && any(i == iscon)
+        %Convert from bdys to edges
+        bsz = mean(diff(bdys));
+        edges = [bdys - bsz/2 bdys(end)+bsz/2] ;
+        %Check that minlen is within the bin range
+        if minlen > edges(1)
+            %Then, shift bdys and cts by an amount
+            bdys(1) = (minlen(1) + edges(2)) /2;
+            cts(1) = cts(1) * (edges(2) - edges(1)) / (edges(2) - minlen);
+        end
+    end
     subplot2([3,4],i), hold on, cellfun(@plot, bdys, cts)
     title(fgtits{i})
     xlim([0 xmxs(i)])
@@ -186,7 +237,8 @@ nns{10} = cellfun(@(z) length(z), ssz, 'Uni', 0);
 subplot2([3,4],10), hold on, cellfun(@plot, bdys, cts)
 title('Step Dist')
 xlim([0 30])
-%%in progress
+
+%For those histograms where there is a cmin, account for this by shifting x, scaling y
 
 
 means = [means{:}];
@@ -201,62 +253,3 @@ nns = reshape(nns, 3, [])';
 
 a = [means stdevs nns];
 assignin('base', 'ppkvstats', a) %super messy but w/e
-
-return
-% 
-% 
-% %collect tloc runs
-% len = length(dcrop);
-% tl = cell(1,len);
-% tlf = cell(1,len);
-% for i = 1:len
-%     %start of tloc is istl 0 -> 1
-%     indSta = find(diff(istl{i}) == -1);
-%     %end of tloc is istl 1 -> 0
-%     indEnd = [find(diff(istl{i}) == -1) length(istl{i})];
-%     
-%     if istl{i}(1)
-%         indSta = [1 indSta]; %#ok<AGROW>
-%     end
-%     
-%     hei = length(indSta);
-%     tmptl = cell(1, hei);
-%     tmptlf = cell(1, hei);
-%     for j = 1:hei
-%         tmptl{j} = dcrop{i}(indSta(j):indEnd(j));
-%         tmptlf{j} = fcrop{i}(indSta(j):indEnd(j));
-%     end
-%     tl{i} = tmptl;
-%     tlf{i} = tmptlf;
-% end
-% 
-% %unpack
-% tl = [tl{:}];
-% tlf = [tlf{:}];
-% tl = tl(~cellfun(@isempty, tl));
-% tlf = tlf(~cellfun(@isempty, tlf));
-% 
-% tlheis = cellfun(@range, tl);
-% 
-% %n events per bp
-% df = dfil(~cellfun(@isempty, dfil));
-% sumbp = cellfun(@(x)x(1)-min(x), df);
-% sumbp = sum(sumbp);
-% 
-% fprintf( '%0.2f events per kb\n' , 1000 * sum([szs{:}]) / sumbp);
-% 
-% 
-% %get forces
-% tlf0 = cellfun(@(x) x(1), tlf);
-% 
-% %do PWD of 5-15pN ones that span at least 50bp
-% sumPWDV1b(tl(tlf0 > 5 & tlf0 < 15 & tlheis > 50));
-% tmpfg = gcf;
-% tmpfg.Name = 'PWD Tloc';
-% 
-% btheis = cellfun(@range, bt);
-% btf0 = cellfun(@(x) x(1), btf);
-% %do PWD of bt, too why not
-% sumPWDV1b(bt(btf0 > 5 & btf0 < 15 & btheis > 50));
-% tmpfg2 = gcf;
-% tmpfg2.Name = 'PWD Bt';

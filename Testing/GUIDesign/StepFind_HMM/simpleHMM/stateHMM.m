@@ -2,40 +2,40 @@ function out = stateHMM(inRealModel, inModel)
 %Fits a HMM to a n-state hopping problem; generates test data if nothing supplied
 ns = 4;
 
-% if nargin<1
-%     %simulate trace data
-%     % reals = [1 2 4.5];
-%     realmu = (1:ns)/ns + randn(1,ns)/ns^2/2;
-%     realsig = 1/ns;
-%     % reala = [.99 .002 .008; .004 .99 .006; .009 .001 .99];
-%     reala = rand(ns) / 100 /ns + diag(ones(1,ns));
-%     reala = bsxfun(@rdivide, reala, sum(reala,2));
-%     % reala = [.95 .01 .04; .02 .95 .03; .04 .01 .95];
-%     % reala = [.95 .05 0; .02 .95 .03; 0 .05 .95];
-%     len = 1e5;
-%     realst = zeros(1,len);
-%     realpi = [1 0 0];
-%     realst(1) = 1; %start in state 1
-%     for i = 2:len
-%         %roll dice
-%         newstate = find( rand(1) < cumsum(reala(realst(i-1),:)), 1);
-%         realst(i) = newstate;
-%     end
-%     tr = realmu(realst);
-%     tr = tr + realsig * randn(1,len);
-%     real.mu = realmu;
-%     real.sig = realsig;
-%     real.a = reala;
-%     real.tr = tr;
-%     real.st = realst;
-%     real.pi = realpi;
-% else
-% %     tr = inRealModel.tr;
-% %     len = length(tr);
-% %     realmu = inRealModel.mu;
-% %     realst = inRealModel.st;
-% %     real = inRealModel;
-% end
+if nargin<1
+    %simulate trace data
+    % reals = [1 2 4.5];
+    realmu = (1:ns)/ns + randn(1,ns)/ns^2/2;
+    realsig = 1/ns;
+    % reala = [.99 .002 .008; .004 .99 .006; .009 .001 .99];
+    reala = rand(ns) / 100 /ns + diag(ones(1,ns));
+    reala = bsxfun(@rdivide, reala, sum(reala,2));
+    % reala = [.95 .01 .04; .02 .95 .03; .04 .01 .95];
+    % reala = [.95 .05 0; .02 .95 .03; 0 .05 .95];
+    len = 1e5;
+    realst = zeros(1,len);
+    realpi = [1 0 0];
+    realst(1) = 1; %start in state 1
+    for i = 2:len
+        %roll dice
+        newstate = find( rand(1) < cumsum(reala(realst(i-1),:)), 1);
+        realst(i) = newstate;
+    end
+    tr = realmu(realst);
+    tr = tr + realsig * randn(1,len);
+    real.mu = realmu;
+    real.sig = realsig;
+    real.a = reala;
+    real.tr = tr;
+    real.st = realst;
+    real.pi = realpi;
+else
+%     tr = inRealModel.tr;
+%     len = length(tr);
+%     realmu = inRealModel.mu;
+%     realst = inRealModel.st;
+%     real = inRealModel;
+end
 
 if nargin<2 %generate model guess
 %     a = [.99 .005 .005; .005 .99 .005; .005 .005 .99];
@@ -209,7 +209,7 @@ st = zeros(1,len);
 for i = len-1:-1:1
     st(i) = vitdp(i,st(i+1));
 end
-st = st + lb - 1;
+% st = st + lb - 1;
 
 figure, plot(y(st))
 

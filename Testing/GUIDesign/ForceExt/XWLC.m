@@ -17,8 +17,9 @@ end
 if nargin < 1 || isempty(F)
     F = 0.1:0.1:45;
     testplot=1;
+else
+    testplot = 0;
 end
-
 
 switch method
     case 2 %phage, legacy

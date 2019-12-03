@@ -4,7 +4,7 @@ function [outData, outRawData, rawColNames] = ReadMiniFile_minaV2(filepath)
 %Columns:
    %CycleCount/n	A_PsdY	A_PsdSum	A_Iris	B_PsdY	B_PsdSum	B_Iris	X_force	Y_force	Z_force	Tension	A_dist-Y	B_dist-Y	time(sec)	Status
 %Using extra columns is fine, too few is bad
-numColumns = 15;
+numColumns = 13;
 
 if nargin < 1 || isempty(filepath)
     %Grab, load file if not supplied
@@ -24,10 +24,10 @@ outRawData = textscan(fid, fmt,'CommentStyle','#');
 
 %Trim the data to what we want - force (tension), extension, time
 outData = cell(1,3);
-outData{1} = outRawData{end-4}';
+outData{1} = outRawData{end-3}'; %Force
 % outData{2} = ((outRawData{end-3}+outRawData{end-2})/2)'; %is this correct? empirically, it seems so
-outData{2} = outRawData{end-3};
-outData{3} = (outRawData{end-1}-outRawData{end-1}(1))';
+outData{2} = outRawData{end-2}'; %Distance
+outData{3} = (outRawData{end}-outRawData{end}(1))'; %Time
 
 %Save as phage MAT file for opening
 stepdata.time = outData(3);

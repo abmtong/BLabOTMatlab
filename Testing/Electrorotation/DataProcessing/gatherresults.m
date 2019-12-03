@@ -189,7 +189,7 @@ end
 % %about -69.7pN nm for kT = 4.14 tdr = 10; hence -209.1 per rotation
 
 fg.Position = [0 0 1920 1080];
-folnam = 'gr';
+folnam = 'gr2';
 if ~exist(folnam, 'dir')
     mkdir(folnam)
 end

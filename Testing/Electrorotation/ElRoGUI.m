@@ -4,7 +4,7 @@ function ElRoGUI()
 %Add paths
 thispath = fileparts(mfilename('fullpath'));
 addpath ( thispath)                      %PhageGUICrop
-% addpath ([thispath filesep 'Helpers'])        %Filename sorter
+addpath ([thispath filesep 'Helpers'])        %Filename sorter
 % addpath ([thispath filesep 'StepFind_KV'])    %windowFilter
 % addpath ([thispath filesep 'PairwiseDist'])   %PWD
 %Load settings file (or create one)
@@ -50,6 +50,7 @@ subRAxisB= axes(panaxs, 'Position', [.85, .05, .14, .1]);
 subRAxisT= axes(panaxs, 'Position', [.85, .15, .14, .1]);
 hold(subRAxisT, 'on')
 hold(subRAxisB, 'on')
+%Move these uicontrols out of the way, but keep them real so I don't have to remove their references
 subRAxisB.Position = subRAxisB.Position + [1 0 0 0];
 subRAxisT.Position = subRAxisT.Position + [1 0 0 0];
 

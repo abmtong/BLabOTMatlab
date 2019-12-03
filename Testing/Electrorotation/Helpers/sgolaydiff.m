@@ -24,6 +24,6 @@ else
     fwid = (size(sgf, 1) - 1) / 2; %= size(sgf, 1) == sgparams{2}
 end
 %Crop start and end, because edge effects of @conv (and I don't have the transients for first derivative)
-inyCr =   iny( 1 + fwid : end - fwid - 1);
-inyF =   inyF( 1 + fwid : end - fwid - 1);
-dinyF = dinyF( 1 + fwid : end - fwid - 1);
+inyCr =   iny( 1 + fwid : end - fwid);
+inyF =   inyF( 1 + fwid : end - fwid);
+dinyF = dinyF( 1 + fwid : end - fwid);

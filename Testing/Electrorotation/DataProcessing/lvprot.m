@@ -1,4 +1,4 @@
-function out = lvprot(inx, iny)
+function [outv outx] = lvprot(inx, iny)
 
 %Takes input protocol, outputs what LV would use (circsmooth by 3, spline)
 %Splining doesn't do much actually
@@ -20,4 +20,12 @@ end
 xv = (0:.1:359.9)';
 yv = spline([inx; 360], [iny; iny(1)], xv);
 
-out = [xv yv];
+outv = [xv yv];
+
+if nargout > 1
+    %Mimic labview protocol position-time calculation
+    dt = 0.01;
+    t =3;
+    
+    
+end

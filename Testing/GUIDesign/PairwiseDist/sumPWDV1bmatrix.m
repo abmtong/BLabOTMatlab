@@ -1,6 +1,8 @@
-function sumPWDV1bmatrix(data, fils, pfils)
+function sumPWDV1bmatrix(data, fils, pfils, binsz)
 
-binsz = .1;
+if nargin < 4
+    binsz = .1;
+end
 if nargin < 3
     pfils = [1 5 10] * .1/binsz;
     pfils = round(pfils);

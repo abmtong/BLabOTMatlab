@@ -20,26 +20,44 @@ end
 
 %Apply @sgolaydiff to input
 [cvel, cfilt, ccrop] = cellfun(@(x)sgolaydiff(x, opts.sgp), c, 'uni', 0);
-
 %Convert velocity from /pt to /s
 cvel = cellfun(@(x) double(x)*opts.Fs, cvel, 'Uni', 0); 
-
 %Concatenate velocities
 cf2 = [cvel{:}];
 
-%Make hist bounds
-mincf = floor(min(cf2) / opts.vbinsz) * opts.vbinsz;
-maxcf =  ceil(max(cf2) / opts.vbinsz) * opts.vbinsz;
-xbins = mincf:opts.vbinsz:maxcf;
-
 %Bin values
-% ccts = hist(cf2, xbins); lets move away from @hist
-ccts = histcounts(cf2, xbins);
-%@histcounts uses them as edges, so convert to centers
-xbins = ( xbins(1:end-1) + xbins(2:end) ) /2; 
+[ccts, xbins] = nhistc(cf2, opts.vbinsz);
 
-%Normalize
-ccts = ccts / sum(ccts) / opts.vbinsz;
-
-% %Debug: plot
-% figure, bar(xbins, ccts);
+if nargout < 1 %Plot instead of output
+    %Transform velocity to positive, nm
+    xbins = -xbins*.34;
+    ccts = ccts / .34;
+    %Velocity cutoff for fitting
+    vmin = 0;
+    vmax = 100;
+    xf = xbins(xbins>vmin & xbins < vmax);
+    vf = ccts(xbins>vmin & xbins < vmax);
+    
+    %Fit two gaussians, code taken from phagepause
+    npdf = @(x0, y) normpdf(y, x0(1), x0(2))*x0(3);
+    bigauss = @(x0, y) normpdf(y, x0(1), x0(2))*x0(3) + normpdf(y, x0(4), x0(5))*x0(6) ;
+    xg = [0 6 .2 33 6 .8];
+    lb = [0 0 0 0 0 0];
+    ub = [0 inf 1 inf inf 1];
+    
+    %Fit using @lsqcurvefit
+    fit = lsqcurvefit(bigauss, xg, xf, vf, lb, ub, optimoptions('lsqcurvefit', 'Display', 'none'));
+    fp = bigauss(fit, xbins);
+    
+    %plot
+    figure('Name', sprintf('vdist %s: Speed %0.2f +- %0.2f (%0.2f SEM) nm/s, (%0.2f,%0.2f) pct (tloc,paused)\n', inputname(1), fit(4:5), fit(5)/ sqrt(fit(6)*sum(cellfun(@length, cvel))/opts.sgp{2}), 100*fit(6), 100*fit(3)))
+    bar(xbins, ccts), hold on
+    plot(xbins, fp, 'LineWidth', 2, 'Color', 'k')
+    plot(xbins, npdf(fit(1:3),xbins), ':', 'LineWidth', 1.5, 'Color', 'k')
+    plot(xbins, npdf(fit(4:6),xbins), '--', 'LineWidth', 1, 'Color', 'k')
+    line(fit(4) * [1 1], [0 max(fp)*2], 'LineStyle', '--', 'LineWidth', 1, 'Color', 'k')
+    %N for SEM purposes here is Ntot * pct / framelen, i.e. framelen pts become one [works for order 0 or 1, higher order = 'less N']
+    %  we plot all the data to make the histogram smoother, but for stats use the decimated data
+    xlim([-100 100])
+    clear ccts
+end
