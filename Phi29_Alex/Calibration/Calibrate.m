@@ -114,7 +114,8 @@ switch opts.lortype
     case 3 %time delay
         lb = [0 0 0 0];
         ub = [10*Fcg 10*Dg 1 opts.Fs*10];
-        Guess = [Fcg, Dg, .3, opts.Fnyq/2];
+%         Guess = [Fcg, Dg, .3, opts.Fnyq/2];
+        Guess = [Fcg, Dg, .3, 1e4];
     case 5 %Fc D al f0 g0 f1 g1
         lb = [0 0 0 0 0 0 0];
         ub = [10*Fcg, 10*Dg, 1 inf inf inf inf];
@@ -153,12 +154,13 @@ if opts.verbose
     loglog(opts.ax, [Fall(1) Fbf Fall(end)], (Lorentzian(fit,[Fall(1) Fbf Fall(end)], opts)), 'Color', 'k', 'LineWidth',2)
     Pmin = min(Pbf);
     Pmax = max(Pbf);
-    text(Fbf(1),(Pmin^2*Pmax)^.33,...
+    text(opts.Fmin,(Pmin^2*Pmax)^.33,...
         sprintf(' %s \n fc: %0.0fHz \n D: %0.3f\n al: %0.3f\n f3: %0.1f \n \\alpha: %0.0fnm/NV \n \\kappa: %0.3fpN/nm \n \\alpha*\\kappa: %0.1fpN/NV \n r: %dnm Sum: %0.2fV wV: %0.2e \n ',opts.name,fit,a,k,a*k, opts.ra, opts.Sum, opts.wV),...
         'FontSize',12);
 %         sprintf(' %s \n \\itf_{c}\\rm: %0.0fHz \n \\alpha: %0.0fnm/NV \n \\kappa: %0.3fpN/nm \n \\alpha*\\kappa: %0.1fpN/NV',opts.name,fit(1),a,k,a*k),...
 %         'FontSize',12);
-    opts.ax.XLim = [Fbf(1)*.9, Fbf(end)*1.1];
+%     opts.ax.XLim = [Fbf(1)*.9, Fbf(end)*1.1];
+    opts.ax.XLim = [opts.Fmin*.09, opts.Fmax*1.1];
     opts.ax.YLim = [Pmin*.9, Pmax*1.1];
 end
 

@@ -39,8 +39,8 @@ bar(bins-binsz/2, hy/hscale)
 gy = pdf(gd, bins);
 plot(bins-binsz/2, gy, 'LineWidth', 2);
 plot(binall-binsz/2, gy2, 'LineWidth', 2);
-
+xlim([0 cutoff*1.5])
 herr = sqrt(hy.*(1-hy/n));
 errorbar(bins-binsz/2, hy/hscale, herr/hscale, '.')
-xlim([0 cutoff*1.5])
-fprintf('gamma: %0.2f, gamma2: %0.2f, nmin: %0.2f\n', gd.a, gd2(1), nmin);
+
+fprintf('gamma mle: [%0.2f, %0.3f], gamma lsq:[%0.2f, %0.3f], mean/sd/sem: [%0.3f %0.3f %0.5f], nmin: %0.2f\n', [gd.a, gd.b], gd2, mean(datac), std(datac), std(datac)/sqrt(length(datac)), nmin);

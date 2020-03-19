@@ -5,8 +5,23 @@ if nargin<2 %generate model guess
     inModel = [];
 end
 
+if nargin<1
+    %simulate hopping, n-state
+    ns = 3;
+    len=1e4;
+    sig = .5;
+    tprb = .99;
+    st = rand(1,len);
+    st = double(st>tprb);
+    st = mod(1+cumsum(st), ns);
+    tr = st + randn(1,len)*sig;
+else
+    tr = double(tr(:)');
+    len = length(tr);
+end
+
 if ~isfield(inModel, 'ns')
-    ns = 2;
+    ns = 3;
     inModel.ns = ns;
 else
     ns = inModel.ns;
@@ -23,15 +38,15 @@ else
 end
 
 if ~isfield(inModel, 'mu')
-    mu = (2:ns+1)/(ns+2) * (max(tr) - min(tr)) + min(tr); %evenly divided
+%     mu = ((1:ns)+1)/(ns+2) * (max(tr) - min(tr)) + min(tr); %evenly divided by range
+    mu = prctile(tr, ((1:ns)+1)/(ns+2) * 100);%evenly divided by prb
     inModel.mu = mu;
 else
     mu = inModel.mu;
 end
 
 if ~isfield(inModel, 'sig')
-    sig = sqrt(estimateNoise(tr, [], 2));
-%     sig = std(tr);
+    sig = sqrt(estimateNoise(tr));
     inModel.sig = sig;
 else
     sig = inModel.sig;
@@ -47,7 +62,7 @@ end
 
 len = length(tr);
 
-%precalc & normalize (necessary?) normpdf
+%precalc & normalize normpdf
 gauss = @(x) exp( -(mu-x).^2 /2 /sig/sig);
 npdf = zeros(len,ns);
 for i = 1:len
@@ -57,21 +72,21 @@ end
 npdf = bsxfun(@rdivide, npdf, sum(npdf,2));
 
 
-sta1 = tic;
-%calculate alpha
-al = zeros(len,ns);
-scal = zeros(1,len);
-al(1,:) = pi .* npdf(1,:);
-scal(1) = sum(al(1,:));
-al(1,:) = al(1,:)/scal(1);
-for i = 2:len
-    al(i,:) = al(i-1,:) * a .* npdf(i,:);
-    scal(i) = sum(al(i,:));
-    al(i,:) = al(i,:)/scal(i);
-end
-ta1 = toc(sta1);
+% sta1 = tic;
+% %calculate alpha
+% al = zeros(len,ns);
+% scal = zeros(1,len);
+% al(1,:) = pi .* npdf(1,:);
+% scal(1) = sum(al(1,:));
+% al(1,:) = al(1,:)/scal(1);
+% for i = 2:len
+%     al(i,:) = al(i-1,:) * a .* npdf(i,:);
+%     scal(i) = sum(al(i,:));
+%     al(i,:) = al(i,:)/scal(i);
+% end
+% ta1 = toc(sta1);
 
-sta2 = tic;
+% sta2 = tic;
 %non-matrix way, probably slower for large matricies
 al2 = zeros(len,ns);
 scal2 = zeros(1,len);
@@ -89,19 +104,19 @@ for t = 1:len-1
     scal2(t+1) = sum(al2(t+1,:));
     al2(t+1,:) = al2(t+1,:)/scal2(t+1);
 end
-ta2 = toc(sta2);
+% ta2 = toc(sta2);
 
-stb1 = tic;
-%calculate beta
-be = zeros(len,ns);
-be(len,:) = ones(1,ns);
-be(len,:) = be(len,:) / scal(len);
-for i = len-1:-1:1
-    be(i,:) = be(i+1, :) .* npdf(i+1,:) * a.' / scal(i);
-end
-tb1 = toc(stb1);
-
-stb2 = tic;
+% stb1 = tic;
+% %calculate beta
+% be = zeros(len,ns);
+% be(len,:) = ones(1,ns);
+% be(len,:) = be(len,:) / scal(len);
+% for i = len-1:-1:1
+%     be(i,:) = be(i+1, :) .* npdf(i+1,:) * a.' / scal(i);
+% end
+% tb1 = toc(stb1);
+% 
+% stb2 = tic;
 %non-matrix way
 be2 = zeros(len,ns);
 be2(len,:) = ones(1,ns);
@@ -115,9 +130,11 @@ for t = len-1:-1:1
         be2(t,i) = temp / scal2(t);
     end
 end
-tb2 = toc(stb2);
-
-fprintf('al: matrix %0.5fs, for %0.5fs; be: matrix %0.5fs, for %0.5fs\n', ta1, ta2, tb1, tb2)
+% tb2 = toc(stb2);
+al = al2;
+scal = scal2;
+be = be2;
+% fprintf('al: matrix %0.5fs, for %0.5fs; be: matrix %0.5fs, for %0.5fs\n', ta1, ta2, tb1, tb2)
 
 %calculate gamma
 ga = al .* be;
@@ -152,14 +169,15 @@ newa = bsxfun(@rdivide, newa, sum(newa,2));
 %}
 
 
-%more rigorous way
-xi = zeros(len-1, ns, ns);
-for i = 1:len-1
-    xi(i,:,:) = a .* bsxfun(@times, al(i,:).',be(i+1,:) .* npdf(i+1,:));
-end
-%normalize
-%could also do in loop (temp = ..., tempsum = sum(sum(temp)), xi(i,:,:) = temp/tempsum, but matrix ops should be faster?
-xi = bsxfun(@rdivide, xi, sum(sum(xi,3),2));
+% %more rigorous way
+% xi = zeros(len-1, ns, ns);
+% for i = 1:len-1
+%     xi(i,:,:) = a .* bsxfun(@times, al(i,:).',be(i+1,:) .* npdf(i+1,:));
+% end
+% %normalize
+% %could also do in loop (temp = ..., tempsum = sum(sum(temp)), xi(i,:,:) = temp/tempsum, but matrix ops should be faster?
+% xi = bsxfun(@rdivide, xi, sum(sum(xi,3),2));
+
 
 %non-matrix way, probably slower unless JIT
 xi2 = zeros(len-1,ns,ns);
@@ -170,12 +188,13 @@ for t = 1:len-1
         end
     end
 end
-xi2 = bsxfun(@rdivide, xi2, sum(sum(xi,3),2));
+xi2 = bsxfun(@rdivide, xi2, sum(sum(xi2,3),2));
 
 %it should be the case that ga = sum(xi, 3); : true
 % ga2 = sum(xi,3);
 % ga3 = sum(xi2,3);
 
+xi = xi2;
 %calculate new var.s
 newpi = ga(1,:);
 newa = squeeze(sum(xi,1));
@@ -192,16 +211,33 @@ for i = 1:len
 end
 %normalize
 newnpdf = bsxfun(@rdivide, newnpdf, sum(newnpdf,2));
+% tic
+% %vitterbi
+% vitdp = zeros(len-1, ns); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
+% vitdp(1,:) = 1:ns;
+% vitsc = newpi .* newnpdf(1,:);
+% for i = 1:len-1
+%     [vitsc, vitdp(i,:)] = max(bsxfun(@times, newa, vitsc'), [], 1);
+%     vitsc = vitsc .* newnpdf(i+1,:) / sum(vitsc); %renormalize
+% end
+% toc
 
-%vitterbi
-vitdp = zeros(len-1, ns); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
-vitdp(1,:) = 1:ns;
-vitsc = newpi .* newnpdf(1,:);
+%vit no bsxfun
+% tic
+vitdp2 = zeros(len-1, ns); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
+vitdp2(1,:) = 1:ns;
+vitsc2 = newpi .* newnpdf(1,:);
 for i = 1:len-1
-    [vitsc, vitdp(i,:)] = max(bsxfun(@times, newa, vitsc'), [], 1);
-    vitsc = vitsc .* newnpdf(i+1,:) / sum(vitsc); %renormalize
+    for j = 1:ns
+        [vitsc2(j), vitdp2(i,j)] = max( newa(:,j) .* vitsc2' );
+    end
+%     [vitsc, vitdp(i,:)] = max(bsxfun(@times, newa, vitsc'), [], 1);
+    vitsc2 = vitsc2 .* newnpdf(i+1,:) / sum(vitsc2); %renormalize
 end
 
+% toc
+vitsc = vitsc2;
+vitdp = vitdp2;
 %assemble path via backtracking
 st = zeros(1,len);
 [~, st(len)] = max(vitsc);
@@ -210,19 +246,22 @@ for i = len-1:-1:1
 end
 
 %vitterbi, just apply w/ inModel
-vitdp = zeros(len-1, ns); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
-vitdp(1,:) = 1:ns;
-vitsc = pi .* npdf(1,:);
+vitdpim = zeros(len-1, ns); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
+vitdpim(1,:) = 1:ns;
+vitscim = pi .* npdf(1,:);
 for i = 1:len-1
-    [vitsc, vitdp(i,:)] = max(bsxfun(@times, a, vitsc'), [], 1);
-    vitsc = vitsc .* npdf(i+1,:) / sum(vitsc); %renormalize
+    for j = 1:ns
+        [vitscim(j), vitdpim(i,j)] = max( newa(:,j) .* vitscim' );
+    end
+%     [vitsc, vitdp(i,:)] = max(bsxfun(@times, newa, vitsc'), [], 1);
+    vitscim = vitscim .* newnpdf(i+1,:) / sum(vitscim); %renormalize
 end
 
 %assemble path via backtracking
 st2 = zeros(1,len);
-[~, st2(len)] = max(vitsc);
+[~, st2(len)] = max(vitscim);
 for i = len-1:-1:1
-    st2(i) = vitdp(i,st2(i+1));
+    st2(i) = vitdpim(i,st2(i+1));
 end
 
 finish.a = newa;

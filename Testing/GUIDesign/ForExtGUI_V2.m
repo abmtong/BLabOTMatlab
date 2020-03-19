@@ -37,7 +37,7 @@ extFc = [];
 timFc = [];
 fil = [];
 dec = [];
-xwlcData = {'xwlcData', zeros(1,3)}; %= {'name' [PL SM CL]}
+xwlcData = {'xwlcData', zeros(1,5)}; %= {'name' [PL SM CL offX offF]}
 
 %Construct figure
 scrsz = get(0, 'ScreenSize');
@@ -78,16 +78,16 @@ trcNotes = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.7, 0
 
 %Left bar of text inputs, sliders, etc.
 panlef = uipanel('Position',[0 0 panwid_left 1-panwid_top]);
-fileSlider= uicontrol('Parent', panlef, 'Style', 'slider', 'Units', 'normalized', 'Position', [0 .9 1 .1], 'Callback', @fileSlider_callback);
+fileSlider= uicontrol('Parent', panlef, 'Style','slider','Units', 'normalized', 'Position', [0 .9 1 .1], 'Callback', @fileSlider_callback);
 txtSlider2= uicontrol('Parent', panlef, 'Style', 'text', 'Units', 'normalized', 'Position', [0.15 .901 .7 .05], 'String', 'mmddyyN00');
-clrGraph  = uicontrol('Parent', panlef, 'Units', 'normalized', 'Position', [0 .775 1 .025], 'String', 'Clear Graph', 'Callback', @clrGraph_callback);
+clrGraph  = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [0 .775 1 .025], 'String', 'Clear Graph', 'Callback', @clrGraph_callback);
 filtFactT = uicontrol('Parent', panlef, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .85 .5 .025], 'String', 'Filter');
 filtFact  = uicontrol('Parent', panlef, 'Style', 'edit', 'Units', 'normalized', 'Position', [0 .8 .5 .05], 'String', '[]', 'Callback', @refilter_callback);
 deciFactT = uicontrol('Parent', panlef, 'Style', 'text', 'Units', 'normalized', 'Position', [.5 .85 .5 .025], 'String', 'Decim.');
 deciFact  = uicontrol('Parent', panlef, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .8 .5 .05], 'String', '25', 'Callback', @refilter_callback);
 traceTxt  = uicontrol('Parent', panlef, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .65 1 .05], 'String', '00bp/s, 00pts');
-datTable  = uitable  ('Parent', panlef, 'Units', 'normalized', 'Position', [-.1 .35 1.1 .25], 'Data', zeros(8,1), 'RowName', {'Last' 'PL' 'SM' 'CL' 'OffX' 'Avg' 'PL' 'SM' 'CL' 'OffX'}, 'ColumnName', '');
-clrHists  = uicontrol('Parent', panlef, 'Units', 'normalized', 'Position', [0 .625 1 .025], 'String', 'Clear Data', 'Callback', @clrHists_callback);
+datTable  = uitable  ('Parent', panlef,                  'Units', 'normalized', 'Position', [-.1 .35 1.1 .25], 'Data', zeros(8,1), 'RowName', {'Last' 'PL' 'SM' 'CL' 'OffX' 'OffF' 'Avg' 'PL' 'SM' 'CL' 'OffX' 'OffF'}, 'ColumnName', '');
+clrHists  = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [0 .625 1 .025], 'String', 'Clear Data', 'Callback', @clrHists_callback);
 plotCal   = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [0 .3 .5 .05], 'String', 'Plot Cal', 'Callback', @plotCal_callback);
 plotOff   = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [.5 .3 .5 .05], 'String', 'Plot Off', 'Callback', @plotOff_callback);
 
@@ -302,19 +302,19 @@ fig.Visible = 'on';
 %         opts.inGuess = [30 500 4000];
         
         %Do fitting
-        xwlcfit = fitForceExt(extFc, frcFc, opts, 0);
+        [xwlcfit, fitfcn] = fitForceExt(extFc, frcFc, opts, 0);
         
         %Add to xwlcData, if new (else replace)
         ind = find(strcmp(name, xwlcData(:,1)));
         if ind
-            xwlcData{ind, 2} = xwlcfit ./ [1 1 1000 1];
+            xwlcData{ind, 2} = xwlcfit ./ [1 1 1000 1 1];
         else %Not found, append to end
-            xwlcData(end+1,:) = {name xwlcfit ./ [1 1 1000 1]};
+            xwlcData(end+1,:) = {name xwlcfit ./ [1 1 1000 1 1]};
         end
         
         %Plot residual, fit
 %         fitx = xwlcfit(3) * .34 * ForceExt_XWLC_Wikipedia(frcFc, xwlcfit(1),xwlcfit(2)) + xwlcfit(4);
-        fitx = xwlcfit(3) * .34 * XWLC(frcFc, xwlcfit(1),xwlcfit(2), [], 3) + xwlcfit(4);
+        fitx = fitfcn(xwlcfit, frcFc); % xwlcfit(3) * .34 * XWLC(frcFc, xwlcfit(1),xwlcfit(2), [], 3) + xwlcfit(4);
         extresid = extFc - fitx;
         delete(fitLine)
         fitLine = plot(subAxis, fitx, frcFc, 'Color', 'k', 'LineWidth', 1);
@@ -339,13 +339,13 @@ fig.Visible = 'on';
         
         %Average XWLC data
         len = size(xwlcData, 1);
-        dat = zeros(1,4);
+        dat = zeros(1,5);
         for i = 2:len
             dat = dat + xwlcData{i,2};
         end
         dat = dat / (len-1);
         %Update table
-        datTable.Data = [0; (xwlcfit ./ [1 1 1000 1])'; len-1; dat';];
+        datTable.Data = [0; (xwlcfit ./ [1 1 1000 1 1])'; len-1; dat';];
     end
 
     function ensembFit_callback(~,~)

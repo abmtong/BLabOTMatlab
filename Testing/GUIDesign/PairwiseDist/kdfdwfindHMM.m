@@ -1,7 +1,7 @@
 function out = kdfdwfindHMM(incon, inmodel, verbose)
 %Fits a HMM to trace incon according to model guess inmodel
 %Acceptable guesses: n states (integer), states (array), full struct of everything
-%Defaults: mu: evenly spaced; a: translocation only, no skipped steps [assumes mu is sorted, makes a @tril]
+%Defaults: mu: evenly spaced; a: translocation only, no skipped steps [assumes mu is sorted-- makes a lower-triangular]
 % sig: estimated with @estimateNoise; pi: end
 
 if nargin < 3
@@ -28,7 +28,7 @@ ns = length(mu);
 len = length(incon);
 dbar = len/ns;
 
-%Translocation matrix == a
+%Translocation matrix == a. By default, can only transition to the next mu
 if isfield(inmodel, 'a')
     a=inmodel.a;
 else
@@ -57,8 +57,7 @@ if isfield(inmodel, 'pi')
     pi = inmodel.pi;
 else
     %pi guess is: start at end
-    pi = zeros(size(mu));
-    pi(end) = 1;
+    pi = normpdf(mu, incon(1), sig);
 end
 
 %Calculate alpha ('forewards variable')
@@ -124,13 +123,13 @@ ga = bsxfun(@rdivide, ga,  sum(ga,2));
 %mle fit
 [~, ml] = max(ga, [], 2);
 
-%calculate xi
-xi = zeros(len-1, ns, ns);
-for i = 1:len-1
-    xi(i,:,:) = a .* bsxfun(@times, al(i,:).',be(i+1,:) .* npdf(i+1,:));
-end
-%normalize
-xi = bsxfun(@rdivide, xi, sum(sum(xi,3),2));
+% %calculate xi
+% xi = zeros(len-1, ns, ns);
+% for i = 1:len-1
+%     xi(i,:,:) = a .* bsxfun(@times, al(i,:).',be(i+1,:) .* npdf(i+1,:));
+% end
+% %normalize
+% xi = bsxfun(@rdivide, xi, sum(sum(xi,3),2));
 
 %{
 %non-matrix way, probably slower
@@ -145,25 +144,25 @@ end
 xi2 = bsxfun(@rdivide, xi2, sum(sum(xi,3),2));
 %}
 
-%calculate new a, pi
-newpi = ga(1,:);
-newa = squeeze(sum(xi,1));
-% newa = bsxfun(@rdivide, newa,  sum(ga(1:end-1,:), 1) );
-newa = bsxfun(@rdivide, newa, sum(newa, 2));
-%%someting slightly wrong with either gamma or xi, norm. not quite working
-
-%calculate new mu
-newmu = zeros(1,ns);
-for i = 1:ns
-    newmu(i) = sum(ga(:,i).*incon') / sum(ga(:,i));
-end
-
-%calc new sig
-newsig = zeros(1,len);
-for i = 1:len
-    newsig(i) = sum( ga(i,:) .* (incon(i) - mu).^2 );
-end
-newsig = sqrt(sum(newsig)/(length(newsig)-1));
+% %calculate new a, pi
+% newpi = ga(1,:);
+% newa = squeeze(sum(xi,1));
+% % newa = bsxfun(@rdivide, newa,  sum(ga(1:end-1,:), 1) );
+% newa = bsxfun(@rdivide, newa, sum(newa, 2));
+% %%someting slightly wrong with either gamma or xi, norm. not quite working
+% 
+% %calculate new mu
+% newmu = zeros(1,ns);
+% for i = 1:ns
+%     newmu(i) = sum(ga(:,i).*incon') / sum(ga(:,i));
+% end
+% 
+% %calc new sig
+% newsig = zeros(1,len);
+% for i = 1:len
+%     newsig(i) = sum( ga(i,:) .* (incon(i) - mu).^2 );
+% end
+% newsig = sqrt(sum(newsig)/(length(newsig)-1));
 
 %vitterbi
 vitdp = zeros(len-1, ns); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
@@ -181,20 +180,18 @@ for i = len-1:-1:1
 end
 
 %Collect start and end
-finish.a = newa;
-finish.mu = newmu;
-finish.sig = newsig;
-finish.pi = newpi;
-finish.st = st;
-finish.fit = mu(st);
-finish.fitmle = mu(ml);
-finish.logp = sum(log(scal)) + log(sum(al(end,:)));
-start.a = a;
-start.mu = mu;
-start.sig = sig;
-start.pi = pi;
-out.start = start;
-out.finish = finish;
+% finish.a = newa;
+% finish.mu = newmu;
+% finish.sig = newsig;
+% finish.pi = newpi;
+out.a = a;
+out.mu = mu;
+out.sig = sig;
+out.pi = pi;
+out.st = st;
+out.fit = mu(st);
+out.fitmle = mu(ml);
+out.logp = sum(log(scal)) + log(sum(al(end,:)));
 
 if verbose
     figure('Name', 'kdfdwfindHMM vit=g mle=r'), plot(incon),hold on, plot(mu(st), 'g'), plot(mu(ml), 'r')

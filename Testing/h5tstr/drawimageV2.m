@@ -1,6 +1,5 @@
-function out = drawimageV2(pos, grn)
+function [out, t] = drawimageV2(pos, grn)
 %Renders a Lumicks image from the InfoWave (pos, uint8 array) and photoncount (grn, uint32 array).
-%If the image is a kymograph or movie, set iskymo = 1 to skip the last line, as it is probably incomplete (could take it, but code won't do it yet)
 %V2: Assumes pixel time is the same, so get via sum(reshape) instead of for loop. ~10X speedup
 
 %Might be expected to discard data when pos == 2, as assumedly the laser is moving, but eh keep, difference probably negligible
@@ -29,5 +28,8 @@ for i = 1:hei
         out(:, i) = sum( reshape(grn(lnstarts(i):lnends(i)) , lnwid, len), 1);
     end    
 end
+
+%Calculate time: t is the time of the start of each line
+t = lnstarts / 78125; %Index of start of each line, Fs=78125Hz
 
 % figure, imshow(out)

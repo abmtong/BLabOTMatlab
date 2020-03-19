@@ -1,6 +1,6 @@
-function outOpts = fitForceExt( inExt, inFor, inOpts, verbose )
+function [outOpts, fitfcn] = fitForceExt( inExt, inFor, inOpts, verbose )
 %Fits a force-extension trace to the XWLC model.
-%opts.inGuess = [PersistenceLength(nm), StretchModulus(pN), ContourLength(bp)]
+%x0 = [PL(nm), SM(pN), CL(bp) OffX(nm) OffF(pN)]
 
 %lsqcurvefit requires double
 if ~isa(inExt,'double')
@@ -16,10 +16,13 @@ end
 
 %Default Params
 %Cutoff forces, for fitting
-opts.loF = 5;
-opts.hiF = 30;
-%Guess for fitting: [ PL(nm) SM(pN) CL(bp) Off(nm) ]
-opts.inGuess = [50 1200 4000 0];
+opts.loF = 1;
+opts.hiF = inf;
+%Guess for fitting: [ PL(nm) SM(pN) CL(bp) Off(nm) Off(F) ]
+opts.x0 = [50 1200 4000 0 0];
+%Fitting bounds: Override to allow for e.g. force/ext offsets to be set
+opts.lb = [0   0   0   -00 -0];
+opts.ub = [1e3 1e4 inf  00  0];
 
 if nargin >= 3 && ~isempty(inOpts)
     fn = fieldnames(inOpts);
@@ -29,26 +32,15 @@ if nargin >= 3 && ~isempty(inOpts)
 end
 
 [inExt, inFor] = trimTrace(inExt, inFor, opts.loF, opts.hiF);
-%bounds
-lb = [1 1 0 -000];
-ub = [1e3 1e4 1e4 000];
 
-fitfcn = @(opts,force)( opts(3) * .34 * XWLC(force, opts(1),opts(2), [], 3) + opts(4) );
+%Fitfcn: ext(F)
+fitfcn = @(opts,force)( opts(3) * .34 * XWLC(force-opts(5), opts(1),opts(2), [], 2) + opts(4) );
 
-%Mute lsqcurvefit
-options=optimoptions(@lsqcurvefit);
-options.Display = 'off';
-% %Unmute if verbose
-% if nargin >= 4 && verbose
-%     options.Display = 'final';
-% end
-
-
-%While we plot force-extension, we calculate extension-force
-[outOpts, ~, outResid, exflag] = lsqcurvefit(fitfcn, opts.inGuess, inFor, inExt, lb, ub, options);
+%Fit ext-force curve
+[outOpts, ~, outResid, exflag] = lsqcurvefit(fitfcn, opts.x0, inFor, inExt, opts.lb, opts.ub, optimoptions(@lsqcurvefit, 'Display', 'off'));
 
 %Warn for weird exit cases, even if verbose==0
-if exflag ~= 3 %"Standard" exit: change in residual less than fnc tolerance
+if exflag ~= 3 %"3=Standard" exit: change in residual less than fnc tolerance
     ST = dbstack;
     fprintf('%s: lsqcurvefit exited for a nonstandard reason, try verbose\n',ST(1).name)
 end 
@@ -61,7 +53,7 @@ if nargin >= 4 && verbose
     range = opts.loF:0.1:opts.hiF;
     plot(fitfcn(outOpts,range), range, 'Color',[0.3 0.3 1])
     hold off
-        msg = sprintf('PerLen=%0.2fnm, StrMod=%0.2fpN, ConLen=%0.2fbp, Offset=%0.2fnm\n' ,outOpts);
+        msg = sprintf('PerLen=%0.2fnm, StrMod=%0.2fpN, ConLen=%0.2fbp, OffsetX=%0.2fnm, OffsetF = %0.2fpN\n' ,outOpts);
     text(inExt(1),opts.hiF,msg)
     disp(msg)
     subplot(3,1,3)

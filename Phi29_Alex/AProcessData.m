@@ -41,7 +41,7 @@ txtlines = txtlines{1};
 %First is date, format into string [should be ok to use as-is, but might have whitespace]
 mmddyy = sprintf('%06d', str2double(txtlines{1}));
 len = length(txtlines)-1;
-%Preallocate the matrix to hold data numbers, comments
+%Preallocate the matrix to hold data numbers, comments, and options changes
 nndat = zeros(len, 3);
 coms = cell(len,1);
 pre = []; %prefix
@@ -88,10 +88,10 @@ prompts  = {'Sampling Frequency (Hz)' 'Number of Samples in Data' 'Number of Det
 defaults = {'2500' '1' '8' 'true' ...
             '1.40', '1.05' '758.4' '577.2' ... %Mirror calibrated 041719. Trap B offsets found by eye
             '1000/2' '1000/2' ...
-            'true' ...
+            '1' ...
             '40' '900' '(273+27)*.0138' '0.34'...
             '50'... %Capsid is 44nm + antibody stem ~ 5-10nm
-            '{''cal.wV'', ''1.07e-9'';}'};
+            '{''cal.wV'', ''0.91e-9'';}'};
 fnames   = {'Fsamp' 'numSamples' 'numLanes' 'numEndian' ...
             'offTrapX' 'offTrapY' 'convTrapX' 'convTrapY' ...
             'raA' 'raB' ...
@@ -155,13 +155,18 @@ for i = 1:size(nndat,1)
     opts.comment = coms{i};
     try
         ProcessOneData([path mmddyy 'N.dat'], nndat(i,:), opts);
-    catch
+    catch %There are some common mistakes when writing down the data triplet, account for them here
         try
-            %try swapping off and cal
+            %Swap off and cal
             ProcessOneData([path mmddyy 'N.dat'], nndat(i,[1 3 2]), opts);
             warning('Data/off/cal [%d %d %d] rearranged to [%d, %d, %d].\n', nndat(i,:), nndat(i,[1 3 2]));
         catch
-            warning('Data/off/cal [%d %d %d] failed.\n', nndat(i,:));
+            try %Add one to dat and off
+                ProcessOneData([path mmddyy 'N.dat'], nndat(i,:)+[0 1 1], opts);
+                warning('Data/off/cal [%d %d %d] shifted to [%d, %d, %d].\n', nndat(i,:), nndat(i,:)+[0 1 1]);
+            catch
+                warning('Data/off/cal [%d %d %d] failed.\n', nndat(i,:));
+            end
         end
     end
 end

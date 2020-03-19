@@ -7,7 +7,7 @@ function [dat, cmt] = timeshareread_badavgnum(infp, dtype, avgnum)
 %I accidentally used avg num = 27, which is bad because it writes a different number of data.
 %To fix: Each channel is read 20k elements at a time, so avgnum needs to divide evenly this number.
 % If it isn't, then the reshapes will add zeros = add numbers, also it loses register meaning you can't just reshape the entire matrix anymore.
-% The end result is that 740 timepoints (9620 pts) get written, then of the 741st, only 10 pts get written (of 13), and they're only 20/27ths of the magnitude (bc they've been averaged with zeros
+% The end result is that 740 timepoints (9620 across all channels) get written, then of the 741st, only 10 pts get written (of 13), and they're only 20/27ths of the magnitude (bc they've been averaged with zeros
 % So, for every 9630 pts of data, rescale the last 10 by 27/20 and add 3 zeros. (this is PSD XYS, which we don't care about anyway - probs better to replace with the t-1 values, but eh)
 % For the trap MHz, the result is we get 740 timepoints fine, then just trap 1, at 20/27ths the value. So every 1461 pts, rescale the last pt and add a 90 for trap 2.
 

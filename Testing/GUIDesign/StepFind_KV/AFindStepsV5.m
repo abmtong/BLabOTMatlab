@@ -20,7 +20,7 @@ function [outInd, outMean, outTra] = AFindStepsV5(inContour, inPenalty, maxSteps
 
 %Changelog:
 %V4: Modifying @findStepsChSq code to do K-V, as earlier versions are inefficient
-%V5: Search is now completely in C, speedup of ~40%
+%V5: Search is now completely in C, speedup of ~40%, but cannot pause mid-iter
 
 %Later functions require double
 if ~isa(inContour, 'double')

@@ -6,11 +6,12 @@ function out = readh5all(infp)
 
 if nargin<1
     dr = fileparts(mfilename('fullpath'));
-    [f, p] = uigetfile([dr '.h5']);
+    [f, p] = uigetfile([dr filesep '*.h5']);
     infp = [p f];
 end
 
 % infp = [p f];
 
 out = h5groupread(infp);
+out.cal = h5calread(infp);
 end

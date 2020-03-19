@@ -1,6 +1,6 @@
 function out = splitffb(inx, maxlen)
 %Splits a force feedback trace into parts, since they can be very long
-% A loF FFB trace (DNA, D2O) is 1.5-2k pts
+% A loF semi-passive trace (DNA, D2O) is 1.5-2k pts
 
 if nargin < 2
     maxlen = 2e3;

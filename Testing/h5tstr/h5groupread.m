@@ -1,7 +1,6 @@
 function out = h5groupread(infp, instruct)
 %Reads a Lumicks HDF5 file. Second paramter is only used for recursing.
 
-
 if nargin < 2
     instruct = h5info(infp);
     instruct = instruct.Groups;
@@ -39,7 +38,7 @@ for struct = instruct'
                 fn1 = formath5fn(h5fn1);
                 fn2 = formath5fn(h5fn2);
                 %finally, read data
-                out.([fn1 '_' fn2]) = h5read(infp, [ h5fn1 '/' h5fn2 ]);
+                out.([fn1 '_' fn2]) = h5read(infp, [ h5fn1 '/' h5fn2 ])';
             end
         end
     end

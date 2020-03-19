@@ -1,44 +1,62 @@
 function plotraw(insd)
+%Plots raw data [{Force, Bead Ext, NV} x {XY} x {AB}]
 
-ax = insd.forceAX;
-bx = insd.forceBX;
-ay = insd.forceAY;
-by = insd.forceBY;
-t = insd.time;
+if isfield(insd, 'cut');
+    ax = [insd.forceAX insd.cut.forceAX];
+    bx = [insd.forceBX insd.cut.forceBX];
+    ay = [insd.forceAY insd.cut.forceAY];
+    by = [insd.forceBY insd.cut.forceBY];
+    t =  [insd.time insd.cut.time];
+else
+    ax = insd.forceAX;
+    bx = insd.forceBX;
+    ay = insd.forceAY;
+    by = insd.forceBY;
+    t = insd.time;
+end
 
-figure Name PlotRaw
-axs(1) = subplot(3,1,1); hold on
-title('Force')
-cellfun(@(x,y)plot(x,-y, 'Color', 'b'), t, ax)
-cellfun(@(x,y)plot(x,y, 'Color', 'g'), t, bx)
-cellfun(@(x,y)plot(x,-y, 'Color', 'b'), t, ay)
-cellfun(@(x,y)plot(x,y, 'Color', 'g'), t, by)
+plotAX = @(xx,yy,zz) cellfun(@(x,y)plot(x,-zz(y), 'Color', 'b'), xx, yy); %b = [0 0 1]
+plotBX = @(xx,yy,zz) cellfun(@(x,y)plot(x,zz(y), 'Color', 'g'), xx, yy); %g =  [0 1 0]
+plotAY = @(xx,yy,zz) cellfun(@(x,y)plot(x,-zz(y), 'Color', [.5 .5 1]), xx, yy);
+plotBY = @(xx,yy,zz) cellfun(@(x,y)plot(x,zz(y), 'Color', [.5 1 .5]) , xx, yy);
 
+%Get spring parameters
 kax = insd.cal.AX.k;
 kbx = insd.cal.BX.k;
 kay = insd.cal.AY.k;
 kby = insd.cal.BY.k;
+aax = kax * insd.cal.AX.a;
+abx = kbx * insd.cal.BX.a;
+aay = kay * insd.cal.AY.a;
+aby = kby * insd.cal.BY.a;
+
+figure('Name', 'PlotRaw')
+%Plot force
+axs(1) = subplot(3,1,1); hold on
+title('Force')
+plotAX(t,ax,@(x)x)
+plotBX(t,bx,@(x)x)
+plotAY(t,ay,@(x)x)
+plotBY(t,by,@(x)x)
 axis tight
 
+%Plot bead extension
 axs(2) = subplot(3,1,2); hold on
 title('BeadEx')
-cellfun(@(x,y)plot(x,-y/kax, 'Color', 'b'), t, ax)
-cellfun(@(x,y)plot(x,y/kbx, 'Color', 'g'), t, bx)
-cellfun(@(x,y)plot(x,-y/kay, 'Color', 'b'), t, ay)
-cellfun(@(x,y)plot(x,y/kby, 'Color', 'g'), t, by)
-
-aax = insd.cal.AX.k * insd.cal.AX.a;
-abx = insd.cal.BX.k * insd.cal.BX.a;
-aay = insd.cal.AY.k * insd.cal.AY.a;
-aby = insd.cal.BY.k * insd.cal.BY.a;
+plotAX(t,ax,@(x)x/kax)
+plotBX(t,bx,@(x)x/kbx)
+plotAY(t,ay,@(x)x/kay)
+plotBY(t,by,@(x)x/kby)
 axis tight
 
+%Plot normalized volts
 axs(3) = subplot(3,1,3); hold on
 title('NormVolt')
-cellfun(@(x,y)plot(x,-y/aax, 'Color', 'b'), t, ax)
-cellfun(@(x,y)plot(x,y/abx, 'Color', 'g'), t, bx)
-cellfun(@(x,y)plot(x,-y/aay, 'Color', 'b'), t, ay)
-cellfun(@(x,y)plot(x,y/aby, 'Color', 'g'), t, by)
+plotAX(t,ax,@(x)x/aax)
+plotBX(t,bx,@(x)x/abx)
+plotAY(t,ay,@(x)x/aay)
+plotBY(t,by,@(x)x/aby)
 linkaxes(axs, 'x');
 axis tight
+
 

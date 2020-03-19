@@ -163,7 +163,7 @@ switch data.chanpattern
 
         data.C_Y = D(:,11)';
         data.C_X = D(:,12)';
-        data.C_Y_Sum = D(:,13)';
+        data.C_Y_Sum =  D(:,13)';
         data.C_X_Sum = -D(:,13)';
 
         data.time = (0:(length(data.A_X)-1))*data.sampperiod;

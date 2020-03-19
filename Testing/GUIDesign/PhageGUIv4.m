@@ -1,15 +1,15 @@
 function PhageGUIv4()
 %% PhageGUI: Interface for viewing phage .mat files
 %Expects a file with name phage*.mat that contains a struct, with fields time, contour, force, all of which are cell arrays
-%Can work with some other subgroups' mat files
+%Can work with most other subgroups' mat files
 %Last annotated 191127
 
 %% Add paths
 thispath = fileparts(mfilename('fullpath'));
-addpath ( thispath)                         %PhageGUI
-addpath ([thispath filesep 'Helpers'])      %Filename sorter
-addpath ([thispath filesep 'StepFind_KV'])  %K-V stepfinder
-addpath ([thispath filesep 'PairwiseDist']) %PWD
+addpath( thispath)                         %PhageGUI
+addpath([thispath filesep 'Helpers'])      %Filename sorter
+addpath([thispath filesep 'StepFind_KV'])  %K-V stepfinder
+addpath([thispath filesep 'PairwiseDist']) %PWD
 %Load settings file (or create one)
 path = 'C:\Data';
 file = 'phageMMDDYYN00.mat';
@@ -61,9 +61,9 @@ linkaxes([mainAxis, mainRAxis], 'y')
 %This panel contains the top row of buttons, which are used for functions
 pantop = uipanel('Position', [0 .95 1 .05]); %'panel on top'
 loadFile = uicontrol(pantop,                  'Units', 'normalized', 'Position', [ 0, 0, .1, 1],       'String', 'Load File', 'Callback',@loadFile_callback);
-loadCrop = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.1, 0, .1, 1],       'String', 'Load Crop', 'Callback',@loadCrop_callback);
+loadCropB= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.1, 0, .1, 1],       'String', 'Load Crop', 'Callback',@loadCrop_callback);
 permCrop = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.2, 0, .075, 1],     'String', 'Crop', 'Callback',@permCrop_callback);
-permCropT= uicontrol(pantop, 'Style', 'text', 'Units', 'normalized', 'Position', [.275, .5, .025, .5], 'String', 'CropNum', 'Callback',[]);
+permCropT= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.275, .5, .025, .5], 'String', 'CropNum', 'Callback',@getCropNs_callback);
 permCropB= uicontrol(pantop, 'Style', 'edit', 'Units', 'normalized', 'Position', [.275, 0, .025, .5],  'String', '', 'Callback',@loadCrop_callback);
 measLine = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.3, 0, .1, 1],       'String', 'Measure', 'Callback',@measLine_callback);
 trimTrace= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.4, 0, .1, 1],       'String', 'Trim', 'Callback',@trimTrace_callback);
@@ -99,6 +99,7 @@ panPlotX = uipanel(panlef, 'Position', [0 .65 1 .075]);
 plotCal   = uicontrol(panPlotX, 'Units', 'normalized', 'Position', [0  .5 .5 .5], 'String', 'Plot Cal', 'Callback', @plotCal_callback);
 plotOff   = uicontrol(panPlotX, 'Units', 'normalized', 'Position', [.5 .5 .5 .5], 'String', 'Plot Off', 'Callback', @plotOff_callback);
 plotRaw   = uicontrol(panPlotX, 'Units', 'normalized', 'Position', [0  0  .5 .5], 'String', 'Plot Raw', 'Callback', @plotRaw_callback);
+plotMet   = uicontrol(panPlotX, 'Units', 'normalized', 'Position', [.5 0  .5 .5], 'String', 'Plot Meta', 'Callback', @plotMet_callback);
 %This panel has the KDF (kernel density function) calculation options
 radioKDF  = uibuttongroup(panlef,                       'Units', 'normalized', 'Position', [0 .55 1 .1 ], 'SelectionChangedFcn', @kdf_callback);
 radioKDF1 = uicontrol(radioKDF, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0 .66 5 .34], 'String', 'No KDF', 'Callback', []);
@@ -166,7 +167,11 @@ fig.Visible = 'on';
         %Check if it's regular phage data or something else
         if strcmp(sn, 'stepdata')
             stepdata = tmp;
-            name = file(6:end-4); %Strip leading 'phage' and trailing '.mat'
+            if length(file) > 5 && strcmpi(file(1:5), 'phage')
+                name = file(6:end-4); %Strip leading 'phage' and trailing '.mat'
+            else
+                name = file(1:end-4); %Just strip trailing '.mat'
+            end
         else
             %If it's something else, convert to phage-like
             stepdata = renametophage(tmp, sn);
@@ -186,8 +191,9 @@ fig.Visible = 'on';
         fileSlider.Value = find(cellfun(@(x) strcmp(x, file),fileSlider.String),1);
         txtSlider.String = sprintf('%s\n%d/%d', name, round(fileSlider.Value), fileSlider.Max);
         %Reset the crop buttons
-        loadCrop.String = 'Load Crop';
+        loadCropB.String = 'Load Crop';
         cropT = [];
+        zoom on
         %Plot
         refilter_callback
         fixLimit_callback
@@ -197,23 +203,13 @@ fig.Visible = 'on';
 
     function loadCrop_callback(~,~)
         %Load a crop
-        cropT = [];
-        %Create path of crop file
-        cropstr = permCropB.String; %This is a crop suffix, so we can have multiple crops
-        cropfp = sprintf('%s\\CropFiles%s\\%s.crop', path, cropstr, name);
-        %Try to open the file
-        fid = fopen(cropfp);
-        %If no file, do nothing; alert user by changing text on Load Crop box
-        if fid == -1
-            loadCrop.String = 'Crop not found';
+        cropT = loadCrop(permCropB.String, path, file);
+        if isempty(cropT)
+            loadCropB.String = 'Crop not found';
             return
         else
-            loadCrop.String = 'Load Crop';
+            loadCropB.String = 'Load Crop';
         end
-        %Crops are just text files with two numbers, read them
-        cropT = textscan(fid, '%f');
-        fclose(fid);
-        cropT = cropT{1};
         %Delete old crop lines
         if ~isempty(cropLines{1,1})
             cellfun(@delete, cropLines(1,:))
@@ -364,7 +360,7 @@ fig.Visible = 'on';
             %Do K-V stepfinding
             cellfun(@delete,kvlines)
             %For speed, apply K-V only if cropped - KV takes a long time on long traces
-            if ~isempty(cropT)
+            if isempty(cropT)
                 return
             end
             %Apply crop
@@ -408,16 +404,17 @@ fig.Visible = 'on';
         assignin('base','guicropT', cropT);
         if ~isempty(cropT)
             %If crop is valid, add cropped guistepdata
-            assignin('base','guisdcrop', cropstepdata(cropT))
+            assignin('base','guisdcrop', cropstepdata(stepdata, cropT))
         end
     end
 
     function clrGraph_callback(~,~)
-        %Delete all lines and text objects
-        len = length(mainAxis.Children);
-        toDel = false(1,len);
+        %Delete all lines and text objects in mainAxis and mainRAxis
+        chs = [mainAxis.Children; mainRAxis.Children];
+        len = length(chs);
+        toDel = false(len,1);
         for i = 1:len
-            gobj = mainAxis.Children(i);
+            gobj = chs(i);
             if isgraphics(gobj, 'Text')
                 toDel(i)=true;
             elseif isgraphics(gobj, 'Line') && length(gobj.XData) == 2;
@@ -425,7 +422,7 @@ fig.Visible = 'on';
                 toDel(i)=true;
             end
         end
-        arrayfun(@delete, mainAxis.Children(toDel))
+        arrayfun(@delete, chs(toDel))
     end
 
     function measLine_callback(~,~)
@@ -456,8 +453,10 @@ fig.Visible = 'on';
         %If crop is selected right to left, delete it
         if ~issorted(x)
             if exist(cropfp, 'file')
-                fprintf('Deleted crop%s for %s\n', cropstr, name)
+%                 fprintf('Deleted crop%s for %s\n', cropstr, name)
                 delete(cropfp)
+                cellfun(@delete, cropLines)
+                loadCropB.String = 'Crop deleted';
             end
             return
         end
@@ -506,7 +505,7 @@ fig.Visible = 'on';
         cmin = max(str2double(conMin.String), min(cellfun(@grabmin, stepdata.contour, stepdata.force)));
         cmax = min(str2double(conMax.String), max(cellfun(@grabmax, stepdata.contour, stepdata.force)));
         clim = [cmin cmax];
-        if length(clim) ~= 2
+        if length(clim) ~= 2 || ~issorted(clim)
             clim = [0 6000]; %Fallback if automatic procedure messes up
         end
         %Zoom out, set limits, zoom reset so the figure 'remembers' this zoom on double-click
@@ -521,7 +520,7 @@ fig.Visible = 'on';
 
     function m = grabmin(c, f)
         %Helper for fixLimit, grabs the minimum contour with force at least 1
-        m = double(min(c(f>1)));
+        m = double(min(c(f>0)));
         if isempty(m)
             m = 1e4;
         end
@@ -529,7 +528,7 @@ fig.Visible = 'on';
 
     function m = grabmax(c, f)
         %Helper for fixLimit, grabs the maximum contour with force at least 1
-        m = double(max(c(f>1)));
+        m = double(max(c(f>0)));
         if isempty(m)
             m = 0;
         end
@@ -592,6 +591,18 @@ fig.Visible = 'on';
         end
     end
 
+    function plotMet_callback(~,~)
+        %Display things like XWLC params, etc. [things in Opts]
+        if isfield(stepdata, 'opts')
+            plotmet(stepdata)
+        end
+    end
+
+    function getCropNs_callback(~,~)
+        %Get the cropNs of the current data folder
+        getcropns(path);
+    end
+
 %% Custom Callbacks
     function custom01_callback(~,~)
         %Draw lines parallel to the X axis
@@ -600,10 +611,7 @@ fig.Visible = 'on';
         yl = mainAxis.YLim;
         yr = diff(yl);
         %Get actual axes size from product of sizes of containing panels
-        fgps = fig.Position(3:4);
-        pnsz = panaxs.Position(3:4);
-        axsz = mainAxis.Position(3:4);
-        axdim = fgps.*pnsz.*axsz;
+        axdim = fig.Position(3:4).*panaxs.Position(3:4).*mainAxis.Position(3:4);
         %Set the aspect ratio (by distorting x)
         xr = yr * .03 * axdim(1)/axdim(2);
         mainAxis.XLim = xl(1) + [0 xr];
@@ -629,12 +637,17 @@ fig.Visible = 'on';
         delete(stripes);
         stripes = gobjects(2, length(liney));
         for i = 1:length(liney)
-            stripes(1,i) = line(mainAxis,  xl .* [.8 1.2], liney(i) * [1 1], 'LineStyle', ':', 'Color', [1 1 1]*0);
-            stripes(2,i) = line(mainRAxis, xl2 .* [.8 2], liney(i) * [1 1], 'LineStyle', ':', 'Color', [1 1 1]*0);
+            stripes(1,i) = line(mainAxis,  xl  .* [.8 1.2], liney(i) * [1 1], 'LineStyle', ':', 'Color', [1 1 1]*0);
+            stripes(2,i) = line(mainRAxis, xl2 .* [.8 1]  , liney(i) * [1 1], 'LineStyle', ':', 'Color', [1 1 1]*0);
         end
     end
 
     function custom02_callback(~,~)
+%         cla(subAxis) %Convert to mirror extension
+%         mx = cellfun(@(x,y,z) x - y/stepdata.cal.AX.k + z/stepdata.cal.BX.k, stepdata.extension, stepdata.forceAX, stepdata.forceBX, 'Un', 0);
+%         cellfun(@(x,y)plot(subAxis,x,y), stepdata.time, mx)
+%         ylim(subAxis, [-inf inf])
+%         return
         %Take the pairwise distribution of a section of the trace
         addpath([thispath '\PairwiseDist']); %PWD code
         customB2.String = 'Take PWD';
@@ -687,13 +700,15 @@ fig.Visible = 'on';
     end
 
     function outColor = getColor(i)
-        %Generates a rainbow starting from blue->red->green, period 10
-        col0 = 2/3;
-        dcol = .1;
-        %Generate colors in hsv colorspace
-        h = mod(col0 + (i-1)*dcol,1); %Hue: equally spaced along the color wheel
-        s = 1; %Saturation: 1 for bold colors, .25 for pastel-y colors
-        v = .6; %Value: too high makes yellow difficult to see, too low and everything is muddy
-        outColor = hsv2rgb( h, s, v);
+        n = 10;
+        outColor = colorcircle( [mod(i + floor(n*2/3), n)+1 n], .6);
+%         %Generates a rainbow starting from blue->red->green, period 10
+%         col0 = 2/3;
+%         dcol = .1;
+%         %Generate colors in hsv colorspace
+%         h = mod(col0 + (i-1)*dcol,1); %Hue: equally spaced along the color wheel
+%         s = 1; %Saturation: 1 for bold colors, .25 for pastel-y colors
+%         v = .6; %Value: too high makes yellow difficult to see, too low and everything is muddy
+%         outColor = hsv2rgb( h, s, v);
     end
 end

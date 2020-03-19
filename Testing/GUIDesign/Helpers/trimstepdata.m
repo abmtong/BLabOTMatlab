@@ -7,9 +7,11 @@ cellfinden = @(ce) (find(ce < tlim(2),1, 'last'));
 indst = cellfun(cellfindst, stepdata.time, 'UniformOutput', false);
 inden = cellfun(cellfinden, stepdata.time, 'UniformOutput', false);
 
-%We're going to put these in the cut field
+%We're going to put these in the cut field. If it doesn't exist, we'll make it [later]
 if ~isfield(stepdata, 'cut')
-    stepdata.cut = [];
+    newcut = 1;
+else
+    newcut = 0;
 end
 cutadd = cell(1,length(indst));
 
@@ -51,7 +53,11 @@ for j = 1:length(fnames)
         stepdata.(fnames{j}) = temp;
         %Add cut bits to the end of the cut array
         cutadd = cutadd(~cellfun(@isempty,cutadd));
-        stepdata.cut.(fnames{j}) = [stepdata.cut.(fnames{j}) cutadd];
+        if newcut
+            stepdata.cut.(fnames{j}) = cutadd;
+        else
+            stepdata.cut.(fnames{j}) = [stepdata.cut.(fnames{j}) cutadd];
+        end
     end
 end
 

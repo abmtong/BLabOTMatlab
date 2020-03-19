@@ -1,9 +1,19 @@
 function outData = windowFilter( filterFcn, inData, inHalfWidth, inDecimate )
 %Filters inData with a centered window with inWidth points on each side, taking every inDecimate points
 %@filterFcn must follow: filteredX(i) = filterFcn(X(windowInds)), e.g. @mean or @median, or use as shortcut for @var, etc.
-%ver 062019: added @filter for @mean
 
 narginchk(3,4)
+
+%Default decimation factor
+if nargin < 4 || isempty(inDecimate)
+    inDecimate = 1;
+end
+
+%if input data is cell, batch
+if iscell(inData)
+    outData = cellfun(@(x) windowFilter(filterFcn, x, inHalfWidth, inDecimate), inData, 'un', 0);
+    return
+end
 
 %input must be vector
 if size(inData,1)~=1
@@ -15,11 +25,6 @@ end
 if isempty(inData)
     outData = [];
     return
-end
-
-%Default decimation factor
-if nargin < 4 || isempty(inDecimate)
-    inDecimate = 1;
 end
 
 %If just decimating, short circuit
@@ -39,7 +44,7 @@ if isequal(filterFcn, @mean)
         inHalfWidth = floor(inDecimate/2);
     end
     if inHalfWidth * 2 - 1 > length(inData)
-        inHalfWidth = length(inData) / 2 - 1;
+        inHalfWidth = max(length(inData) / 2 - 1,0);
     end
     width = 2*inHalfWidth+1;
     len=length(inData);

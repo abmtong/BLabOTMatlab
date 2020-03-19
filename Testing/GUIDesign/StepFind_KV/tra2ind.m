@@ -1,5 +1,5 @@
 function [outInd, outMean] = tra2ind(inTrace)
-%Converts the output from Aggarwal to KV method
+%Converts a staircase trace to just its inds and meas
 
 tempInd = [1 find(diff(inTrace) ~= 0)+1];
 outMean = inTrace(tempInd);

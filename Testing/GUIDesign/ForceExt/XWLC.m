@@ -9,7 +9,7 @@ if nargin < 4 || isempty(kT)
     kT = 4.14;
 end
 if nargin < 3 || isempty(S)
-    S = 700;
+    S = 900;
 end
 if nargin < 2 || isempty(P)
     P = 50;

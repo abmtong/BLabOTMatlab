@@ -12,6 +12,6 @@ for c = ch
     if isa(c, 'matlab.graphics.chart.primitive.Line')
         c.XData = -c.XData;
     elseif isa(c, 'matlab.graphics.primitive.Text')
-        c.Position = bsxfun(@times, c.Position, [-1 1 1]) ;
+        c.Position = bsxfun(@times, c.Position, [-1 1 1]) ; %Why did I use bsxfun here? c should be a scalar, no? -> just .* then
     end
 end

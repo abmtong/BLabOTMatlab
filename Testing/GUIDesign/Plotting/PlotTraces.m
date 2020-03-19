@@ -7,7 +7,7 @@ p = inputParser();
 isBool = @(x) islogical(x) || isnumeric(x) && (x==1 || x==0);
 isInt = @(x) isnumeric(x) && rem(x,1) == 0;
 %InputParser parameters
-addOptional(p, 'FilterRank', 10, isInt )
+addOptional (p, 'FilterRank', 10, isInt )
 addParameter(p, 'PlotUncropped', 0, isBool )
 addParameter(p, 'CropStr', '', @ischar )
 addParameter(p, 'SelectFiles', 0, isBool )
@@ -155,6 +155,6 @@ for i = 1:length(files);
     end
     drawnow
     
-        out{1,i} = cellfun(@(c, crst, cren) c(crst:cren), tim, stInd, enInd, 'uni', 0);
-        out{2,i} = cellfun(@(c, crst, cren) c(crst:cren), con, stInd, enInd, 'uni', 0);
+    out{1,i} = cellfun(@(c, crst, cren) c(crst:cren), tim, stInd, enInd, 'uni', 0);
+    out{2,i} = cellfun(@(c, crst, cren) c(crst:cren), con, stInd, enInd, 'uni', 0);
 end

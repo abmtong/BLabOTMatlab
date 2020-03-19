@@ -29,24 +29,23 @@ end
             + F./S;
     end
 
-outCons = [];
+outCons = {};
 outExts = [];
 outFrcs = [];
 outTrNs = []; %arg that groups fcs from the same file together
 for i = 1:length(files)
     file = files{i};
     %Load crop
-    cropfp = sprintf('%s\\CropFiles%s\\%s.crop',path,cropstr, file(6:end-4));
-    fid = fopen(cropfp);
-    if fid == -1
+    crop = loadCrop(cropstr, path, file);
+    if isempty(crop)
         fprintf('Crop%s not found for %s\n', cropstr, file)
         continue
     end
-    ts = textscan(fid, '%f');
-    fclose(fid);
-    crop = ts{1};
-    
-    load([path file],'stepdata')
+    stepdata = load([path file]);
+    fname = fieldnames(stepdata);
+    fname = fname{1};
+    stepdata = stepdata.(fname);
+    stepdata = renametophage(stepdata, fname);
     indsta = cellfun(@(x)find(x>crop(1),1),        stepdata.time,'UniformOutput',0);
     indend = cellfun(@(x)find(x<crop(2),1,'last'), stepdata.time,'UniformOutput',0);
     con = cellfun(@(ce,st,en)ce(st:en),stepdata.contour, indsta, indend, 'UniformOutput',0);

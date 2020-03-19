@@ -95,7 +95,7 @@ for j = 1:ntr
             %For some reason, r0 == r96 (1:1 scale)
         else
             drawnow
-            pause(.016)%60fps ish
+%             pause(.016)%60fps ish
         end
     end
 end

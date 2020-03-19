@@ -8,22 +8,33 @@ if nargin < 2
     dy = 0.1;
 end
 
-%calc gauss for pt +-5sd. Set up y-binning first
-wid = ceil(ysd/dy*5); %+-5sd, time difference between 3/4/5 sd is negligible so opt for 5, max difference from using full-length y is 1e-2/1e-3/1e-5 respectively
-minyi = floor( min(indata)/dy );
-maxyi = ceil ( max(indata)/dy );
-y = (minyi-wid:maxyi+wid)*dy;
+%Placing a gaussian == applying a gaussian filter on the binned data
+[out, y] = cdf(indata, dy);
+out = [0 diff(out)];
 
-%calc gauss for only pt within wid (+-5sd)
-leny = length(y);
-out = zeros(1, leny);
-gauss = @(x,ys) exp( -(ys-x).^2 /2 /ysd^2);
-indi = wid+round(indata/dy)-minyi+1;
-lb = indi-wid;
-ub = indi+wid;
-for i = 1:length(indata)
-    out(lb(i):ub(i)) = out(lb(i):ub(i)) + gauss(indata(i), y(lb(i):ub(i)));
-end
+gaufh = @(x)sum(x.*(normpdf((1:length(x))*dy,dy*(length(x)/2+.5),ysd)));
+
+out = windowFilter(gaufh, out, ceil(5*ysd/dy), 1);
+
+
+% %calc gauss for pt +-5sd. Set up y-binning first
+% wid = ceil(ysd/dy*5); %+-5sd, time difference between 3/4/5 sd is negligible so opt for 5, max difference from using full-length y is 1e-2/1e-3/1e-5 respectively
+% minyi = floor( min(indata)/dy );
+% maxyi = ceil ( max(indata)/dy );
+% y = (minyi-wid:maxyi+wid)*dy;
+% 
+% %calc gauss for only pt within wid (+-5sd)
+% leny = length(y);
+% out = zeros(1, leny);
+% gauss = @(x,ys) exp( -(ys-x).^2 /2 /ysd^2);
+% indi = wid+round(indata/dy)-minyi+1;
+% lb = indi-wid;
+% ub = indi+wid;
+% for i = 1:length(indata)
+%     out(lb(i):ub(i)) = out(lb(i):ub(i)) + gauss(indata(i), y(lb(i):ub(i)));
+% end
+
+
 
 %worse implementations
 

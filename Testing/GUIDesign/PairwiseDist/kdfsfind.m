@@ -1,4 +1,4 @@
-function [pkloc, ssz, histfit, dws] = kdfsfind(incon, varargin)
+function [pkloc, ssz, histfit, dws, tra] = kdfsfind(incon, varargin)
 %Find steps using the 'kdf' method: Find peak location by looking at kdf
 
 
@@ -12,7 +12,8 @@ addParameter(ip, 'histdec', 2); %Step histogram decimation factor
 addParameter(ip, 'histfil', 5); %Filter width for step histogram
 addParameter(ip, 'kdfmpp', .5); %Multiplier to kdf MinPeakProminence
 addParameter(ip, 'histfitx', [0 15]); %X range to fit histfit to
-addParameter(ip, 'rmburst', 1); %Remove bursts in kdfdwellfind
+addParameter(ip, 'rmburst', 0); %Remove bursts in kdfdwellfind
+addParameter(ip, 'verbose', 1); %Plot
 parse(ip, incon, varargin{:});
 
 fpre = ip.Results.fpre;
@@ -23,6 +24,7 @@ histfil = ip.Results.histfil;
 kdfmpp = ip.Results.kdfmpp;
 histfitx = ip.Results.histfitx;
 rmburst = ip.Results.rmburst;
+verbose = ip.Results.verbose;
 
 %Generating fit requires batch operation, so send into batch mode if not
 if nargout > 2 && ~iscell(incon)
@@ -35,7 +37,8 @@ if iscell(incon)
     ssz = [ssz{:}];
     %Fit the step size distribution to a gaussian, calculate M+-SEM
     %Get histogram
-    [~, xx, ~, yy] = nhistc(ssz, binsz);
+%     [~, xx, ~, yy] = nhistc(ssz, binsz);
+    [yy, xx, ~, ~] = nhistc(ssz, binsz);
     %Decimate by histdec
     %Crop xx, yy length to an integer mult. of histdec, then avg/sum across
     % May chop the last few values, w/e
@@ -56,13 +59,15 @@ if iscell(incon)
 %     gfit = fitgauss_iter(xx,yy,[-2 0]));
     
     %And plot
-    figure('Name', sprintf('KDFsfind: Data %s, Filter: %d/%d, KDF [sd, mpp] [%0.1f, %0.2f]', inputname(1), fpre{:}, kdfsd, kdfmpp))
-    plot(xx,yy), hold on
-    plot(xx, fitfcn(gfit,xx))
-    xlim([0 30])
-    [ymx, ymxi] = max(yy);
-    %N is fit(1)/binsz, print mean +- sem
-    text(xx(ymxi), ymx*1.1,sprintf('%0.2f +- %0.2f, est. %0.2f%% good steps\n', gfit(2), gfit(3)/sqrt(gfit(1)/binsz/histdec), gfit(1)/binsz/histdec/length(ssz)*100))
+    if verbose
+        figure('Name', sprintf('KDFsfind: Data %s, Filter: %d/%d, KDF [sd, mpp] [%0.1f, %0.2f]', inputname(1), fpre{:}, kdfsd, kdfmpp))
+        plot(xx,yy), hold on
+        plot(xx, fitfcn(gfit,xx))
+        xlim([0 histfitx(2)*2])
+        [ymx, ymxi] = max(yy);
+        %N is fit(1)/binsz, print mean +- sem
+        text(xx(ymxi), ymx*1.1,sprintf('%0.2f +- %0.2f, est. %0.2f%% good steps\n', gfit(2), gfit(3)/sqrt(gfit(1)/binsz/histdec), gfit(1)/binsz/histdec/length(ssz)*100))
+    end
     histfit.fit = gfit;
     histfit.x = xx;
     histfit.y = yy;
@@ -70,7 +75,9 @@ if iscell(incon)
     %Get dwells with @kdfdwfindHMM if asked for
     if nargout > 3
         %Minimum pkloc size for stepfinding = 3 (since we remove first, last dwell)
-        ki = cellfun(@length, pkloc) >= 3;
+%         ki = cellfun(@length, pkloc) >= 3;
+        ki = true(1,length(pkloc)); %nah just do everything
+        
         if rmburst
             dblind = ceil((1:2* max(cellfun(@length, pkloc)))/2); %[1 1 2 2 3 3 ...]
             %Place a step in-between each step to serve as the burst time
@@ -83,13 +90,12 @@ if iscell(incon)
         nois = 3.0; %Cant be too low, else hmm errors (probability -> 0)
         dwf = cellfun(@(x,y)kdfdwfindHMM(x,struct('mu',y,'sig',nois),0), cellfun(@(x)windowFilter(@mean, x, 3,1), incon(ki), 'un',0), pklocd(ki));
         %Extract fit staircases
-        dwff = [dwf.finish];
-        dwtr = {dwff.fit};
+        tra = {dwf.fit};
         
 %         figure, plot([incon{ki}]), hold on, plot([dwtr{:}])
         
         %Extract indicies
-        oi = cellfun(@tra2ind, dwtr, 'Un', 0);
+        oi = cellfun(@tra2ind, tra, 'Un', 0);
         %Dwell time = diff(ind)
         oid = cellfun(@diff, oi, 'un', 0);
         %Separate burst times, if applicable
@@ -106,7 +112,7 @@ if iscell(incon)
         Fs = 2.5e3; %hard-coded Fs
         dws=dws/Fs;
         %Calculate histogram
-        fitgamma(dws)
+%         fitgamma(dws)
         if rmburst
             bus = cellfun(@(x) x(2:end-1), oib, 'Un', 0);
             bus = [bus{:}];

@@ -68,7 +68,7 @@ if verbose
     
     figure('Name',sprintf('%s {%s [%s]}', mfilename, inputname(1), sprintf('%0.3f ',inPenalty)));
     %Plot step size distribution
-    subplot(3,1,1);
+    subplot2([4,1],[1 2]);
     hold on
     %make plot colors: rainbow starting at blue with period 10
     cols =    arrayfun(@(x)hsv2rgb([mod(x,1)  1 .6]), 2/3 + (1:length(inContour))/10 ,'Uni', 0);
@@ -77,7 +77,7 @@ if verbose
     cellfun(@(x,y,c)plot(x+y, 'Color', c), inContour, conshft, colsraw)
     cellfun(@(x,y,c)plot(x+y, 'Color', c), outTra, conshft, cols)
     
-    subplot(3,1,2);
+    subplot2([4,1],3);
     x = newP(:,1);
     bary = newP(:,2);
     bar(x,bary);
@@ -94,11 +94,20 @@ if verbose
     text(distx(maxx)*1.75, maxy*.75, sprintf('Mode: %0.3f\nN: %d, N+: %d\nMu, Sig: %0.3f, %0.3f\nMean: %0.3f\nLogMean: %0.3f\nNormMean: %0.3f', exp(logndist.mu-logndist.sigma^2), stepN, stepNp, logndist.mu,logndist.sigma, exp(logndist.mu + logndist.sigma^2/2), exp(logndist.mu), normdist.mu))
     
     %Calculate dwell histogram
-    [yy, xx] = nhistc(dwells, 10/Fs); %Bin size * Fs should be integer
+    [yy, xx] = nhistc(dwells, 10/Fs); %Histogram bin size * Fs should be integer, since dwells*Fs is integer only
+    %Make sure there's enough bins, else redo with automatic bin size
+    if length(xx) < 5
+        [yy, xx] = nhistc(dwells);
+    end
     %X cutoff
-    prc = 5 * [0 1]; %Percentile cutoff
+    prc = [0 95]; %Percentile cutoffs
     xmn = prctile(dwells, prc(1));
-    xmx = prctile(dwells, 100-prc(2));
+    xmx = prctile(dwells, prc(2));
+    %Make sure enough data falls within bounds; else dont crop
+    if sum(xx<=xmx & xx >= xmn) < 5
+        xmx = inf;
+        xmn = 0;
+    end
     %Fit to gamma dist (k, th)
     gamm   = @(x0,x) x0(3) * x.^(x0(1)-1) .* exp(-x/x0(2)) / gamma(x0(1)) /x0(2)^x0(1);
     lb = [1 0 0];
@@ -110,7 +119,7 @@ if verbose
     %Fit with fitdist
     gamdist = fitdist(dwells(:), 'gamma');
     %And plot
-    subplot(3,1,3), plot(xx,yy), hold on, plot(xx, gamm(ft, xx)), line( xmx*[1 1], ylim), line( xmn*[1 1], ylim)
+    subplot2([4,1],4), plot(xx,yy), hold on, plot(xx, gamm(ft, xx)), line( xmx*[1 1], ylim), line( xmn*[1 1], ylim)
     plot(xx, pdf(gamdist, xx))
     text( (ft(1)-1) * ft(2), max(yy), sprintf('Gamma with k = %0.2f, th = %0.5f, amp %0.3f', ft))
     text( (ft(1)-1) * ft(2), max(yy)*.5,sprintf('Naive guess mean: %0.3f, sd: %0.3f, nmin: %0.2f\n', mn, sd, mn^2/sd^2))
