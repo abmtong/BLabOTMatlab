@@ -1,6 +1,10 @@
-function tweenaxs(ax1, ax2, ns, tp)
+function tweenaxs(ax1, ax2, ns, tp, res)
 %Assuming the Children of ax1 and ax2 are compatible, tween between them
 %Source is ax1, becomes coords in ax2
+
+if nargin < 5
+    res = 1;
+end
 
 if nargin < 3
     ns = 100; %100 steps
@@ -28,5 +32,5 @@ for i = 1:ns
     end
     pause(tp)
     drawnow
-    addframe('outgif.gif', gcf, tp)
+    addframe('outgif.gif', gcf, tp, res)
 end

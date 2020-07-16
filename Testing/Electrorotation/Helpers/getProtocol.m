@@ -1,4 +1,4 @@
-function [outProtocol, outraw, acrs] = getProtocol(indat, inOpts)
+function [outProtocol, outraw, acrs, kit, ki, trapposraw] = getProtocol(indat, inOpts)
 %Probably defer to using the output in _protocol.txt from the labVIEW script, but this could still be useful
 
 %OH LV uses L-M fitting, while Matlab defaults to TRR. Consider checking swapping from TRR to L-M in optimoptions
@@ -70,6 +70,7 @@ trappos = (1:length(rotpos)) * opts.rotdir * opts.stepsz /360;
 % Subtract bead pos and trap pos, see if this is an integer or half-integer
 isodd = logical(mod( round((rotpos - trappos) * 2) , 2));
 trappos(isodd) = trappos(isodd) + 0.5;
+trapposraw = trappos;
 
 %keep those in cropt
 tcropind = opts.cropt * Fs;

@@ -71,11 +71,3 @@ for i = 1:len
     end
     drawnow
 end
-
-
-
-
-
-
-
-

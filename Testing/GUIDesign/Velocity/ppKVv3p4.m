@@ -42,8 +42,14 @@ for i = 1:len
         %Add the fit lines in lighter but same color
         plot(axs(i), x, yg, 'Color', mean([c; 1 1 1], 1), 'LineWidth', 2)
     end
-    dat{i} = [tmpd{:}]';
+    %Regularize dat: Make each row equal length
+    if isempty(tmpd)
+        dat{i} = repmat({'NA'}, [3,1]);
+    else
+        dat{i} = [tmpd{:}]';
+    end
 end
+
 dat = [dat{:}]';
 out = flipud([tits' dat]);
 nam = infg.Name;

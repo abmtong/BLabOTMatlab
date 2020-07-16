@@ -167,7 +167,7 @@ fig.Visible = 'on';
         %display XWLC if already calc'd
         ind = find(strcmp(name, xwlcData(:,1)));
         if ind
-            datTable.Data(1:5) = [1 xwlcData{ind, 2}];
+            datTable.Data(1:5) = [xwlcData{ind, 2}];
         else
             datTable.Data(1:5) = zeros(1,5);
         end
@@ -231,8 +231,14 @@ fig.Visible = 'on';
         subYLim = subAxis.YLim;
         cropLines{1} = line(mainAxis,cropT(1) * [1 1], mainYLim);
         cropLines{2} = line(mainAxis,cropT(2) * [1 1], mainYLim);
-        cropLines{3} = line(subAxis ,cropT(1) * [1 1], subYLim);
-        cropLines{4} = line(subAxis ,cropT(2) * [1 1], subYLim);
+%         cropLines{3} = line(subAxis ,cropT(1) * [1 1], subYLim);
+%         cropLines{4} = line(subAxis ,cropT(2) * [1 1], subYLim);
+        
+        %Update crop var.s
+        indc = timF > cropT(1) & timF < cropT(2);
+        frcFc = frcF(indc);
+        extFc = extF(indc);
+        timFc = timF(indc);
     end
 
     function measure_callback(~,~)
@@ -379,6 +385,7 @@ fig.Visible = 'on';
     end
 
     function locNoise_callback(~,~)
+        if false %Hijack: dont plot noise
         %Plot the local noise levels every so-and-so points
         netlen = length(frc);
         if netlen > 1e5
@@ -398,7 +405,7 @@ fig.Visible = 'on';
             text(mainAxis, textt, textc+2, sprintf('%0.2f',textv), 'Rotation', 90, 'Clipping', 'on')
             
         end
-        
+        end
     end
 
     function clrHists_callback(~,~)
@@ -435,6 +442,7 @@ fig.Visible = 'on';
     end
         
     function custom01_callback(~,~)
+        %{
         %Remove this one
         customB1.String = 'RmXWLC';
         ind = find(strcmp(name, xwlcData(:,1)));
@@ -442,10 +450,86 @@ fig.Visible = 'on';
             xwlcData(ind,:) = [];
             datTable.Data(1:4) = [-1 0 0 0];
         end
+        
+        %}
+        
+        customB1.String = 'Plot cropped F-D';
+        %Plot the crop area F-D curve. Only works after fitting XWLC
+        fg = figure('Name', sprintf('Plot FX Curve %s', name), 'Color', ones(1,3));
+        ax = gca;
+        plot(ax, extFc, frcFc, 'LineWidth', 2, 'Color', 'r');
+        xlabel(ax, 'Extension')
+        ylabel(ax, 'Force')
+        
+        %Add a Measure button
+        uicontrol('Parent', fg, 'Units', 'normalized', 'Position', [ 0, 0, .1, .1], 'String', 'Measure', 'Callback',@(x,y)drawline); %drawline takes no input args, but callbacks do two
+
     end
 
     function custom02_callback(~,~)
+        customB2.String = 'Xform to Contour';
+        %Now plot Contour-Time, using fitXWLC output. Only works after fitting XWLC
         
+        %Find it in table
+        ind = find(strcmp(name, xwlcData(:,1)));
+        if ind
+            xwlcparms = xwlcData{ind, 2} .* [1 1 1000 1 1];
+        else %Not found, append to end
+            return
+        end
         
+        %Plot specially
+        fg = figure('Name', sprintf('Xform2Contour %s', name), 'Color', ones(1,3));
+        ax1 = subplot2(fg, [2 1], 1);
+        ax2 = subplot2(fg, [2 1], 2);
+        
+        hold(ax1, 'on')
+        
+        %Plot Con-Tim and only within fit force range
+        xx = ContourData.time(:)';
+        yy = ContourData.extension(:)' ./ XWLC(ContourData.force, xwlcparms(1), xwlcparms(2), [], 3);
+        flim = str2num(frcRange.String); %#ok<ST2NM>
+        zz = ContourData.force(:)';
+        
+        plot(ax1, xx,yy,'Color', [.8 .8 .8])
+        
+        %Filter
+        dec = str2double(deciFact.String);
+        fil = str2num(filtFact.String); %#ok<ST2NM>
+        xf = windowFilter(@mean, xx, fil, dec);
+        yf = windowFilter(@mean, yy, fil, dec);
+        zf = windowFilter(@mean, zz, fil, dec);
+        %Setup colormap: cool, with 
+        cm = [1 1 1; cool ; 1 1 1];
+        colormap(ax1, cm)
+        ax1.CLim = flim;
+        
+        surface(ax1, [xf;xf], [yf;yf], [zf;zf], 'EdgeColor', 'interp')
+        
+        xl = prctile(xf, [2 98]);
+        yl = prctile(yf, [2 98]);
+        zoom out
+        ax1.XLim = xl;
+        ax1.YLim = yl;
+        zoom reset
+        
+        xlabel(ax1, 'Time')
+        ylabel(ax1, 'Contour')
+        
+        %Copy MainAxis to ax2
+        ax2c = copyobj(mainAxis, fg);
+        ax2c.Position = ax2.Position;
+        delete(ax2);
+        
+        xlabel(ax2c, 'Time')
+        ylabel(ax2c, 'Force')
+        
+        %Link axes
+        linkaxes([ax1 ax2c], 'x')
+        
+        %Add a Measure button
+        uicontrol('Parent', fg, 'Units', 'normalized', 'Position', [ 0, 0, .1, .1], 'String', 'Measure', 'Callback',@(x,y)drawline); %drawline takes no input args, but callbacks do two
+
+        %Hey, not bad!
     end
 end

@@ -1,14 +1,17 @@
-function addframe(fn, fh, dt)
+function addframe(fn, fh, dt, res)
 %Adds a frame to a gif (or creates it, if it doesn't exist)
-%Inputs: FileName, FunctionHandle, DTime
+%Inputs: FileName, FunctionHandle, DTime, Resolution scale
 
 %Print the current figure handle
-[im, cm] = rgb2ind(frame2im(getframe(fh)),256);
 
-%While @getframe is faster, if you want to use @print for special options, use below
-% [im, cm] = rgb2ind(print(fh, '-RGBImage', '-r96'),256);
+if nargin < 4 || res == 1
+    [im, cm] = rgb2ind(frame2im(getframe(fh)),256);
+else
+    %@getframe is faster for exporting 1x images, if you want to use @print for upscaling, use below
+    [im, cm] = rgb2ind(print(fh, '-RGBImage', sprintf('-r%d', 96*res)),256);
+end
 
-%Add to the .gif: Right now goes for no looping
+%Add to the .gif
 if ~exist(fn, 'file')
     imwrite(im, cm, fn, 'gif', 'Loopcount', inf, 'DelayTime', dt)
 else

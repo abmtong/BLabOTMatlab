@@ -41,24 +41,27 @@ end
 
 % return %Modify for loop range and enable this return to just output one figure, for testing colors
 
+gifres = 3;
+frres = 3;
+
 %Create axis to view
-ax = modelfig(ordr{1}, 2);
+ax = modelfig(ordr{1}, 1);
 dmotorV2(ax, mopts(1));
 ddna(ax, dopts(1));
 addlight(ax)
 setcmap(ax)
 % ax.Projection = 'perspective'; %Use MATLAB 3D
-addframe('outgif.gif', gcf, 1)
-addframe('outfr.gif', gcf, 1)
+addframe('outgif.gif', gcf, 1, gifres)
+addframe('outfr.gif', gcf, 1, frres)
 
 %Tween between nframes
 twfrms = [1 1 5 5 5 5 1 1 5 5 5 5];
 for i = 2:12
     ii = i - floor((i-1)/len)*len;
-    tweenaxs(ax, axs(ii), twfrms(ii), .1)
+    tweenaxs(ax, axs(ii), twfrms(ii), .1, gifres)
     pause(.5)
-    addframe('outgif.gif', gcf, 1)
-    addframe('outfr.gif', gcf, 1)
+    addframe('outgif.gif', gcf, 1, gifres)
+    addframe('outfr.gif', gcf, 1, frres)
 end
 
 end
@@ -74,7 +77,7 @@ xlim([-5 5])
 ylim([-5 5])
 zlim([-5 5])
 
-campos = 2;
+campos = 3;
 switch campos
     case 0 %Original: Slightly from above
         ax.CameraPosition = [0 5 1];
@@ -93,8 +96,8 @@ end
 
 function addlight(ax)
 light(ax, 'Position', [5 5 5])
-material dull
-% material(ax, [.6 .9 .0]) %Usual 'dull' preset is [.3. 8 0]
+% material dull
+material(ax, [.6 .9 .0]) %Usual 'dull' preset is [.3. 8 0]
 %Material params are ambient, diffuse, specular lighting
 %V2 uses .6 .9 0, to be brighter for orange
 end

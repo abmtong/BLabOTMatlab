@@ -1,4 +1,4 @@
-function [bts, out, outf] = phagepauseV2(data, fdata, inOpts)
+function [bts, out, outf] = ppV2(data, fdata, inOpts)
 %Takes in data, and determines whether the phage is paused, translocating, or backtracking at a given pt
 %Generates stats on backtrack segments
 %Based on Ronen's polymerase pausing code

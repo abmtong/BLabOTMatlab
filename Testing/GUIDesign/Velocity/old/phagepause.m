@@ -28,6 +28,7 @@ if nargin >= 3
 end
 
 %Filter the inputs
+%ccts, xbins, cvel, cfilt, ccrop
 [p, x, dvel, dfil, dcrop] = vdist(data, opts);
 % [~, ~, ~, ffil, ~] = vdist(fdata, opts);
 [~, ffil, ~] = cellfun(@(x)sgolaydiff(x, opts.sgp), fdata, 'uni', 0);

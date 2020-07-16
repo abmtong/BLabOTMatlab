@@ -39,6 +39,12 @@ fitfcn = @(opts,force)( opts(3) * .34 * XWLC(force-opts(5), opts(1),opts(2), [],
 %Fit ext-force curve
 [outOpts, ~, outResid, exflag] = lsqcurvefit(fitfcn, opts.x0, inFor, inExt, opts.lb, opts.ub, optimoptions(@lsqcurvefit, 'Display', 'off'));
 
+%Make real
+if ~all(isreal(outOpts))
+    outOpts = real(outOpts);
+    warning('FitForceExt generated imaginary fit, forcing real')
+end
+
 %Warn for weird exit cases, even if verbose==0
 if exflag ~= 3 %"3=Standard" exit: change in residual less than fnc tolerance
     ST = dbstack;

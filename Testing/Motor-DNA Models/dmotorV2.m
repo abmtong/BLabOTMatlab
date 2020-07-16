@@ -5,8 +5,8 @@ n=5;
 px = 200;
 
 opts.dht = [0 0 0 0 0]; %Relative heights of motor subunits
-opts.alpha = [.75 .75 .75 .25 .25]; %Alpha channel. Back 3 sligtly transparent, front 2 mostly transp.
-% opts.alpha = .75* ones(1,5); %Alpha channel
+% opts.alpha = [.75 .75 .75 .25 .25]; %Alpha channel. Back 3 sligtly transparent, front 2 mostly transp.
+opts.alpha = .75* ones(1,5); %Alpha channel
 opts.cols = [1 1 1 1 1]; %Colors, for colormap
 opts.dims= [.5 1 .5]; %Dimensions of motor in XYZ of SSU (which is in +x dir.)
 opts.pos = [0 0 0]; %Center position
@@ -57,6 +57,13 @@ for i = 1:n
     ya = opts.r*tan(36/180*pi);
     za = sum(opts.dht(1:i-1));% + opts.dht(i)/2 ;
     [xa, ya] = rot2d(xa, ya, th);
+    %Translate
+    x = x + opts.pos(1);
+    y = y + opts.pos(2);
+    z = z + opts.pos(3);
+    xa = xa + opts.pos(1);
+    ya = ya + opts.pos(2);
+    za = za + opts.pos(3);
     %Plot / update: plot if axis passed
     if isa(axorob(1), 'matlab.graphics.axis.Axes')
         out(i) = surf(axorob,x,y,z,sc*opts.cols(i),'EdgeColor', 'none', 'FaceAlpha', opts.alpha(i)); %#ok<*AGROW>

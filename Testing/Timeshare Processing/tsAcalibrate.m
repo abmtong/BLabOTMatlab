@@ -1,6 +1,6 @@
 function out = tsAcalibrate(infp, inOpts)
 
-dtype = 'int16';
+dtype = 'single';
 
 if nargin < 1 || isempty(infp)
     [f, p] = uigetfile('./*.dat', 'Select cal file');
@@ -39,7 +39,7 @@ colors = {[.2039 .5961 .8588] [.1608 .5020 .7255];...
 calopts.verbose = 1;
 
 if nargin > 1
-calopts = handleOpts(calopts, inOpts);
+    calopts = handleOpts(calopts, inOpts);
 end
 
 %Define plot window
