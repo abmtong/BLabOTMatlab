@@ -1,7 +1,7 @@
 function PhageGUIv4()
-%% PhageGUI: Interface for viewing phage .mat files
+%% PhageGUI: Interface for viewing optical tweezers .mat files
 %Expects a file with name phage*.mat that contains a struct, with fields time, contour, force, all of which are cell arrays
-%Can work with most other subgroups' mat files
+%Can work with most other subgroups' mat files -- detects their format and re-wraps them into Phage-like [see @convertToPhage]
 %Last annotated 191127
 
 %% Add paths
@@ -599,11 +599,12 @@ fig.Visible = 'on';
     end
 
     function getCropNs_callback(~,~)
-        %Get the cropNs of the current data folder
+        %Get the cropNs of the current data folder (i.e. shows the cropIDs and the number of crops in each)
         getcropns(path);
     end
 
 %% Custom Callbacks
+%These are here to do custom, variable things. May be moved to a more permanent button.
     function custom01_callback(~,~)
         %Draw lines parallel to the X axis
         customB1.String = 'AspectRatio';
@@ -671,7 +672,7 @@ fig.Visible = 'on';
     end
 
     function custom03_callback(~,~)
-        %Does FC rescaling, so you can see the effect before you make the files.
+        %Does FC rescaling, so you can see the effect before you make the files. See @FCrescale for more info.
         % Alters the figure's stepdata, so rescale is useable for e.g. takePWD
         customB3.String = 'ScaleFCs';
         str = permCropB.String;
@@ -694,21 +695,26 @@ fig.Visible = 'on';
         for i = 1:length(x)
             out{i} = plot(ax, x{i}, y{i}, 'Color', getColor(i));
         end
+        %Make it act like @plot, where it returns nothing if nargout is 0
         if nargout
             varargout{1} = out;
         end
     end
 
     function outColor = getColor(i)
+        %Generates the rainbow of colors to plot different feedback cycles
         n = 10;
         outColor = colorcircle( [mod(i + floor(n*2/3), n)+1 n], .6);
-%         %Generates a rainbow starting from blue->red->green, period 10
-%         col0 = 2/3;
-%         dcol = .1;
-%         %Generate colors in hsv colorspace
-%         h = mod(col0 + (i-1)*dcol,1); %Hue: equally spaced along the color wheel
-%         s = 1; %Saturation: 1 for bold colors, .25 for pastel-y colors
-%         v = .6; %Value: too high makes yellow difficult to see, too low and everything is muddy
-%         outColor = hsv2rgb( h, s, v);
+        %Original code below, replaced by the function above
+        %{
+        %Generates a rainbow starting from blue->red->green, period 10
+        col0 = 2/3;
+        dcol = .1;
+        %Generate colors in hsv colorspace
+        h = mod(col0 + (i-1)*dcol,1); %Hue: equally spaced along the color wheel
+        s = 1; %Saturation: 1 for bold colors, .25 for pastel-y colors
+        v = .6; %Value: too high makes yellow difficult to see, too low and everything is muddy
+        outColor = hsv2rgb( h, s, v);
+        %}
     end
 end

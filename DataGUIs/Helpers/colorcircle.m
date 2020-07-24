@@ -1,15 +1,16 @@
 function outrgb = colorcircle(n, V)
-%Creates n equally-spaced (in hue, HSV) colors with the same L (in lightness, LAB)
-%i.e. convert (h, 1, V) colors to (l, a, b), equalize L, then convert back to RGB
-
-%@inputs
-%n is either a scalar (then number of colors) or a 1x2 vector, which returns the ith color of n
+%Creates n colors in a rainbow with Value V (HSV colorspace)
+%Does this by creating n equally-spaced hues (HSV colorspace), then normalizing their lightness (LAB colorspace)
+% Normalizing step done since colors at the same Value have different Lightnesses
+% Set V instead of L since it seems to work more consistently that way. YMMV
+%i.e. convert (h, 1, V) colors to (L, A, B), normalize L's, then convert to RGB
+%Can alternatively pass n=[n1,n2] which returns the n1-th color of outrgb(n2, V)
 
 if nargin < 2
     V = .7;
 end
 
-%check what n was passed
+%Check what n was passed
 if numel(n) == 2
    ni = n(1);
    n = n(2);

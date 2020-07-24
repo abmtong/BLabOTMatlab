@@ -5,6 +5,14 @@ inx = double(inx(:)');
 inp = double(inp(:)');
 guessmean = guessmean(:)';
 
+%Make sure x's are unique
+[tmpx, ui] = unique(inx);
+if length(tmpx) ~= length(inx)
+    warning('Removing duplicate values in inx')
+    inx = tmpx;
+    inp = inp(ui);
+end
+
 %length(guessmean) is the number of gaussians to fit
 if nargin < 3 || isempty(guessmean)
     guessmean = [5 10];
@@ -17,9 +25,11 @@ gauss2 = @(op, x) op(1) * gauss(x, op(2), op(3));
 
 %       [amp mean sd; ''; '';]
 %       Guess [.1, mean, 1]
-Guess = [.1*ones(n,1), guessmean', 1*ones(n,1)];
-lb = zeros(n,3);
-ub = repmat([1 20 20],n, 1);
+Guess = [0.1*ones(n,1), guessmean', 1*ones(n,1)];
+% lb = zeros(n,3);
+% ub = repmat([1 20 20],n, 1);
+lb = [];
+ub = [];
 
     function outY = ngauss(xG, opG)
         nG = size(opG,1);

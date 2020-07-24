@@ -524,6 +524,9 @@ fig.Visible = 'on';
         xlabel(ax2c, 'Time')
         ylabel(ax2c, 'Force')
         
+        colorbar(ax1)
+        colorbar(ax2c)
+        
         %Link axes
         linkaxes([ax1 ax2c], 'x')
         
