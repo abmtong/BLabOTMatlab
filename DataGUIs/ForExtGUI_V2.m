@@ -504,7 +504,10 @@ fig.Visible = 'on';
         colormap(ax1, cm)
         ax1.CLim = flim;
         
+
         surface(ax1, [xf;xf], [yf;yf], [zf;zf], 'EdgeColor', 'interp')
+%         cla(ax1);
+%         surface(ax1, [yf;yf], [zf;zf], [zf;zf], 'EdgeColor', 'interp')
         
         xl = prctile(xf, [2 98]);
         yl = prctile(yf, [2 98]);

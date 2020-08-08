@@ -1,7 +1,7 @@
 function PhageGUIv4()
 %% PhageGUI: Interface for viewing optical tweezers .mat files
 %Expects a file with name phage*.mat that contains a struct, with fields time, contour, force, all of which are cell arrays
-%Can work with most other subgroups' mat files -- detects their format and re-wraps them into Phage-like [see @convertToPhage]
+%Can work with most other subgroups' mat files -- detects their format and re-wraps them into Phage-like [see @renametophage]
 %Last annotated 191127
 
 %% Add paths
@@ -34,6 +34,7 @@ fil = []; %Filter width (see @windowFilter)
 dec = []; %Decimation amount (see @windowFilter)
 stripes = []; %Dotted lines, for showing stripes on the axis
 fnfil = '*.mat'; %filename filter, was phage*.mat
+ezAnOpts = [];
 
 %% Construct figure and axes
 %Create a figure with size 3/4ths the screensize, centered. Invisible, for now, to not update as we add ui elements
@@ -61,18 +62,19 @@ linkaxes([mainAxis, mainRAxis], 'y')
 %This panel contains the top row of buttons, which are used for functions
 pantop = uipanel('Position', [0 .95 1 .05]); %'panel on top'
 loadFile = uicontrol(pantop,                  'Units', 'normalized', 'Position', [ 0, 0, .1, 1],       'String', 'Load File', 'Callback',@loadFile_callback);
-loadCropB= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.1, 0, .1, 1],       'String', 'Load Crop', 'Callback',@loadCrop_callback);
-permCrop = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.2, 0, .075, 1],     'String', 'Crop', 'Callback',@permCrop_callback);
-permCropT= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.275, .5, .025, .5], 'String', 'CropNum', 'Callback',@getCropNs_callback);
-permCropB= uicontrol(pantop, 'Style', 'edit', 'Units', 'normalized', 'Position', [.275, 0, .025, .5],  'String', '', 'Callback',@loadCrop_callback);
-measLine = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.3, 0, .1, 1],       'String', 'Measure', 'Callback',@measLine_callback);
-trimTrace= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.4, 0, .1, 1],       'String', 'Trim', 'Callback',@trimTrace_callback);
-toWorksp = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.5, 0, .05, 1],      'String', 'ToWkspace' , 'Callback',@toWorksp_callback);
-locNoise = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.55, 0, .05, 1],     'String', 'LocNoise' , 'Callback',@locNoise_callback);
-customB1 = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.60, 0.5, .05, .5],  'String', 'But01', 'Callback',@custom01_callback);
+loadCropB= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.1, 0, .075, 1],       'String', 'Load Crop', 'Callback',@loadCrop_callback);
+permCrop = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.175, 0, .075, 1],     'String', 'Crop', 'Callback',@permCrop_callback);
+permCropT= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.25, .5, .025, .5], 'String', 'CropNum', 'Callback',@getCropNs_callback);
+permCropB= uicontrol(pantop, 'Style', 'edit', 'Units', 'normalized', 'Position', [.25, 0, .025, .5],  'String', '', 'Callback',@loadCrop_callback);
+measLine = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.275, 0, .075, 1],       'String', 'Measure', 'Callback',@measLine_callback);
+trimTrace= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.35, 0, .075, 1],       'String', 'Trim', 'Callback',@trimTrace_callback);
+toWorksp = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.425, 0, .05, 1],      'String', 'ToWkspace' , 'Callback',@toWorksp_callback);
+locNoise = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.475, 0, .05, 1],     'String', 'LocNoise' , 'Callback',@locNoise_callback);
+ezAnalyze= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.525, 0, .075, 1],     'String', 'Easy Analyze' , 'Callback',@ezAnalyze_callback);
+customB1 = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.60, 0.5, .05, .5],  'String', 'Aspect Ratio', 'Callback', @custom01_callback);
 customB1t= uicontrol(pantop, 'Style', 'edit', 'Units', 'normalized', 'Position', [.60, 0, .05, .5],    'String', '[2.5, 0]', 'Callback', []);
-customB2 = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.65, .5, .05, .5],   'String', 'But02', 'Callback',@custom02_callback);
-customB3 = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.65, 0 , .05, .5],   'String', 'But03', 'Callback',@custom03_callback);
+customB2 = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.65, .5, .05, .5],   'String', 'Custom02', 'Callback',@custom02_callback);
+customB3 = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.65, 0 , .05, .5],   'String', 'ScaleFCs', 'Callback',@custom03_callback);
 trcNotes = uicontrol(pantop, 'Style', 'text', 'Units', 'normalized', 'Position', [.7, 0, .2, 1],       'String', 'Comment');
 fixLimit = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.9, 0, .1, 1],       'String', 'Print' , 'Callback',@printFig_callback);
 
@@ -603,6 +605,33 @@ fig.Visible = 'on';
         getcropns(path);
     end
 
+    function ezAnalyze_callback(~,~)
+        %Add PWD dir
+        addpath([thispath '\PairwiseDist']); %PWD code
+
+        %Query for opts
+        if isempty(ezAnOpts)
+            ezAnOpts = easyAnalyzeOpts;
+        else
+            ezAnOpts = easyAnalyzeOpts(ezAnOpts);
+        end
+        
+        %Get traces
+        switch ezAnOpts.Traces
+            case 1 %Single trace, just take current crop
+                cropfcn = @(x, y, z) x(y>z(1) & y<z(2));
+                dat = cellfun(@(x,y)cropfcn(x,y,cropT), stepdata.contour, stepdata.time, 'uni', 0);
+                dat = dat(~cellfun(@isempty, dat));
+            case 2 %Multiple: getFCs on this folder w/ current cropstr
+                dat = getFCs(permCropB.String, path);
+            otherwise
+                error('easyAnalyze traces option %d not recognized')
+        end
+        
+        %Analyze
+        easyAnalyze(dat, ezAnOpts);
+    end
+
 %% Custom Callbacks
 %These are here to do custom, variable things. May be moved to a more permanent button.
     function custom01_callback(~,~)
@@ -644,31 +673,13 @@ fig.Visible = 'on';
     end
 
     function custom02_callback(~,~)
-%         cla(subAxis) %Convert to mirror extension
-%         mx = cellfun(@(x,y,z) x - y/stepdata.cal.AX.k + z/stepdata.cal.BX.k, stepdata.extension, stepdata.forceAX, stepdata.forceBX, 'Un', 0);
-%         cellfun(@(x,y)plot(subAxis,x,y), stepdata.time, mx)
-%         ylim(subAxis, [-inf inf])
-%         return
-        %Take the pairwise distribution of a section of the trace
-        addpath([thispath '\PairwiseDist']); %PWD code
-        customB2.String = 'Take PWD';
-        %Query for range
-        [a,~] = ginput(2);
-        if length(a) ~= 2
-            return
-        end
-        a = sort(a);
-        %Crop
-        cropfcn = @(x, y, z) x(y>z(1) & y<z(2));
-        concrop = cellfun(@(x,y)cropfcn(x,y,a), stepdata.contour, stepdata.time, 'uni', 0);
-        concrop = concrop(~cellfun(@isempty, concrop));
-        %Plot the PWD with a matrix of PWD options, to brute force find ok options
-        fils  = [3 5 10 25];
-        binsz = .1;
-        pfils = [1 5 10] * .1/binsz;
-        pfils = round(pfils);
-        %Plot PWD
-        sumPWDV1bmatrix(concrop, fils, pfils, binsz)
+        cla(subAxis) %Convert to mirror extension
+        customB2.String = 'MirExt';
+        mx = cellfun(@(x,y,z) x - y/stepdata.cal.AX.k + z/stepdata.cal.BX.k, stepdata.extension, stepdata.forceAX, stepdata.forceBX, 'Un', 0);
+        cellfun(@(x,y)plot(subAxis,x,y), stepdata.time, mx)
+        ylim(subAxis, [-inf inf])
+        return
+
     end
 
     function custom03_callback(~,~)

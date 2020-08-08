@@ -33,13 +33,17 @@ opts.verbose = 1;
 opts.Sum = 0;
 opts.lortype = 3; %1 = pure lorentzian, 2 = 1 filter, 3 = filter+timedelay, 4 = 2 filters
 %Assign any overridden values
-if exist('inOpts','var') && isstruct(inOpts)
-    fn = fieldnames(inOpts);
-    for i = 1:length(fn)
-        fname = fn{i};
-        opts.(fname) = inOpts.(fname);
-    end
+% if exist('inOpts','var') && isstruct(inOpts)
+%     fn = fieldnames(inOpts);
+%     for i = 1:length(fn)
+%         fname = fn{i};
+%         opts.(fname) = inOpts.(fname);
+%     end
+% end
+if nargin > 1
+    opts = handleOpts(opts, inOpts);
 end
+
 %Special opts handling
 opts.Fnyq = opts.Fs/2; %Nyquist freq, used in Fmax or opts. guess
 if isempty(opts.Fmax)

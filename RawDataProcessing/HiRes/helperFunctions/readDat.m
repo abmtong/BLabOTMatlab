@@ -29,7 +29,7 @@ else
     file = [f e];
 end
 
-mmap = memmapfile(filepath, 'Format', fileFormat);
+mmap = memmapfile(filepath, 'Format', fileFormat); %This was written using memmapfile for old PCs with low memory, @fread probably equivalent (better?)
 out = mmap.Data;
 
 if changeEndian

@@ -1,4 +1,6 @@
 function [outExts, outFrcs] = getFCs_fx(cropstr, path)
+%Like getFCs, but gets cropped sections from a force-extension file instead of a phage file
+%Works the same, see @getFCs for details
 
 if nargin < 1
     cropstr = '';

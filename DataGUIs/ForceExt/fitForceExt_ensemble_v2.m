@@ -1,5 +1,5 @@
 function outfit = fitForceExt_ensemble_v2( inExt, inFor, inOpts, verbose )
-
+%Fits ForExt to an ensemble of traces, passed as cell arrays in inExt and inFor
 
 if nargin < 4
     verbose = 1;

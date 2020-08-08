@@ -23,13 +23,13 @@ p = p(keepind);
 x = double(x(:)');
 p = double(p(:)');
 
-%check if from @bar (is patch)
+%check if it's from @bar (is a patch, and is plotted differently)
 if isa(ax.Children(end), 'patch')
 [x, ix] = unique(x);
 p = p(ix);
 end
 %renormalize
-p = p / sum(p) * mean(diff(x));
+p = p / sum(p) * mean(abs(diff(x)));
 
 guessmean = guessmean(:)';
 
@@ -45,8 +45,8 @@ mdht = max(p);
 xrng = range(x);
 
 Guess = [guessmean' repmat([mdht xrng/100],n,m)];
-lb = [-2*min(x)*ones(n,1) repmat([0 0],n,m)];
-ub = [2*max(x)*ones(n,1) repmat([mdht*1e3 xrng*20],n,m)];
+lb = [(min(x)-range(x))*ones(n,1) repmat([0 0],n,m)];
+ub = [(max(x)+range(x))*ones(n,1) repmat([mdht*1e3 xrng*20],n,m)];
 
     function outY = nmgauss(xG, opG)
         [nG, mG] = size(opG);

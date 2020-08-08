@@ -1,21 +1,31 @@
-function [outCons, outExts, outFrcs, outTrNs, outNames] = getFCs(cropstr, newxwlc)
+function [outCons, outExts, outFrcs, outTrNs, outNames] = getFCs(cropstr, path, newxwlc)
 if nargin < 1
     cropstr = '';
 end
 %newxwlc changes con to have new XWLC params, defined by {PL, SM}
-if nargin >1
+if nargin >=3
     %might input [PL, SM] instead, if so fix for user
     if ~iscell(newxwlc)
         newxwlc = num2cell(newxwlc);
     end
 end
 
-[files, path] = uigetfile('C:\Data\phage*.mat','MultiSelect','on');
-if ~path
-    return
+if nargin < 2
+    path = [];
 end
-if ~iscell(files)
-    files = {files};
+
+if isempty(path)
+    [files, path] = uigetfile('D:\Data\*.mat','MultiSelect','on');
+    if ~path
+        return
+    end
+    if ~iscell(files)
+        files = {files};
+    end
+else
+    %If path is passed, then grab all traces in that folder
+    d = dir([path filesep '*.mat']);
+    files = {d.name};
 end
 
     function outXpL = XWLC(F, P, S, kT)
@@ -70,7 +80,7 @@ if nargout>1|| nargin > 1
     outExts = outExts(~cellfun(@isempty,outExts));
     outFrcs = outFrcs(~cellfun(@isempty,outFrcs));
 end
-if nargin > 1
+if nargin >= 3
     outCons = cellfun(@(x, f) x ./ XWLC(f, newxwlc{:}, 4.14) / .34, outExts, outFrcs, 'uni', 0);
 end
 end

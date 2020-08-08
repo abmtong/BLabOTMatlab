@@ -1,6 +1,6 @@
-function [outOpts, fitfcn] = fitForceExt( inExt, inFor, inOpts, verbose )
-%Fits a force-extension trace to the XWLC model.
-%x0 = [PL(nm), SM(pN), CL(bp) OffX(nm) OffF(pN)]
+function [outXWLC, fitfcn] = fitForceExt( inExt, inFor, inOpts, verbose )
+%Fits a force-extension trace to the XWLC model
+%outXWLC = [PL(nm), SM(pN), CL(bp) OffX(nm) OffF(pN)]
 
 %lsqcurvefit requires double
 if ~isa(inExt,'double')
@@ -37,11 +37,11 @@ end
 fitfcn = @(opts,force)( opts(3) * .34 * XWLC(force-opts(5), opts(1),opts(2), [], 2) + opts(4) );
 
 %Fit ext-force curve
-[outOpts, ~, outResid, exflag] = lsqcurvefit(fitfcn, opts.x0, inFor, inExt, opts.lb, opts.ub, optimoptions(@lsqcurvefit, 'Display', 'off'));
+[outXWLC, ~, outResid, exflag] = lsqcurvefit(fitfcn, opts.x0, inFor, inExt, opts.lb, opts.ub, optimoptions(@lsqcurvefit, 'Display', 'off'));
 
 %Make real
-if ~all(isreal(outOpts))
-    outOpts = real(outOpts);
+if ~all(isreal(outXWLC))
+    outXWLC = real(outXWLC);
     warning('FitForceExt generated imaginary fit, forcing real')
 end
 
@@ -57,9 +57,9 @@ if nargin >= 4 && verbose
     plot(inExt, inFor, 'o', 'Color',[0.7 0.7 0.7])
     hold on
     range = opts.loF:0.1:opts.hiF;
-    plot(fitfcn(outOpts,range), range, 'Color',[0.3 0.3 1])
+    plot(fitfcn(outXWLC,range), range, 'Color',[0.3 0.3 1])
     hold off
-        msg = sprintf('PerLen=%0.2fnm, StrMod=%0.2fpN, ConLen=%0.2fbp, OffsetX=%0.2fnm, OffsetF = %0.2fpN\n' ,outOpts);
+        msg = sprintf('PerLen=%0.2fnm, StrMod=%0.2fpN, ConLen=%0.2fbp, OffsetX=%0.2fnm, OffsetF = %0.2fpN\n' ,outXWLC);
     text(inExt(1),opts.hiF,msg)
     disp(msg)
     subplot(3,1,3)

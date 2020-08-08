@@ -1,6 +1,6 @@
 function out = tsAcalibrate(infp, inOpts)
 
-dtype = 'single';
+dtype = 'int16';
 
 if nargin < 1 || isempty(infp)
     [f, p] = uigetfile('./*.dat', 'Select cal file');
@@ -23,7 +23,7 @@ calopts.hydro = 0;
 calopts.Fs = 1/calraw.meta.hdr(3);
 calopts.ra = 500; %bead radius, nm. Replace with query window later like @AProcessData
 calopts.nBin = ceil(length(calraw.AX) / 200); %200 total pts in pspec
-calopts.Fmin =  50;
+calopts.Fmin = 50;
 calopts.Fmax = [];
 fnames = {'AX' 'AY' 'BX' 'BY'};
 sumnms = {'AS' 'AS' 'BS' 'BS'};

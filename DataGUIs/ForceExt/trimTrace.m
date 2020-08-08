@@ -1,7 +1,9 @@
 function [outExt, outFor] = trimTrace(inExt, inFor, loF, hiF)
-%Trims trace by finding first crossings of loF and hiF. Preferable to e.g. inFor(inFor > loF & inFor < hiF) because of bdys
+%Trims a ForExt pull for XWLC fitting by finding first crossings of loF and hiF
+%Only works for single pulls [todo: handle multiple, e.g. by tracking mirror movement]
+% Preferable to e.g. the naive inFor(inFor > loF & inFor < hiF) because of bdys
 
-%inFor should be increasing, reverse if not.
+%Make inFor increasing (reverse if not -- this naive algorithm should be enough to work)
 if inFor(1) > inFor(end)
     inExt = inExt(end:-1:1);
     inFor = inFor(end:-1:1);
