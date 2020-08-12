@@ -41,7 +41,7 @@ thispath = fileparts(which('PlotTraces'));
 addpath([thispath  filesep '..' filesep 'StepFind_KV']);
 
 if selFiles
-    [files, path] = uigetfile('C:\Data\phage*.mat','MultiSelect','on');
+    [files, path] = uigetfile('C:\Data\*.mat','MultiSelect','on');
     if ~path
         return
     end
@@ -58,6 +58,7 @@ else
     files = dir([path filesep 'phage*.mat']);
     files = {files.name};
 end
+
 if isempty(files)
     fprintf('No traces found in %s\n',path);
     return

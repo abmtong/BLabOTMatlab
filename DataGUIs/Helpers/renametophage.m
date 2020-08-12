@@ -1,7 +1,7 @@
 function out = renametophage(in, sn)
 %For use by PhageGUI, converts the naming conventions of files processed by different
-% methods to that used by me, so PGUI can open them
-%Essentially makes them have fields {time, contour, force}; each a cell array of values
+% methods to those used by me, so PGUI can open them
+%Essentially makes them have fields {time, contour, force}, each a cell array of values
 
 out = in;
 switch sn
@@ -26,6 +26,11 @@ switch sn
         out.forceAY = {out.forceAY};
         out.forceBX = {out.forceBX};
         out.forceBY = {out.forceBY};
+    case 'output'
+        %Some of Ronen/Antony's Tx data is in this format
+        out.time = {in.time};
+        out.contour = {in.signal};
+        out.force = {in.force};
     otherwise
         out = [];
         warning('Struct name %s is unrecognized', sn)

@@ -74,7 +74,7 @@ ahalf = (length(a)-1)/2;
 
 %Define upper, lower bdys [slice of states we need to consider at each pt]
 maxdif = max(abs(diff(tr)));
-maxdif = max(maxdif, length(a));
+maxdif = max(maxdif, length(a)*binsz);
 ub = min( ceil((tr+maxdif-yimin*binsz+1)/binsz), hei);
 lb = max(floor((tr-maxdif-yimin*binsz+1)/binsz), 1);
 wid = ub-lb+1;

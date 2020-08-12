@@ -18,7 +18,7 @@ bup = 20;
 
 % sts = [2.5 2.5 2.5 2];
 % sts = 2.2 * ones(1,4);
-sts = 2.4 * ones(1,4);
+sts = 2.5 * ones(1,4);
 
 out = cell(1,n);
 loc = 9000;

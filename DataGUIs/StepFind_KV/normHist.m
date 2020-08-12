@@ -1,4 +1,5 @@
 function outHist = normHist(inData, inBinSize)
+%Trying to move away from this and use nhistc instead
 
 if nargin < 2
     inBinSize = 0.2;

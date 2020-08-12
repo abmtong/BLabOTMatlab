@@ -3,10 +3,7 @@ function ForExtGUI_V2()
 
 %Add paths
 thispath = fileparts(mfilename('fullpath'));
-addpath (thispath)                     %ForExtGUI
-addpath ([thispath '\Helpers\'])       %Filename sorter
-addpath ([thispath '\ForceExt\'])      %XWLC
-addpath ([thispath '\StepFind_KV\'])   %Filtering
+run( fullfile( thispath, '..', 'startup.m') )
 
 %Load settings file (or create one)
 path = 'C:\Data';

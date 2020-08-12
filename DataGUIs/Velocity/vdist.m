@@ -10,10 +10,10 @@ opts.vbinsz = 2; %Velocity BIN SiZe
 opts.Fs = 2500; %Frequency of Sampling
 % Options for plotting, if requested
 opts.verbose = 1;
-opts.velmult = -.34; %Velocity conversion, e.g. from bp to nm
-opts.vfitlim = [0 100]; %Velocity to fit over
+opts.velmult = 1; %Velocity multiplier, set to -1 if negative velocity is forwards (for proper fitting)
+opts.vfitlim = [-inf inf]; %Velocity to fit over
 opts.fitmethod = 1;
-opts.xlim = [-100 100];
+opts.xlim = [-inf inf];
 if nargin >= 2
     opts = handleOpts(opts, inOpts);
 end
@@ -49,7 +49,9 @@ if opts.verbose
     switch opts.fitmethod
         case 1 %For Phage
             %Fit two gaussians, one at zero, other positive
-            xg = [0 6 .2 33 6 .8];
+            sdg = std(cf2)/2;
+            ampg = max(vf)*2.5/sdg/2;
+            xg = [0 sdg ampg prctile(cf2, 60) sdg ampg];
             lb = [0 0 0 0 0 0];
             ub = [0 inf 1 inf inf 1];
             %Fit using @lsqcurvefit

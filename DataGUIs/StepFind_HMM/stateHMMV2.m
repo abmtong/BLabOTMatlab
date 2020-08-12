@@ -251,7 +251,7 @@ vitdpim(1,:) = 1:ns;
 vitscim = pi .* npdf(1,:);
 for i = 1:len-1
     for j = 1:ns
-        [vitscim(j), vitdpim(i,j)] = max( newa(:,j) .* vitscim' );
+        [vitscim(j), vitdpim(i,j)] = max( a(:,j) .* vitscim' );
     end
 %     [vitsc, vitdp(i,:)] = max(bsxfun(@times, newa, vitsc'), [], 1);
     vitscim = vitscim .* newnpdf(i+1,:) / sum(vitscim); %renormalize

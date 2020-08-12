@@ -15,13 +15,13 @@ ssz = get(0, 'ScreenSize');
 ssz = ssz(3:4);
 %Need ssz >= boxsz
 ssz = max(boxsz, ssz);
-fg = figure('Name', 'AProcessData Options', 'Position', [(ssz-boxsz)/2 boxsz]);
+fg = figure('Name', 'EasyAnalyze Options', 'Position', [(ssz-boxsz)/2 boxsz]);
 col = [0 100 300 400]; %Column positions, we're gonna do [Text Box   Text Box]
 
 %Add stuff to the figure
 
 %Row 1: Dropdown menus to choose presets
-optMethod = {'Pairwise' 'Stepfinding: K-V' 'Stepfinding: KDF' 'Stepfinding: HMM' 'N-state HMM' 'Velocity distribution'};
+optMethod = {'Pairwise' 'Stepfinding: K-V' 'Stepfinding: KDF' 'Stepfinding: HMM' 'N-state HMM' 'Velocity distribution' 'Plot' 'Staircase'};
 dropMethL= uicontrol(fg, 'Style', 'text'     , 'Position', [col(1) rx(1) 100 txty], 'String', 'Analysis: ', 'HorizontalAlignment', 'right', 'FontSize', 12); %#ok<*NASGU>
 dropMeth = uicontrol(fg, 'Style', 'popupmenu', 'Position', [col(2) rx(1) 200 txty], 'String', optMethod, 'Callback', @dropMeth_cb);
 optTrcs  = {'Just this one' 'All in folder'};
@@ -67,7 +67,7 @@ if nargin > 0
     %Set per-method opts
     switch dropMeth.Value
         case 1 %Pairwise
-            %Nothing, run sumPWDv1bmatrix with default opts
+            txtAnOp(1).String = sprintf('%g', inOpts.binsz);
         case 2 %Stepfinding K-V
             if isa(inOpts.kvpf, 'single')
                 txtAnOp(1).String = sprintf('single(%g)', inOpts.kvpf);
@@ -89,6 +89,12 @@ if nargin > 0
             txtAnOp(2).String = sprintf('%g', inOpts.vbinsz);
             txtAnOp(3).String = sprintf('%g', inOpts.Fs);
             txtAnOp(4).String = sprintf('%g', inOpts.velmult);
+        case 7 %Plot
+            txtAnOp(1).String = sprintf('%g', inOpts.Fs);
+        case 8 %Monotonic 
+            txtAnOp(1).String = sprintf('%g', inOpts.ssz);
+            txtAnOp(2).String = sprintf('%g', inOpts.dir);
+            txtAnOp(3).String = sprintf('%g', inOpts.trnsprb);
         otherwise
             warning('Loaded inOpts method %d is invalid', src.Value)
     end
@@ -105,7 +111,7 @@ uiwait(fg)
 
 %If exited with X, fg is deleted, so exit
 if ~isgraphics(fg)
-    opts = [];
+    out = [];
     return
 end
 
@@ -130,10 +136,16 @@ switch dropMeth.Value
         opts.ns = str2double(txtAnOp(1).String);
         opts.parpool = str2double(txtAnOp(4).String);
     case 6 %vdist
-        opts.sgp = str2num(txtAnOp(1).String);
+        opts.sgp = eval(txtAnOp(1).String);
         opts.vbinsz = str2double(txtAnOp(2).String);
         opts.Fs = str2double(txtAnOp(3).String);
         opts.velmult = str2double(txtAnOp(4).String);
+    case 7 %Plot
+        opts.Fs = str2double(txtAnOp(1).String);
+    case 8 %Monotonic steps
+        opts.ssz = str2double(txtAnOp(1).String);
+        opts.dir = str2double(txtAnOp(2).String);
+        opts.trnsprb = str2double(txtAnOp(3).String);
     otherwise
         error('Dropdown menu for Methods can''t handle value %d', opts.Value)
 end
@@ -188,6 +200,20 @@ delete(fg)
                 strL= {'S-G Params' 'Bin Size' 'Fs' 'velmult'};
                 str = {'{ 1 301 }' '2' '2500' '1'};
                 cmt = 'Calculates the velocity distribution by filtering and differentiating with a Savitzky-Golay filter with params {order, width}. The other options are for plotting of the velocity histogram, the bin size, the sampling frequency (to calculate velocity), and a velocity multiplier [e.g. set -1 to turn negative velocities positive]';
+            case 7 %Plot
+                flt = 1;
+                flts = {[] 10};
+                ena = {'on' 'off' 'off' 'off'};
+                strL= {'FSamp' '' '' ''};
+                str = {'2500' '' '' ''};
+                cmt = 'Just plot the cropped traces';
+            case 8 %Monotonic steps
+                flt = 1;
+                flts = {[] 10};
+                ena = {'on' 'on' 'on' 'off'};
+                strL= {'Step Size' 'Direction' 'Transition Prob.' ''};
+                str = {'1' '1' '1e-3' ''};
+                cmt = 'Fits a stepfunction to the data, with a given step size. Estimate transition probability as nsteps / n points, but it doesn''t really matter. Direction = 1 for positive slope, -1 for negative, or 0 for both directions.';
             otherwise
                 error('Dropdown menu for Methods can''t handle value %d', src.Value)
         end
@@ -207,6 +233,5 @@ delete(fg)
             txtFdec.Enable = 'off';
         end
         txtBlurb.String = cmt;
-        
     end
 end

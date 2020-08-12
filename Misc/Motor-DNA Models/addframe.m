@@ -2,6 +2,15 @@ function addframe(fn, fh, dt, res)
 %Adds a frame to a gif (or creates it, if it doesn't exist)
 %Inputs: FileName, FunctionHandle, DTime, Resolution scale
 
+
+if nargin < 4
+    res = 1;
+end
+
+if nargin < 3
+    dt = 0.05;
+end
+
 %Print the current figure handle
 
 if nargin < 4 || res == 1

@@ -4,12 +4,10 @@ function PhageGUIv4()
 %Can work with most other subgroups' mat files -- detects their format and re-wraps them into Phage-like [see @renametophage]
 %Last annotated 191127
 
-%% Add paths
+%% Add paths, by running startup.m
 thispath = fileparts(mfilename('fullpath'));
-addpath( thispath)                         %PhageGUI
-addpath([thispath filesep 'Helpers'])      %Filename sorter
-addpath([thispath filesep 'StepFind_KV'])  %K-V stepfinder
-addpath([thispath filesep 'PairwiseDist']) %PWD
+run( fullfile( thispath, '..', 'startup.m') )
+
 %Load settings file (or create one)
 path = 'C:\Data';
 file = 'phageMMDDYYN00.mat';
@@ -34,7 +32,11 @@ fil = []; %Filter width (see @windowFilter)
 dec = []; %Decimation amount (see @windowFilter)
 stripes = []; %Dotted lines, for showing stripes on the axis
 fnfil = '*.mat'; %filename filter, was phage*.mat
-ezAnOpts = [];
+ezAnOpts = []; % To hold EasyAnalyze options through runnings
+fSamp = []; % 
+
+%% In-file options: I don't think these should need to be changed, but if they need to be ...
+fplotmin = 1; %Minimum force to consider when setting y-limits. Useful to remove contour divergences due to zero force [broken tether]
 
 %% Construct figure and axes
 %Create a figure with size 3/4ths the screensize, centered. Invisible, for now, to not update as we add ui elements
@@ -44,9 +46,9 @@ fig = figure('Name', 'PhageGUIcrop', 'Position', [scrsz(3:4)/8 .75*scrsz(3:4)], 
 %Use panels to help organization. This is the main panel, which holds the axes.
 panaxs = uipanel('Position', [.1 0 .9 .95]); %'panel for axes'
 panaxs.BackgroundColor = [1 1 1];
-mainAxis = axes(panaxs, 'Position', [.05 .31 .80 .68]); %Holds the main distance-time plot
+mainAxis = axes(panaxs, 'Position', [.05 .31 .78 .68]); %Holds the main distance-time plot
 mainRAxis= axes(panaxs, 'Position', [.85 .31 .14 .68]); %'main right axis': Holds the kernel density plot
-subAxis  = axes(panaxs, 'Position', [.05 .05 .80 .2]);
+subAxis  = axes(panaxs, 'Position', [.05 .05 .78 .2]);
 subRAxisB= axes(panaxs, 'Position', [.85, .05, .14, .1]);
 subRAxisT= axes(panaxs, 'Position', [.85, .15, .14, .1]);
 %Hold all of the axes
@@ -64,7 +66,7 @@ pantop = uipanel('Position', [0 .95 1 .05]); %'panel on top'
 loadFile = uicontrol(pantop,                  'Units', 'normalized', 'Position', [ 0, 0, .1, 1],       'String', 'Load File', 'Callback',@loadFile_callback);
 loadCropB= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.1, 0, .075, 1],       'String', 'Load Crop', 'Callback',@loadCrop_callback);
 permCrop = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.175, 0, .075, 1],     'String', 'Crop', 'Callback',@permCrop_callback);
-permCropT= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.25, .5, .025, .5], 'String', 'CropNum', 'Callback',@getCropNs_callback);
+permCropT= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.25, .5, .025, .5], 'String', 'CropID', 'Callback',@getCropNs_callback);
 permCropB= uicontrol(pantop, 'Style', 'edit', 'Units', 'normalized', 'Position', [.25, 0, .025, .5],  'String', '', 'Callback',@loadCrop_callback);
 measLine = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.275, 0, .075, 1],       'String', 'Measure', 'Callback',@measLine_callback);
 trimTrace= uicontrol(pantop,                  'Units', 'normalized', 'Position', [.35, 0, .075, 1],       'String', 'Trim', 'Callback',@trimTrace_callback);
@@ -76,13 +78,14 @@ customB1t= uicontrol(pantop, 'Style', 'edit', 'Units', 'normalized', 'Position',
 customB2 = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.65, .5, .05, .5],   'String', 'Custom02', 'Callback',@custom02_callback);
 customB3 = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.65, 0 , .05, .5],   'String', 'ScaleFCs', 'Callback',@custom03_callback);
 trcNotes = uicontrol(pantop, 'Style', 'text', 'Units', 'normalized', 'Position', [.7, 0, .2, 1],       'String', 'Comment');
-fixLimit = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.9, 0, .1, 1],       'String', 'Print' , 'Callback',@printFig_callback);
+printFig = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.9, 0, .05, 1],       'String', 'Print' , 'Callback',@printFig_callback);
+helpText = uicontrol(pantop,                  'Units', 'normalized', 'Position', [.95, 0, .05, 1],       'String', 'Help' , 'Callback',@helpText_callback);
 
 %This panel contains the left bar of text inputs, used for filtering and kernel density
 panlef = uipanel('Position',[0 0 .1 .95]); %'panel on left'
 panlef.BackgroundColor = [1 1 1]; %make it white
 fileSlider= uicontrol(panlef, 'Style', 'slider', 'Units', 'normalized', 'Position', [0 .90 1 .1],      'Callback', @fileSlider_callback);
-txtSlider = uicontrol(panlef, 'Style', 'text',   'Units', 'normalized', 'Position', [.15 .901 .7 .05], 'String', '1');
+txtSlider = uicontrol(panlef, 'Style', 'text',   'Units', 'normalized', 'Position', [.15 .901 .7 .07], 'String', '1');
 clrGraph  = uicontrol(panlef,                    'Units', 'normalized', 'Position', [0 .875 1 .025],   'String', 'Clear Graph', 'Callback', @clrGraph_callback);
 %This subpanel has the filtering text boxes
 panFil = uipanel(panlef, 'Position', [0 .8 1 .075]);
@@ -190,11 +193,13 @@ fig.Visible = 'on';
             trcNotes.String = '';
         end
         %Set the slider to the correct value, update the accompanying text
+        fSamp = 1/mean(cellfun(@(x) mean(diff(x)), stepdata.time));
         fileSlider.Value = find(cellfun(@(x) strcmp(x, file),fileSlider.String),1);
-        txtSlider.String = sprintf('%s\n%d/%d', name, round(fileSlider.Value), fileSlider.Max);
+        txtSlider.String = sprintf('%s\n%d/%d\n%0.2fHz', name, round(fileSlider.Value), fileSlider.Max, fSamp);
         %Reset the crop buttons
         loadCropB.String = 'Load Crop';
         cropT = [];
+        
         zoom on
         %Plot
         refilter_callback
@@ -522,7 +527,7 @@ fig.Visible = 'on';
 
     function m = grabmin(c, f)
         %Helper for fixLimit, grabs the minimum contour with force at least 1
-        m = double(min(c(f>0)));
+        m = double(min(c(f>fplotmin)));
         if isempty(m)
             m = 1e4;
         end
@@ -530,7 +535,7 @@ fig.Visible = 'on';
 
     function m = grabmax(c, f)
         %Helper for fixLimit, grabs the maximum contour with force at least 1
-        m = double(max(c(f>0)));
+        m = double(max(c(f>fplotmin)));
         if isempty(m)
             m = 0;
         end
@@ -611,9 +616,15 @@ fig.Visible = 'on';
 
         %Query for opts
         if isempty(ezAnOpts)
-            ezAnOpts = easyAnalyzeOpts;
+            tmp = easyAnalyzeOpts;
         else
-            ezAnOpts = easyAnalyzeOpts(ezAnOpts);
+            tmp = easyAnalyzeOpts(ezAnOpts);
+        end
+        %If empty, opts picker was cancelled
+        if isempty(tmp)
+            return
+        else
+            ezAnOpts = tmp;
         end
         
         %Get traces
@@ -628,8 +639,19 @@ fig.Visible = 'on';
                 error('easyAnalyze traces option %d not recognized')
         end
         
+        %Add some details of the files. Conflicted where to call getFCs
+        ezAnOpts.cropstr = permCropB.String;
+        ezAnOpts.path = path;
+        
+        %Assign data to workspace
+        assignin('base', 'guitraces', dat);
+        
         %Analyze
         easyAnalyze(dat, ezAnOpts);
+    end
+
+    function helpText_callback(~,~)
+        pGUI_msgblurb
     end
 
 %% Custom Callbacks

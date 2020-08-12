@@ -1,13 +1,18 @@
-%Startup script to add most commonly used folders to the search path
-%I recommend you either start in this folder [so Matlab runs this automatically],
-% or make a shortcut to run this .m file.
-%Do not move this .m file from the root Matlab folder, 
-% as paths are constructed relative to this file
+function startup
+%Startup function to add most commonly used folders to the search path
+%I recommend you either start in the folder with this function [so Matlab runs this automatically], or make a shortcut to run this .m file
+%Do not move this .m file from the root Matlab folder, as paths are constructed relative to this file
 
-%This is a script, so use long names so we can create/delete them without 
-% worry of overwriting workspace var.s
-startupbasepath99 = fileparts(mfilename('fullpath')); %C:\... \MATLAB\
-startupfolders99 = {...
+%Keep track if this file has been run, and only allow it to be run once per Matlab instance.
+% This file takes about 0.5s to run, with 12 path folders to add.
+persistent startuphasrun
+if startuphasrun
+    return
+end
+
+%The root of the code directory, e.g. C:\... \MATLAB\
+basepath = fileparts(mfilename('fullpath'));
+folders = {...
     'RawDataProcessing' ...
     'RawDataProcessing/HiRes' ...
     'RawDataProcessing/HiRes/helperFunctions' ...
@@ -19,10 +24,11 @@ startupfolders99 = {...
     'DataGUIs/Helpers' ...
     'DataGUIs/ForceExt' ...
     'DataGUIs/PairwiseDist' ...
-    'DataGUIs/Plotting'}; %Use / filesep because it works on both Win and Unix
-cellfun(@(x)addpath([startupbasepath99 filesep x]), startupfolders99);
-clear startupbasepath99 startupfolders99
+    'DataGUIs/Plotting'}; %Use / because it works on both Win and Unix
+cellfun(@(x)addpath([basepath filesep x]), folders);
 
 %I like these formatting options, so also apply them here
 format shortG %Allows for display of numbers with varying exponents, e.g. [1 1e99] displays instead of 1e99 x [0, 1]
 format compact %Removes blank lines when the command window shows an output
+
+startuphasrun = 1; %Set hasrun so this does not run again
