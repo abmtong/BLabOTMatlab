@@ -10,7 +10,7 @@ opts.off = 0; %Offset of states
 opts.dir = 1; %1 for POSITIVE only, -1 for NEG only, 0 for BOTH
 opts.trnsprb = 1e-3;
 opts.sig = [];
-opts.mu = []; %If passing mu, keep in mind opts.dir refers to the elements
+opts.mu = []; %If passing mu, keep in mind opts.dir refers to the element-order
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);

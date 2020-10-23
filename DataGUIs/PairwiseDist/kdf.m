@@ -12,6 +12,11 @@ end
 [out, y] = cdf(indata, dy);
 out = [0 diff(out)];
 
+%Pad edges with zeros -- use width 2*sd
+pad = ceil(5*ysd/dy);
+out = [zeros(1,pad) out zeros(1,pad)];
+y = [ (-pad:-1)*dy+y(1)  y y(end) + dy*(1:pad) ];
+
 gaufh = @(x)sum(x.*(normpdf((1:length(x))*dy,dy*(length(x)/2+.5),ysd)));
 
 out = windowFilter(gaufh, out, ceil(5*ysd/dy), 1);

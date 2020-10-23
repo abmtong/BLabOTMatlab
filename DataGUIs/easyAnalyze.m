@@ -126,8 +126,10 @@ switch inOpts.Method
         plot(distx, disty, 'LineWidth', 1)
         [maxy, maxx] = max(disty);
         normdist = fitdist(fitdata', 'normal');
+        try
         text(distx(maxx)*1.75, maxy*.75, sprintf('Mode: %0.3f\nN: %d, N+: %d\nMu, Sig: %0.3f, %0.3f\nMean: %0.3f\nLogMean: %0.3f\nNormMean: %0.3f', exp(logndist.mu-logndist.sigma^2), stepN, stepNp, logndist.mu,logndist.sigma, exp(logndist.mu + logndist.sigma^2/2), exp(logndist.mu), normdist.mu))
-        
+        catch
+        end
         %Calculate dwell histogram
         [yy, xx] = nhistc(dwells, ceil(2*iqr(dwells)*numel(dwells)^(-1/3))); %Histogram bin size = ceil of F-D estimator
         %Make sure there's enough bins, else redo with automatic bin size

@@ -1,4 +1,5 @@
 function out = fitVitterbi(tr, inOpts)
+%Fits a staircase with known state sequence mu. This one is 'unoptimized' for monotonic staircases, so can handle any sort of staircase
 
 %Does vitterbi fitting for a given [mu, sig]. Transition matrix decided by trnsprb, with allowed directions dir.
 % Default states is a grid defined by [ssz, off].
@@ -9,6 +10,7 @@ opts.dir = 1; %1 for POSITIVE only, -1 for NEG only, 0 for BOTH
 opts.trnsprb = 1e-3;
 opts.sig = [];
 opts.mu = [];
+opts.a = [];
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
@@ -25,11 +27,15 @@ end
 ns = length(mu);
 len=length(tr);
 
-%Make transition matrix, as Sparse
-a = sparse(diag(ones(1,ns))) + ...
-    any(opts.dir == [0 1])  * opts.trnsprb*sparse(diag(ones(1,ns-1), 1)) +  ...
-    any(opts.dir == [0 -1]) * opts.trnsprb*sparse(diag(ones(1,ns-1),-1));
-a = bsxfun(@rdivide, a, sum(a,2));
+if isempty(opts.a)
+    %Make transition matrix, as Sparse
+    a = sparse(diag(ones(1,ns))) + ...
+        any(opts.dir == [0 1])  * opts.trnsprb*sparse(diag(ones(1,ns-1), 1)) +  ...
+        any(opts.dir == [0 -1]) * opts.trnsprb*sparse(diag(ones(1,ns-1),-1));
+    a = bsxfun(@rdivide, a, sum(a,2));
+else
+    a = opts.a;
+end
 
 if isempty(opts.sig)
     sig = sqrt(estimateNoise(tr));

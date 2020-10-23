@@ -130,6 +130,13 @@ out.extension = hypot( (rawdat(5,:)-opts.offTrapX)*opts.convTrapX + cal.AX.a*dat
 out.force = hypot((out.forceBX - out.forceAX)/2, ...
                   (out.forceBY - out.forceAY)/2);
 
+%Get Fs from meta if needed
+switch calopts.Instrument
+    case {'Boltzmann' 'Meitner'}
+        %Read the header to get Fs
+        opts.Fsamp = 1/rawdat.meta.Fsamp;
+end
+
 %Define time vector, dt = 1/Fs
 out.time = single(0:length(out.extension)-1) / opts.Fsamp;
             
@@ -207,13 +214,13 @@ end
 %Add extra data, if exists
 if isfield(rawdat, 'meta')
     %Metadata from Timeshared instruments
-    out.meta = rawdata.meta;
+    out.meta = rawdat.meta;
 end
 if isfield(rawdat, 'APD1')
     %Fluorescence data from Fleezers
-    out.apd1 = rawdata.APD1;
-    out.apd2 = rawdata.APD2;
-    out.apdT = rawdata.APDT;
+    out.apd1 = rawdat.APD1;
+    out.apd2 = rawdat.APD2;
+    out.apdT = rawdat.APDT;
 end
 
 %Add extras

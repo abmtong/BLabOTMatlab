@@ -19,7 +19,7 @@ cutadd = cell(1,length(indst));
 fnames = fieldnames(stepdata);
 for j = 1:length(fnames)
     %For those that are cells, ...
-    if iscell(stepdata.(fnames{j}))
+    if iscell(stepdata.(fnames{j})) && isnumeric(stepdata.(fnames{j}){1})
         temp = stepdata.(fnames{j});
         %Trim
         for k = length(indst):-1:1 %process in reverse so cell removal, e.g. a(3) = [], doesn't disrupt indicies

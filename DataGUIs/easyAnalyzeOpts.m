@@ -56,7 +56,7 @@ txtAnOp(4) = uicontrol(fg, 'Style', 'edit', 'Position', [col(4) rx(8) 200 txty],
 txtButOK  = uicontrol(fg, 'Style', 'pushbutton', 'Position', [col(4)+100 rx(11) 100 txty*3], 'String', 'Ok', 'Callback', @(~,~)uiresume(fg));
 txtBlurb  = uicontrol(fg, 'Style', 'text', 'Position', [0 rx(11) col(4)+100 txty*3], 'String', 'Comment');
 
-%Assign to defaults (or to match the passed opts struct)
+%Match the passed opts struct, if passed
 if nargin > 0
     dropMeth.Value = find(strcmp(dropMeth.String, inOpts.Method));
     dropTrcs.Value = inOpts.Traces;
@@ -98,8 +98,7 @@ if nargin > 0
         otherwise
             warning('Loaded inOpts method %d is invalid', src.Value)
     end
-    
-else
+else %Otherwise, assign default
     dropMeth.Value = 1;
     dropTrcs.Value = 1;
     dropMeth_cb(dropMeth);

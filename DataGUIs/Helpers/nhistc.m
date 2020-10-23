@@ -1,6 +1,7 @@
 function [outp, outx, outsd, outn] = nhistc(y, binsz)
 %Calculate normalized histogram with integer-multiple bin limits
-%nhistc = "NormalizedHISTCounts"
+% A wrapper for the built-in @histcounts for speed
+% For weighted and/or n-dimensional histogram binning, use @nhistc2
 
 %Ignore NaN and inf
 len = length(y);
@@ -13,15 +14,11 @@ if nargin < 2
     binsz = 2*iqr(y)*numel(y)^(-1/3); %F-D rule of thumb
 end
 
+%Make bins, define as integer multiples of binsz
 bins = binsz * ( floor(min(y)/binsz):ceil(max(y)/binsz));
-
-if length(bins) < 3
-    warning('bad binsz in nhistc')
-    outp = 0;
-    outx = 0;
-    outsd = 0;
-    outn = 0;
-    return
+%Make sure there's at least two bins [will be fewer if all y's equal]
+if numel(bins) == 1
+    bins = bins + [0 binsz];
 end
 
 outx = bins(1:end-1)+binsz/2;

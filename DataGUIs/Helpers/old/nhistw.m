@@ -1,11 +1,11 @@
-function [outy, outx, outn] = whistc(y, wts, binsz)
-%Histcounts but accepts weights. Uses @dicretize to bin at the speed of @histcounts
+function [outy, outx, outn] = nhistw(y, wts, binsz)
+%Histcounts but accepts weights. Uses @discretize to bin, for speed
 
 %Ignore NaN and inf
 len = length(y);
 y(isnan(y) | isinf(y)) = [];
 if length(y) ~= len
-    warning('Some Inf/NaN values ignored in @whistc')
+    warning('Some Inf/NaN values ignored in @nhistw')
 end
 
 if nargin < 3

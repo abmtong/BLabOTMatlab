@@ -14,6 +14,9 @@ opts.velmult = 1; %Velocity multiplier, set to -1 if negative velocity is forwar
 opts.vfitlim = [-inf inf]; %Velocity to fit over
 opts.fitmethod = 1;
 opts.xlim = [-inf inf];
+%Plot traces
+opts.verboseplot = 0;
+opts.verboseplotsd = 2;
 if nargin >= 2
     opts = handleOpts(opts, inOpts);
 end
@@ -84,4 +87,13 @@ if opts.verbose
     %N for SEM purposes here is Ntot * pct / framelen, i.e. framelen pts become one [works for order 0 or 1, higher order = 'less N']
     %  we plot all the data to make the histogram smoother, but for stats use the decimated data
     xlim(opts.xlim)
+    
+    if opts.verboseplot
+        vthr = fit(2)*opts.verboseplotsd;
+        figure('Name', sprintf('vdistplot %s: Speed %0.2f +- %0.2f (%0.2f SEM) nm/s, (%0.2f,%0.2f) pct (tloc,paused)\n', inputname(1), fit(4:5), fit(5)/ sqrt(fit(6)*sum(cellfun(@length, cvel))/opts.sgp{2}), 100*fit(6), 100*fit(3)))
+        hold on
+        cellfun(@(x,y) surface([1:length(x); 1:length(x)]/opts.Fs, [x;x], double([y;y]>vthr), 'EdgeColor', 'interp', 'LineWidth', 1), cfilt, cvel);
+        %Set a good two-color colormap
+        colormap winter
+    end
 end

@@ -20,6 +20,14 @@ else
     len = length(tr);
 end
 
+if ~isfield(inModel, 'verbose')
+    verbose = 1;
+    inModel.verbose = 1;
+else
+    verbose = inModel.verbose;
+end
+
+
 if ~isfield(inModel, 'ns')
     ns = 3;
     inModel.ns = ns;
@@ -264,20 +272,23 @@ for i = len-1:-1:1
     st2(i) = vitdpim(i,st2(i+1));
 end
 
-finish.a = newa;
-finish.mu = newmu;
-finish.sig = newsig;
-finish.pi = newpi;
-finish.ns = ns;
-finish.fitmle = fitmle(:)';
-finish.fit = st(:)';
-finish.fitnoopt = st2(:)';
+out.a = newa;
+out.mu = newmu;
+out.sig = newsig;
+out.pi = newpi;
+out.ns = ns;
+out.fitmle = fitmle(:)';
+out.fit = st(:)';
+out.fitnoopt = st2(:)';
 
 out.start = inModel;
-out.finish = finish;
+%Changed output to not be out.start and out.finish, so old code may error.
 
-%it works! kinda, weird on convergence (a's sometimes diverge)
-figure, plot(tr, 'Color', [.7 .7 .7]), hold on, plot( newmu(st), 'b' )
-plot( newmu(st2)+range(tr)/5, 'g' )
-plot( newmu(fitmle)+2*range(tr)/5, 'r' )
-fprintf('Trace logprob: %0.3f\n', sum(log(scal)) + log(sum(al(end,:))) )
+if verbose == 1
+    figure, plot(tr, 'Color', [.7 .7 .7]), hold on, plot( newmu(st), 'b' )
+    plot( newmu(st2)+range(tr)/5, 'g' )
+    plot( newmu(fitmle)+2*range(tr)/5, 'r' )
+    fprintf('Trace logprob: %0.3f\n', sum(log(scal)) + log(sum(al(end,:))) )
+elseif verbose == 2
+    fprintf('Trace logprob: %0.3f\n', sum(log(scal)) + log(sum(al(end,:))) )
+end

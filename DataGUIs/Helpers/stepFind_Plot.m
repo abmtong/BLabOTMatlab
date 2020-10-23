@@ -18,7 +18,7 @@ n = length(tr);
 y0 = cellfun(@(x) x(1), st);
 dy = opts.yspc*(1:n) - y0 + opts.ycent;
 
-fg = figure('Name', '%s %s', opts.fgnam, inputname(1));
+fg = figure('Name', sprintf('%s %s', opts.fgnam, inputname(1)));
 
 %Plot traces
 ax1 = subplot2(fg, [4 1], [1 2]);
@@ -78,15 +78,21 @@ gamm   = @(x0,x) x0(3) * x.^(x0(1)-1) .* exp(-x/x0(2)) / gamma(x0(1)) /x0(2)^x0(
 lb = [1 0 0];
 ub = [inf inf 1];
 gu = [4 .1/4 1]; %Guess k=4, mean = 0.1 = k*th
-ft = lsqcurvefit(gamm, gu, xx(xx<=xmx & xx >= xmn), yy(xx<=xmx& xx >= xmn), lb, ub);
-mn = mean(dwells(dwells<=xmx & dwells >= xmn));
-sd = std(dwells(dwells<=xmx & dwells >= xmn));
-%Fit with fitdist
-gamdist = fitdist(dwells(:), 'gamma');
-%And plot
-subplot2([4,1],4), plot(xx,yy), hold on, plot(xx, gamm(ft, xx)), line( xmx*[1 1], ylim), line( xmn*[1 1], ylim)
-plot(xx, pdf(gamdist, xx))
-text( (ft(1)-1) * ft(2), max(yy), sprintf('Gamma with k = %0.2f, th = %0.5f, amp %0.3f', ft))
-text( (ft(1)-1) * ft(2), max(yy)*.5,sprintf('Naive guess mean: %0.3f, sd: %0.3f, nmin: %0.2f\n', mn, sd, mn^2/sd^2))
-text( (ft(1)-1) * ft(2), max(yy)*.1,sprintf('Fitdist k = %0.2f, th = %0.5f', gamdist.a, gamdist.b))
-xlim([0 2*xmx])
+
+%Plot dwells
+subplot2([4,1],4), plot(xx,yy), hold on
+%Try fitting, ignore if error
+try
+    ft = lsqcurvefit(gamm, gu, xx(xx<=xmx & xx >= xmn), yy(xx<=xmx& xx >= xmn), lb, ub);
+    mn = mean(dwells(dwells<=xmx & dwells >= xmn));
+    sd = std(dwells(dwells<=xmx & dwells >= xmn));
+    %Fit with fitdist
+    gamdist = fitdist(dwells(:), 'gamma');
+    plot(xx, gamm(ft, xx)), line( xmx*[1 1], ylim), line( xmn*[1 1], ylim)
+    plot(xx, pdf(gamdist, xx))
+    text( (ft(1)-1) * ft(2), max(yy), sprintf('Gamma with k = %0.2f, th = %0.5f, amp %0.3f', ft))
+    text( (ft(1)-1) * ft(2), max(yy)*.5,sprintf('Naive guess mean: %0.3f, sd: %0.3f, nmin: %0.2f\n', mn, sd, mn^2/sd^2))
+    text( (ft(1)-1) * ft(2), max(yy)*.1,sprintf('Fitdist k = %0.2f, th = %0.5f', gamdist.a, gamdist.b))
+    xlim([0 2*xmx])
+catch
+end

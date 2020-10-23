@@ -150,7 +150,7 @@ delete(fg)
                 txtTConvXY.Enable = 'on';
                 txtTOffV.Enable = 'on';
                 txtTConvXY.String = '[758.4 577.2]'; %Mirror calibrated 041719. Trap B offsets found by eye
-                txtTOffV.String = '[1.40 1.05]';
+                txtTOffV.String = '[1.35 1.30]'; %Changed from 1.40,1.05 on 201022
                 txtLorFlt.Value = 3;
             case 2 %Meitner
                 txtFsamp.Enable = 'off';

@@ -35,7 +35,7 @@ elseif length(indEnd) > length(indSta)
 elseif indSta(1) > indEnd(1) %lengths are equal
     indSta = [1 indSta];
     indEnd = [indEnd len];
-end
+end %This is probably better handled by ind = [1 diff(x>thr) 1], indSta = find(ind == -1), indEnd = find(ind == 1)
 %Remove short segments, say minimum length of 0.1s
 seglens = indEnd-indSta;
 keepind = seglens>opts.Fsamp*0.1;

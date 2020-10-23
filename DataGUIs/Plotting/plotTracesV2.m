@@ -12,6 +12,7 @@ opts.ax = [];
 opts.cropstr = '';
 opts.ymult = 1;
 opts.Fs = 2500;
+opts.plotUnfilt = 0;
 
 if nargin
     opts = handleOpts(opts, inOpts);
@@ -61,7 +62,9 @@ else
 end
 
 %Plot unfiltered plus filtered
-cellfun(@(x,y,z)plot(ax, x,y+z,'Color', .7 * ones(1,3)), ts, dat, num2cell(yoff));
+if opts.plotUnfilt
+    cellfun(@(x,y,z)plot(ax, x,y+z,'Color', .7 * ones(1,3)), ts, dat, num2cell(yoff));
+end
 cellfun(@(x,y,z)plot(ax, x,y+z, 'LineWidth', 1), tF, datF, num2cell(yoff));
 
 %Add names to the end of each 
