@@ -12,19 +12,10 @@ opts.doC = 1;
 
 %Regular opts
 opts.verbose = 0;
+opts.trnsprb = 1e-10;
 opts.btprb = 0;
 opts.minlen = 8;
 
-%Fudge factors:
-% Since we are trying to optimize for mu, we need some way to let the HMM find 'bad' steps that are actually 'good' but have the wrong mu
-% Easy ways are either to decrease the transition probability or increase the sigma
-%  For trnsprb, to tolerate a mis-place of a given Z-score and mean length N, it's P(x>Z)^N, which is ~1e-10-1e-20.
-%  For sig, uncertainty in mean makes the observation function a convolution of two gaussians (one for observing, the other for which mean it actually is),
-%   which essentially means 'increase sigma'. Conv(Gau(VarA), Gau(VarB)) = Gau(VarAVarB/(VarA+VarB)), i.e. the 'reduced mass' of the variances.
-%   Since for the most part, Var(Mu) >> Var(data), we could just replace it with Var(Mu) instead.
-%    Maybe then we want to include Var of each state, and use this as different sigmas for each state? Now THATs an idea.
-opts.trnsprb = 1e-10;
-%opts.sig = 4;
 
 if nargin > 4
     opts = handleOpts(opts, inOpts);
@@ -32,7 +23,6 @@ end
 ctpts = @(xx) cellfun(@(x)sum(cellfun(@length, x)),{xx.raw});
 
 while true
-    stT = tic;
     %Generate mus
     %Apply percentile cutoff to prev result
     prevpts = ctpts(prevres);
@@ -52,7 +42,6 @@ while true
     %Update
     prevres = newres;
     
-    fprintf('optHMM_mc finished iter %d in %0.2fs\n', iter, toc(stT));
     iter = iter + 1;
 end
 

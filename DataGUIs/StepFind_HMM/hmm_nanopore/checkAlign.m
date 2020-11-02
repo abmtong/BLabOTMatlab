@@ -2,7 +2,6 @@ function out = checkAlign(inys, muref)
 %The range of the traces on RNA is different than on DNA
 %Let's quantify by how much
 
-
 binsz = 0.5;
 xs = 0:binsz:100; %Set bins
 

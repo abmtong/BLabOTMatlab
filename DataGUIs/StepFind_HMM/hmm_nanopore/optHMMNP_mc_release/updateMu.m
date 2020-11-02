@@ -22,14 +22,14 @@ for i = 1:ns
     outraw{i} = snp;
 end
 
-out = cellfun(@mean, outraw); %Should I use median instead?
+out = cellfun(@mean, outraw); %Should I use mean or median?
 
 if nargin > 1
     if verbose
         %Plot comparison
         figure, hold on
         plot(out, (1:ns), 'o');
-        cellfun(@(x,y)plot(x,zeros(1,length(x)) + y, '*',  'Color', .7 * ones(1,3)), outraw, num2cell(1:256));
+        cellfun(@(x,y)plot(x,randn(1,length(x))/4*.05 + y+.05, '*',  'Color', .7 * ones(1,3)), outraw, num2cell(1:256));
         plot(prev, (1:ns)+.1, 'or');
         ylim([0 ns+1])
     end

@@ -10,6 +10,7 @@ function [out, outres] = seqHMMp2c(tr, res, trueseq, inOpts)
 
 opts.verbose = 0;
 opts.nc = 4;
+opts.sig = 1;
 opts.trnsprb = 1e-10;
 opts.ntmin = [6 10];%Nucleotide window, for 1 vs 2 gap size
 

@@ -3,4 +3,4 @@ function [outInd, outMean] = tra2ind(inTrace)
 
 tempInd = [1 find(diff(inTrace) ~= 0)+1];
 outMean = inTrace(tempInd);
-outInd = [tempInd length(inTrace)];
+outInd = [tempInd length(inTrace)]; %Note that outInd(end-1) might also be length(inTrace)

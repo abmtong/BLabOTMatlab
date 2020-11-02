@@ -4,6 +4,7 @@ opts.verbose = 0;
 opts.trnsprb = 1e-20;
 opts.minlen = 8;
 opts.doC = 0;
+opts.verboseopt = 1;
 
 if nargin > 3
     opts = handleOpts(opts, inOpts);
@@ -41,5 +42,4 @@ hold on
 plot( mu, (1:256)+.1 , 'o', 'Color', [.7 .7 .7])
 newmu = out(:,1)';
 
-fprintf('%d traces analyzed in %0.2fs.\n', niter, toc(stT))
-fprintf('%d/256 levels found with %d points\n', sum(~isnan(newmu)), sum( cellfun(@length, outraw)));
+fprintf('%d traces analyzed in %0.2fs, %d/256 levels found with %d points\n', niter, toc(stT), sum(~isnan(newmu)), sum( cellfun(@length, outraw)))

@@ -3,6 +3,8 @@ function [out, outraw] = optHMMNP(dat, mu, seq, inOpts)
 opts.verbose = 0;
 opts.trnsprb = 1e-20;
 opts.minlen = 8;
+opts.doC = 0;
+
 if nargin > 3
     opts = handleOpts(opts, inOpts);
 end
@@ -24,7 +26,14 @@ parfor i = 1:niter;
     res = seqHMM(tr, opts);
     
     % Get mu update
-    newmu{i} = seqHMMp2(tr, res, seq, opts);
+    if opts.doC
+        tmp1 = seqHMMp2c(tr, res, seq, opts);
+        %Hm this may skip those that would have been found by p2. Maybe do both?
+        tmp2 = seqHMMp2(tr, res, seq, opts);
+        newmu{i} = [tmp1;tmp2]; %This may double-count some, I am ok with this. Weight 7-len more.
+    else
+        newmu{i} = seqHMMp2(tr, res, seq, opts);
+    end
 end
 
 [out, outraw] = seqHMMp3(newmu, opts.verbose);

@@ -26,7 +26,7 @@ while true
     [out.mu, out.raw] = optHMMNP(dat, mu, seq, opts);
     %Reassign mu, by using last 50 results
     lastnres(mod(iter-1,lastn)+1).raw = out.raw;  %#ok<AGROW>
-    munew = updateMu(lastnres, mu, ~mod(iter, 50)); %Plot something every 50 iters (~1hr)
+    munew = updateMu(lastnres, mu, 0);
     mu = munew;
     out.munew = munew;
     %Assign result to workspace

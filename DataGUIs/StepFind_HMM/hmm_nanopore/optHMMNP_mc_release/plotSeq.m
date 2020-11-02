@@ -1,4 +1,4 @@
-function plotSeq(tr, mu, st)
+function plotSeq(tr, mu, st, kept)
 %Plots the output of HMM Nanopore sequencing analysis
 
 figure Name Plot_Nanopore_Sequencing
@@ -25,12 +25,21 @@ ylim(yl + [-0.1*range(yl) 0]);
 xs = (in(1:end-1) + in(2:end)) /2;
 y = yl(1) + -0.05*range(yl);
 
+if nargin < 4
+    kept = true(1, length(xs));
+end
+
 %First text is full codon, next steps are single nucleotides
 text(xs(1), y, seq(1:4), 'HorizontalAlignment', 'center')
 text(xs(1), mu(me(1)), seq(1:4), 'HorizontalAlignment', 'center')
 for i = 2:length(xs)
-    text(xs(i), y, seq(i+3), 'HorizontalAlignment', 'center')
-    text(xs(i), mu(me(i)), seq(i+3), 'HorizontalAlignment', 'center')
+    if kept(i)
+        clr = [0 0 0];
+    else
+        clr = [.5 0 0];
+    end
+    text(xs(i), y, seq(i+3), 'HorizontalAlignment', 'center', 'Color', clr)
+    text(xs(i), mu(me(i)), seq(i+3), 'HorizontalAlignment', 'center', 'Color', clr)
 end
 
 %List states' mu's on edge

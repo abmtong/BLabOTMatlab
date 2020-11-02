@@ -4,11 +4,20 @@ function out = seqHMM(tr, inOpts)
 %% Options struct
 opts.nb = 4; %Number of bases (ATGC)
 opts.nc = 4; %Number of bases in channel ('codon')
+%Transition matrix - transition probabilities.
 opts.trnsprb = 1e-4; %Transition probability. Use either ntrs/npts to sequence, or a very small value (1e-10 ish) to try to optimize mu values
 opts.btprb = 0; %Backtrack probability. Use zero to ignore backtracks
+%Transition matrix - allowed transitions. Choose up to one.
+opts.okstates = []; %Allowed states.
+opts.okseq = []; %Allowed transitions. If we know the sequence, cleans up the trns mtrx. Might be too strong a bias?
+
 %Load state values (current at each codon) from Laszlo, Nat Biotechnol. 2014 (doi:10.1038/nbt.2950)
-tmpmu = load('muref.mat');
-opts.mu = tmpmu.mu_debru(:)';
+if exist('muref.mat', 'file');
+    tmpmu = load('muref.mat');
+    opts.mu = tmpmu.mu_debru(:)';
+else
+    opts.mu = 1:256;
+end
 opts.sig = sqrt(estimateNoise(tr));
 opts.verbose = 1;
 
@@ -25,9 +34,12 @@ btprb = opts.btprb;
 mu = opts.mu;
 sig = opts.sig;
 
+%Sanity check: (trnsprb + btprb) * nc < 1, so the do nothing probability is nonzero
+assert( (trnsprb + btprb) * nc < 1, 'Transition/backtrack probability too high' )
+
 stT = tic;
 
-%% Transition matrix 
+%% Transition matrix
 len = length(tr); %Length of trace
 ns = nb^nc; %Number of states
 %The transition matrix has ns^2 elements (256x256=65k) but only ns*nb (256x4=1k) nonzero values, so solvable
@@ -38,33 +50,76 @@ spj1 = 1:ns;
 spv1 = ones(1,ns) * (1 - trnsprb*nb - btprb*nb);
 %Transitions
 spi2 = repmat(1:ns, [nb,1]);
-spi2 = spi2(:)';
 spj2 = zeros(nb,ns);
 for i = 1:ns
     cdn = num2cdn(i, nc); %Every initial codon WXYZ can transition to XYZN
     spj2(:,i) = arrayfun(@(x) cdn2num([cdn(2:nc) x]), 1:nb);
 end
-spj2 = spj2(:)';
 spv2 = ones(1,ns*nb)*trnsprb;
 %Backtracks
 spi3 = repmat(1:ns, [nb,1]);
-spi3 = spi3(:)';
 spj3 = zeros(nb,ns);
 for i = 1:ns
     cdn = num2cdn(i); %Every initial codon WXYZ can backtrack to NWXY
     spj3(:,i) = arrayfun(@(x) cdn2num([x cdn(1:nc-1)]), 1:nb);
 end
-spj3 = spj3(:)';
 spv3 = ones(1,ns*nb)*btprb;
+%Deal with disallowed transitions of opts.okstates is passed
+if ~isempty(opts.okstates)
+    oks = opts.okstates;
+    %Zero out spv's of disallowed transitions
+    kii2 = false(size(spi2));
+    kij2 = false(size(spi2));
+    kii3 = false(size(spi3));
+    kij3 = false(size(spi3));
+    for i = oks
+        %Make sure spi and spj are both ok. spi == oks | spj == oks in trns/bts, add back trnsprb to spj1. Keep diagonal 1.
+        kii2 = kii2 | spi2 == i;
+        kij2 = kij2 | spj2 == i;
+        kii3 = kii3 | spi3 == i;
+        kij3 = kij3 | spj3 == i;
+    end
+    %Values to omit are ~ the okay ones
+    oi2 = ~ (kii2 & kij2);
+    oi3 = ~ (kii3 & kij3);
+    %Zero out spv2/3
+    spv2(oi2) = 0;
+    spv3(oi3) = 0;
+    %Add back to spv1
+    spv1 = spv1 + sum(oi2,1)*opts.trnsprb;
+    spv1 = spv1 + sum(oi3,1)*opts.btprb;
+elseif ~isempty(opts.okseq)
+    %Check if okseq is a nt seq or a state seq
+    if ischar(opts.okseq)
+        okseq = seq2st(opts.okseq);
+    else
+        okseq = opts.okseq;
+    end
+    %Zero out spv's of disallowed transitions
+    kii2 = false(size(spi2));
+    kii3 = false(size(spi3));
+    for i = 1:length(okseq)-1;
+        %Make sure spi and spj are both ok. spi == oks | spj == oks in trns/bts, add back trnsprb to spj1. Keep diagonal 1.
+        kii2 = kii2 | spi2 == okseq(i) & spj2 == okseq(i+1);
+        kii3 = kii3 | spi3 == okseq(i+1) & spj3 == okseq(i);
+    end
+    %Values to omit are ~ the okay ones
+    oi2 = ~ kii2;
+    oi3 = ~ kii3;
+    %Zero out spv2/3
+    spv2(oi2) = 0;
+    spv3(oi3) = 0;
+    %Add back to spv1
+    spv1 = spv1 + sum(oi2,1)*opts.trnsprb;
+    spv1 = spv1 + sum(oi3,1)*opts.btprb;
+end
 %Assemble the transition matrix
-a = sparse([spi1 spi2 spi3], [spj1 spj2 spj3], [spv1 spv2 spv3]);
-
-%% Other HMM Parameters
-
+a = sparse([spi1 spi2(:)' spi3(:)'], [spj1 spj2(:)' spj3(:)'], [spv1 spv2(:)' spv3(:)']);
 
 %% Assign the path via Vitterbi
-%Gaussian distribution shortcut
+%Gaussian pdf shortcut. Works with scalar sig and array sig (size = 1xns)
 npdf = @(x) normpdf(mu, tr(x), sig);
+
 %Initial state guess
 pi = npdf(1);
 %Place to save vitterbi paths
@@ -184,5 +239,3 @@ ids = ids(5:end); %Remove the appended 'ATGC' [ids(1:4) should equal 1:4]
 %}
 
 end
-
-

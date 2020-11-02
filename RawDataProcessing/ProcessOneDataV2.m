@@ -248,6 +248,6 @@ else
     varname = 'ContourData';
 end
 
-save(out.name, varname)
+save(out.name, varname, '-v7.3')
 fprintf('\b Done.\n')
 end

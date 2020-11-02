@@ -91,9 +91,31 @@ end
 [~, me] = tra2ind(st);
 %Translate each codon into its nucleotides
 seqtmp = arrayfun(@(x)num2cdn(x,nc), me, 'Un', 0);
-seqtmp = [seqtmp{:}];
-%Extract sequence by getting every nb-th value **Assumes no backtracking right now**
-seq = seqtmp([1:nb-1 nb:nb:end]);
+
+seq = seqtmp{1};
+cdn = seqtmp{1};
+kept = true(1,length(seqtmp));
+for i = 2:length(seqtmp)
+    newcdn = seqtmp{i};
+    %Check if fwd or rev
+    if all(cdn(2:end) == newcdn(1:end-1))
+        %Assign if fwd
+        seq = [seq newcdn(end)]; %#ok<AGROW>
+        cdn = newcdn;
+    else
+        %Remove if rev
+        seq = seq(1:end-1);
+        kept(i) = false;
+        kept(find(kept(1:i), 1, 'last')) = false;
+        cdn = newcdn;
+    end %Some issues handling backtracks, i.e. not respecting 'previous' values correctly. Non-markovian to add, though.
+    %Best I can do is handle by checking if improper backtracks occur and just ignoring that data
+end
+
+%below was no-bt code
+% seqtmp = reshape([seqtmp{:}], 4, [])';
+% %Extract sequence by getting every nb-th value **Assumes no backtracking right now**
+% seq = seqtmp([1:nb-1 nb:nb:end]);
 
 %% Assemble output, plot results
 cdns = 'ATGC';
@@ -102,9 +124,10 @@ out.fiti = st; %Fit trace indicies
 out.seq = seq; %Sequence, in index
 out.seqn = cdns(seq); %Sequence, in text
 out.opts = opts; %Options
+out.kept = kept; %Which states were kept in sequence
 
 if opts.verbose == 1
-    plotSeq(tr, mu, st) %Plot
+    plotSeq(tr, mu, st, kept) %Plot
 elseif opts.verbose == 2
     %Just print an update line
     fprintf('seqHMM found a %dnt sequence in %0.2fs.\n', length(seq), toc(stT))
