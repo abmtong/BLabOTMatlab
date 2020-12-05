@@ -38,8 +38,9 @@ parfor i = 1:niter;
 end
 
 [out, outraw] = seqHMMp3(newmu, opts.verbose);
-hold on
-plot( mu, (1:256)+.1 , 'o', 'Color', [.7 .7 .7])
+if opts.verboseopt
+    hold on
+    plot( mu, (1:256)+.1 , 'o', 'Color', [.7 .7 .7])
+end
 newmu = out(:,1)';
-
 fprintf('%d traces analyzed in %0.2fs, %d/256 levels found with %d points\n', niter, toc(stT), sum(~isnan(newmu)), sum( cellfun(@length, outraw)))

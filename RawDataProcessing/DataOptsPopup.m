@@ -23,11 +23,13 @@ col = [0 100 300 400]; %Column positions, we're gonna do [Text Box   Text Box]
 
 %Row 1: Dropdown menus to choose presets
 optInstr = {'HiRes' 'Meitner' 'Boltzmann' 'Mini' 'Lumicks'};
-optProt  = {'Semipassive' 'Force feedback' 'Force-Extension'};
+optProt  = {'Semipassive' 'Force feedback' 'Force-Extension' 'One Trap'};
 dropInstL= uicontrol(fg, 'Style', 'text'     , 'Position', [col(1) rx(1) 100 txty], 'String', 'Instrument: ', 'HorizontalAlignment', 'right', 'FontSize', 12); %#ok<*NASGU>
 dropInst = uicontrol(fg, 'Style', 'popupmenu', 'Position', [col(2) rx(1) 200 txty], 'String', optInstr, 'Callback', @dropInst_cb);
 dropProtL= uicontrol(fg, 'Style', 'text'     , 'Position', [col(3) rx(1) 100 txty], 'String', 'Protocol: ', 'HorizontalAlignment', 'right', 'FontSize', 12);
 dropProt = uicontrol(fg, 'Style', 'popupmenu', 'Position', [col(4) rx(1) 200 txty], 'String', optProt, 'Callback', @dropProt_cb);
+txtProtL= uicontrol(fg, 'Style', 'text', 'Position', [col(3) rx(2) 100 txty], 'String', 'Trap (for One Trap): ', 'HorizontalAlignment', 'right');
+txtProt = uicontrol(fg, 'Style', 'edit', 'Position', [col(4) rx(2) 200 txty], 'String', 'B');
 
 %Row 2/3: Data Options label
 label3   = uicontrol(fg, 'Style', 'text'     , 'Position', [0 rx(3) 300 txty], 'String', 'Data Options:', 'HorizontalAlignment', 'left', 'FontSize', 12);
@@ -38,7 +40,7 @@ tfSplitFC = uicontrol(fg, 'Style', 'checkbox', 'Position', [250 rx(4) 200 txty],
 
 %Row 5: Data Options - Fsamp, Radii
 txtFsampL= uicontrol(fg, 'Style', 'text', 'Position', [col(1) rx(5) 100 txty], 'String', 'FSamp: ', 'HorizontalAlignment', 'right');
-txtFsamp = uicontrol(fg, 'Style', 'edit', 'Position', [col(2) rx(5) 200 txty], 'String', '2500');
+txtFsamp = uicontrol(fg, 'Style', 'edit', 'Position', [col(2) rx(5) 200 txty], 'String', '2500', 'Callback', @lumWarn);
 txtRadiiL= uicontrol(fg, 'Style', 'text', 'Position', [col(3) rx(5) 100 txty], 'String', 'Bead Radii: ', 'HorizontalAlignment', 'right');
 txtRadii = uicontrol(fg, 'Style', 'edit', 'Position', [col(4) rx(5) 200 txty], 'String', '[500 500]');
 
@@ -97,6 +99,9 @@ end
 %Skip some outputs that aren't enabled
 opts.Instrument = dropInst.String{dropInst.Value};
 opts.Protocol = dropProt.String{dropProt.Value};
+if strcmp(opts.Protocol, 'One Trap')
+    opts.oneTrap = txtProt.String;
+end
 opts.convToContour = tfContour.Value;
 opts.splitFCs = tfSplitFC.Value;
 if strcmp(txtFsamp.Enable, 'on')
@@ -147,11 +152,14 @@ delete(fg)
         switch src.Value
             case 1 %HiRes
                 txtFsamp.Enable = 'on';
+                txtFsamp.String = '2500';
                 txtTConvXY.Enable = 'on';
                 txtTOffV.Enable = 'on';
                 txtTConvXY.String = '[758.4 577.2]'; %Mirror calibrated 041719. Trap B offsets found by eye
                 txtTOffV.String = '[1.35 1.30]'; %Changed from 1.40,1.05 on 201022
                 txtLorFlt.Value = 3;
+                txtLorFlt.Enable = 'on';
+                txtWaterV.Enable = 'on';
             case 2 %Meitner
                 txtFsamp.Enable = 'off';
                 txtTConvXY.Enable = 'on';
@@ -159,14 +167,18 @@ delete(fg)
                 txtTConvXY.String = '[160.2656 0]';
                 txtTOffV.String = '[0 0]';
                 txtLorFlt.Value = 1;
+                txtLorFlt.Enable = 'on';
+                txtWaterV.Enable = 'on';
             case 3 %Boltzmann
                 warning('Should check Boltzmann Instrument Calibration values')
                 txtFsamp.Enable = 'off';
                 txtTConvXY.Enable = 'on';
                 txtTOffV.Enable = 'off';
-                txtTConvXY.String = '[152 0]';
+                txtTConvXY.String = '[142 0]';
                 txtTOffV.String = '[0 0]';
                 txtLorFlt.Value = 1;
+                txtLorFlt.Enable = 'on';
+                txtWaterV.Enable = 'on';
             case 4 %Mini
                 txtFsamp.Enable = 'off';
                 txtTConvXY.Enable = 'off';
@@ -174,13 +186,18 @@ delete(fg)
                 txtTConvXY.String = '[0 0]';
                 txtTOffV.String = '[0 0]';
                 txtLorFlt.Value = 1;
+                txtLorFlt.Enable = 'on';
+                txtWaterV.Enable = 'on';
             case 5 %Lumicks
-                txtFsamp.Enable = 'off';
+                txtFsamp.Enable = 'on';
+                txtFsamp.String = '3125';
                 txtTConvXY.Enable = 'off';
                 txtTOffV.Enable = 'off';
                 txtTConvXY.String = '[0 0]';
                 txtTOffV.String = '[0 0]';
                 txtLorFlt.Value = 1;
+                txtLorFlt.Enable = 'off';
+                txtWaterV.Enable = 'off';
             otherwise
                 error('Dropdown menu for Instruments can''t handle value %d', src.Value)
         end
@@ -195,18 +212,37 @@ delete(fg)
                 tfContour.Value = true;
                 tfSplitFC.Value = true;
                 txtExtOff.String = '50';
+                txtProt.Enable = 'off';
             case 2 %Force feedback
                 txtXWLCp.Enable = 'on';
                 tfContour.Value = true;
                 tfSplitFC.Value = false;
                 txtExtOff.String = '50';
+                txtProt.Enable = 'off';
             case 3 %Force-extension
                 txtXWLCp.Enable = 'off';
                 tfContour.Value = false;
                 tfSplitFC.Value = false;
                 txtExtOff.String = '0';
+                txtProt.Enable = 'off';
+            case 4 %One trap
+                txtXWLCp.Enable = 'off';
+                tfContour.Value = false;
+                tfSplitFC.Value = false;
+                txtExtOff.String = '0';
+                txtProt.Enable = 'on';
             otherwise
                 error('Dropdown menu for Protocols can''t handle value %d', src.Value)
+        end
+    end
+
+%Lumicks warning
+    function lumWarn(src,~)
+        if strcmp('Lumicks', dropInst.String{dropInst.Value})
+            dsamp = (78125 / str2double(src.String));
+            if round(dsamp) ~= dsamp
+                warning('Will pick the closest usable output frequency: %0.2fHz', 78125/max(round(dsamp), 1));
+            end
         end
     end
 end

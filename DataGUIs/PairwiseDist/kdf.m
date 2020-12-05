@@ -2,7 +2,8 @@ function [out, y] = kdf(indata, dy, ysd)
 %calculates the kdf of a set of data by placing a gaussian at each pt with sd ysd
 
 if nargin < 3
-    ysd = 1;
+    %If the std has not been stated, 
+    ysd = sqrt(estimateNoise(indata));
 end
 if nargin < 2
     dy = 0.1;

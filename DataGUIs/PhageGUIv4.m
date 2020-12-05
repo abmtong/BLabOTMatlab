@@ -519,7 +519,7 @@ fig.Visible = 'on';
         zoom(mainAxis, 'out')
         zoom(subAxis, 'out')
         xlim(mainAxis, tlim)
-        ylim(mainAxis, clim)
+        ylim(mainAxis, clim + [0 1])
         ylim(subAxis, flim)
         zoom(mainAxis, 'reset')
         zoom(subAxis, 'reset')

@@ -12,6 +12,10 @@ switch sn
         out.time = {in.time};
         out.contour = {in.extension};
         out.force = {in.force};
+        out.forceAX = {out.forceAX};
+        out.forceAY = {out.forceAY};
+        out.forceBX = {out.forceBX};
+        out.forceBY = {out.forceBY};
     case 'trace'
         %Antony's analysis code
         out.time = {in.time};

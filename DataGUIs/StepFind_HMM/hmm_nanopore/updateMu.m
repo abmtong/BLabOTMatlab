@@ -34,7 +34,7 @@ if verbose == 2
     or = outraw;
     or(cellfun(@isempty, or)) = {10};
     figure, violin(or)
-else
+elseif verbose
     %Plot comparison
     figure, hold on
     plot(out, (1:ns), 'o');

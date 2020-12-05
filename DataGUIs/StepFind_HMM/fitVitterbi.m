@@ -16,11 +16,13 @@ if nargin > 1
     opts = handleOpts(opts, inOpts);
 end
 
+%Apply offset
+tr = tr - opts.off;
 if isempty(opts.mu)
-    %Make state matrix
+    %Make state matrix    
     indSta = floor(min(tr/opts.ssz));
     indEnd = ceil(max(tr/opts.ssz));
-    mu = (indSta:indEnd) * opts.ssz + opts.off;
+    mu = (indSta:indEnd) * opts.ssz;
 else
     mu = opts.mu;
 end

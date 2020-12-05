@@ -1,4 +1,4 @@
-function AProcessDataV2()
+function AProcessDataV2(infp, opts)
 %V2: Works for other 
 
 % Want to rewrite ProcessOneData to be more flexible / generalized
@@ -10,14 +10,29 @@ function AProcessDataV2()
 % 5. General Apply Off/Cal
 % 6. General Finisher (Ext, Frc, Mirror)
 
+
 %Load text file. This must be located where the other .dat files are
-[f, p] = uigetfile('*.txt');
-if ~p
-    return
+if nargin < 1
+    [f, p] = uigetfile('*.txt', 'Mu', 'on');
+    if ~p
+        return
+    end
+    if iscell(f)
+        opts = DataOptsPopup;
+        cellfun(@(x)AProcessDataV2(fullfile(p, x), opts), f)
+        return
+    else
+        infp = fullfile(p,f);
+    end
 end
+[p, f, e] = fileparts(infp);
+f = [f e];
 
 %Set data opts
-opts = DataOptsPopup;
+if nargin < 2
+    opts = DataOptsPopup;
+end
+
 opts = handleOpts(struct('path', p), opts);
 
 %Parse text file. Same code as from V1
@@ -86,7 +101,11 @@ switch opts.Instrument
         datname = '*.h5';    %Name.h5
 end
 
+%To debug, we can't have the error be caught for dbstop to fire
 debug = 1; %#ok<*UNRCH>
+if debug
+    warning('Debugging AProcessData')
+end
 
 %Then ProcessOneData these. Same code from V1
 for i = 1:size(nndat,1)
@@ -106,11 +125,11 @@ for i = 1:size(nndat,1)
             try
                 %Swap off and cal
                 ProcessOneDataV2(p, nndat(i,[1 3 2]), opts);
-                warning('Data/off/cal [%d %d %d] rearranged to [%d, %d, %d].\n', nndat(i,:), nndat(i,[1 3 2]));
+                warning('Data/off/cal [%d %d %d] rearranged to [%d, %d, %d].', nndat(i,:), nndat(i,[1 3 2]));
             catch
                 try %Add one to dat and off
                     ProcessOneDataV2(path, nndat(i,:)+[0 1 1], opts);
-                    warning('Data/off/cal [%d %d %d] shifted to [%d, %d, %d].\n', nndat(i,:), nndat(i,:)+[0 1 1]);
+                    warning('Data/off/cal [%d %d %d] shifted to [%d, %d, %d].', nndat(i,:), nndat(i,:)+[0 1 1]);
                 catch
                     warning('Data/off/cal [%d %d %d] failed.\n', nndat(i,:));
                 end

@@ -1,4 +1,5 @@
-function out = h5calread(infp)
+function [cal, out] = h5calread(infp)
+%Lumicks naming in out, my naming in cal
 
 if nargin<1
     dr = fileparts(mfilename('fullpath'));
@@ -22,5 +23,19 @@ for j = 1:length(calinf)
         out.(fn).(nm).k = ka;
         out.(fn).(nm).a = al;
         out.(fn).(nm).ak = ka*al;
+        %Just return the last cal, if multiple exist
+        switch nm
+            case 'x1'
+                cn = 'AX';
+            case 'x2'
+                cn = 'BX';
+            case 'y1'
+                cn = 'AY';
+            case 'y2'
+                cn = 'BY';
+        end
+        cal.(cn).k = ka;
+        cal.(cn).a = al;
+        cal.(cn).ak = ka*al;
     end
 end

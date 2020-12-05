@@ -1,11 +1,14 @@
-function ax = subplot2(infg, dims, num, wid)
-%Tighter subplot (less whitespace, tunable)
+function [ax, pos] = subplot2(infg, dims, num, wid)
+%Tighter subplot (tunable whitespace, tighter spacing by default)
+%Inputs: (infg, ___), dims (axes array size), num (linear index of axis you want to make)
+% If you want a larger axis, pass an array num, and it will make the axes that contains all of the subaxes defined by num
 
 if nargin < 4
     wid = 0.05;
 end
 
-%Min nargin = 2
+narginchk(2,4)
+
 %If infg is not supplied, use gcf instead
 if nargin == 2 && isnumeric(infg)
     num = dims;
@@ -51,7 +54,8 @@ ury = lly + widy;
 ll = [min(llx) min(lly)];
 ur = [max(urx) max(ury)];
 %Make axis with this position
-ax = axes(infg, 'Units', 'normalized', 'Position', [ll ur-ll]);
+pos = [ll ur-ll];
+ax = axes(infg, 'Units', 'normalized', 'Position', pos);
 
 
 

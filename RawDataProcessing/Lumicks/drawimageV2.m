@@ -4,6 +4,10 @@ function [out, t] = drawimageV2(pos, grn)
 
 %Might be expected to discard data when pos == 2, as assumedly the laser is moving, but eh keep, having more photons is more important than the 'smoothing'
 
+%Make pos/ grn row vectors
+pos = pos(:)';
+grn = grn(:)';
+
 %Line starts when pos goes from 0 to 1 (on the 1, so add 1)
 lnstarts = find(pos(1:end-1) == 0 & pos(2:end) == 1) + 1;
 %Line ends when pos goes from 2 to 0 (on the 2), or at eof
@@ -22,7 +26,7 @@ out = zeros(len, hei);
 for i = 1:hei
     if i == hei %Last line might be unfinished, handle specially. Actually works for every line, but slower (~30%)
         %Pad the end of the last line with extra zeroes to make it of size lnwid*len 
-        out(:, i) = sum( reshape([grn(lnstarts(i):lnends(i)); zeros(len*lnwid-(lnends(i)-lnstarts(i)+1),1)], lnwid, len), 1);
+        out(:, i) = sum( reshape([grn(lnstarts(i):lnends(i)) zeros(1,len*lnwid-(lnends(i)-lnstarts(i)+1))], lnwid, len), 1);
         % Could instead pad grn to length (len*hei*lnwid), might be better + removes this case
     else
         %Snip relevant part of grn, reshape & sum to get pixel value (integrated photon count)

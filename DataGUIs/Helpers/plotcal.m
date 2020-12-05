@@ -58,7 +58,7 @@ if isfield(cal.AX, 'Fall')
             box on
             line(ax2, [tmp.F(1), tmp.F(end)], [1 1], 'LineWidth', 2, 'Color', 'k');
             %         semilogx(ax2, tmp.Fall, Lorentzian(tmp.fit, tmp.Fall', tmp.opts) ./ tmp.Pall','Color', .8*[1 1 1] );
-            semilogx(ax2, tmp.F, Lorentzian(tmp.fit, tmp.F, tmp.opts) ./ tmp.P, 'o', 'Color', tmp.opts.color );
+            semilogx(ax2, tmp.F, (Lorentzian(tmp.fit, tmp.F, tmp.opts) ./ tmp.P).^-1, 'o', 'Color', tmp.opts.color );
             ax2.XLim = [tmp.F(1)*.9, tmp.F(end)*1.1];
             linkaxes([ax ax2], 'x');
             ax2.YLim = [.9 1.1];

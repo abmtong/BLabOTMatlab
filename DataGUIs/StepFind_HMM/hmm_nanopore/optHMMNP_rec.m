@@ -2,7 +2,7 @@ function out = optHMMNP_rec(dat, mu, seq, lastnres, inOpts)
 
 iter = 1;
 
-lastn = 50;
+lastn = 5;
 %To continue, rename the 'opt' in the workspace, then pass it as the lastnres arg.
 if nargin < 4
     lastnres = [];

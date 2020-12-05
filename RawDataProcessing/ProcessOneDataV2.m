@@ -3,6 +3,9 @@ function out = ProcessOneDataV2(path, inNums, inOpts)
 
 if nargin < 3
     inOpts = DataOptsPopup;
+    if isempty(inOpts)
+        return
+    end
 end
 
 %Compose filenames
@@ -25,10 +28,21 @@ else
             spfn = '%s_%03d.dat';
         case 'Meitner'
             spfn = '%s_%03d.dat';
+        case 'Lumicks'
+            spfn = '%s-%06d*.h5';
         otherwise
             error('Instrument %s not recognized', inOpts.Instrument)
     end
     file = arrayfun(@(x) sprintf(spfn, inOpts.mmddyy, x), inNums, 'Un', 0);
+    %For Lumicks, there's some trailing name, use dir to find it
+    if strcmp(inOpts.Instrument, 'Lumicks')
+        file = cellfun(@(x) dir(fullfile(path, x)), file, 'Un', 0);
+        file = cellfun(@(x) x.name, file, 'Un', 0);
+        ie = any(cellfun(@isempty, file));
+        if any(ie)
+            error('File(s) %s not found\n', [file{ie}]);
+        end
+    end
 end
 
 startT = tic;
@@ -45,63 +59,111 @@ calopts.Instrument = opts.Instrument;
 %Get Fs
 switch calopts.Instrument
     case 'HiRes'
-        calopts.Fsamp = opts.Fsamp;
+        calopts.Fsamp = 62500; %Hard code this, at least for now
+        cal = ACalibrateV2(fullfile(path, file{3}), calopts);
+        drawnow %Can inspect calibration while program continues
     case {'Boltzmann' 'Meitner'}
         %Read the header to get Fs
         calhdr = timesharereadhdr(fullfile(path, file{3}));
         calopts.Fsamp = 1/calhdr.Fsamp;
+        cal = ACalibrateV2(fullfile(path, file{3}), calopts);
+        drawnow %Can inspect calibration while program continues
+    case 'Lumicks'
+        %Just load calibration from the cal file
+        cal = h5calread(fullfile(path, file{3}));
 end
-cal = ACalibrateV2(fullfile(path, file{3}), calopts);
-drawnow %Can inspect calibration while program continues
+
 
 %Offset data is taken by holding the beads at a varying distance apart, to see laser-bead interactions (without tether)
-%rawoff V3 is a 8x[] matrix, with each row being a detector in order [AY BY AX BX MX MY SA SB]
-% rawoff = readDat(sprintf('%s\\%sN%02d.dat', path, mmddyy, inNums(2)));
-%OffsetV2 is a 8x[]x2 matrix, with (:,:,2) being the local std at each point. We read it as 8x[], so the second half of dimension 2 is std data
-switch calopts.Instrument
-    case 'HiRes'
-        %HiRes offset is pre-processed
-        rawoff = readDat(fullfile(path, file{2}), 1, 8, 'double', 1);
-        rawoff = rawoff(:,1:(end/2)); %drop the std data
-        %Assign to fields
-        off.AY = rawoff(1,:);
-        off.BY = rawoff(2,:);
-        off.AX = rawoff(3,:);
-        off.BX = rawoff(4,:);
-        off.TX = (rawoff(5,:) - opts.offTrapX) * opts.convTrapX;
-        off.TY = (rawoff(6,:) - opts.offTrapY) * opts.convTrapY;
-        off.AS = rawoff(7,:);
-        off.BS = rawoff(8,:);
-        
-        %Ghe's offset is this
-        %  rawoff = offset_legacy(sprintf('%s\\%sN%02d.dat', path, mmddyy, inNums(2)));
-        %  fprintf('Using Ghe''s offset.\n');
-    otherwise
-        %These should just be a single f-d curve. Average down and use
+
+switch opts.Protocol
+    case 'One Trap'
+        %If it's in one-trap mode, just take the mean as the offset.
+        %1-trap offset is just a single value, the mean of the cal data [or whatever is passed in slot 2]
         rawoff = loadfile_wrapper(fullfile(path, file{2}), opts);
-        %Average down to 100pts
-        npts = 100;
-        navg = floor(length(rawoff.AS) / npts);
-        off = [];
-        fnames = {'AX' 'AY' 'AS' 'BX' 'BY' 'BS' 'TX' 'TY'};
+        fnames = {'AX' 'AY' 'AS' 'BX' 'BY' 'BS'};
         for i = 1:length(fnames)
-            off.(fnames{i}) = windowFilter(@mean, rawoff.(fnames{i}), [], navg);
+            off.(fnames{i}) = [1 1] * mean(rawoff.(fnames{i}));
+        end
+        %Set TX,TY to span the entire range, so the later interp to always return a single value
+        off.TX = [0 1e9];
+        off.TY = [0 1e9];
+        %Also, set the calibration for the non-trap
+        if strcmp(opts.oneTrap, 'B')
+            dx = 'AX';
+            dy = 'AY';
+        else
+            dx = 'BX';
+            dy = 'BY';
+        end
+        cal.(dx).a = 1e-5;
+        cal.(dx).k = 1e-5;
+        cal.(dy).a = 1e-5;
+        cal.(dy).k = 1e-5;
+    otherwise
+        switch inOpts.Instrument
+            case 'HiRes'
+                %HiRes offset is pre-processed:
+                %rawoff V3 is a 8x[] matrix, with each row being a detector in order [AY BY AX BX MX MY SA SB]
+                % rawoff = readDat(sprintf('%s\\%sN%02d.dat', path, mmddyy, inNums(2)));
+                %OffsetV2 is a 8x[]x2 matrix, with (:,:,2) being the local std at each point. We read it as 8x[], so the second half of dimension 2 is std data
+                rawoff = readDat(fullfile(path, file{2}), 1, 8, 'double', 1);
+                rawoff = rawoff(:,1:(end/2)); %drop the std data
+                %Assign to fields
+                off.AY = rawoff(1,:);
+                off.BY = rawoff(2,:);
+                off.AX = rawoff(3,:);
+                off.BX = rawoff(4,:);
+                off.TX = (rawoff(5,:) - opts.offTrapX) * opts.convTrapX;
+                off.TY = (rawoff(6,:) - opts.offTrapY) * opts.convTrapY;
+                off.AS = rawoff(7,:);
+                off.BS = rawoff(8,:);
+                %Ghe's offset is this
+                %  rawoff = offset_legacy(sprintf('%s\\%sN%02d.dat', path, mmddyy, inNums(2)));
+                %  fprintf('Using Ghe''s offset.\n');
+            otherwise
+                %These should just be a single f-d curve. Average down and use
+                [rawoff, rawoffopts] = loadfile_wrapper(fullfile(path, file{2}), opts);
+                %Average down to 100pts
+                if isfield(rawoff, 'meta') && isfield(rawoff.meta, 'scanNSteps')
+                    npul = max(round(rawoff.meta.scanNSteps/rawoff.meta.scanCycPerStep),1); %Scans in Timeshared are two-way, take the first way.
+                else
+                    switch inOpts.Instrument
+                        case {'Boltzmann' 'Meitner'}
+                            npul = 2;
+                        case 'Lumicks'
+                            npul = 1;
+                    end
+                end
+                
+                npts = 100*npul;
+                navg = floor(length(rawoff.AS) / npts);
+                off = [];
+                fnames = {'AX' 'AY' 'AS' 'BX' 'BY' 'BS' 'TX' 'TY'};
+                for i = 1:length(fnames)
+                    off.(fnames{i}) = windowFilter(@mean, rawoff.(fnames{i})(1:round(end/npul)), [], navg);
+                end
         end
 end
 
 %Load data file
-rawdat = loadfile_wrapper(fullfile(path, file{1}), opts);
+[rawdat, rawdatopts] = loadfile_wrapper(fullfile(path, file{1}), opts);
 
 %Create some name-index sets to do in loop
 detNames = {'AX' 'BX' 'AY' 'BY'};
 detSums =  {'AS' 'BS' 'AS' 'BS'};
-%Normalize, apply offset to each detector
+%Normalize, apply offset to each detector. Deal with possible sign differences from Lumicks
+if strcmp(inOpts.Instrument, 'Lumicks')
+    sgn = rawdatopts.lumsgn * rawoffopts.lumsgn;
+else
+    sgn = 1;
+end
 for i = 1:4
     %Extract cell for convenience
     detNam = detNames{i};
     detSum = detSums{i};
     %Normalize offset and subtract it from the normalized data
-    rawdat.(detNam) = rawdat.(detNam) ./ rawdat.(detSum) - interp1( off.TX, off.(detNam)./off.(detSum), rawdat.TX, 'linear', 'extrap');
+    rawdat.(detNam) = rawdat.(detNam) ./ rawdat.(detSum) - interp1( off.TX, sgn * off.(detNam)./off.(detSum), rawdat.TX, 'linear', 'extrap');
     %Calculate force = AX * a * k
     out.(['force' detNam]) = rawdat.(detNam) * cal.(detNam).a * cal.(detNam).k;
 end
@@ -223,6 +285,15 @@ if isfield(rawdat, 'APD1')
     out.apdT = rawdat.APDT;
 end
 
+%Add Green Laser info if it has it
+if strcmp(opts.Instrument, 'Meitner')
+    if isfield(rawdat, 'GrnOn')
+        grn = struct('GrnOn', rawdat.GrnOn, 'GrnCurrPct', rawdat.GrnCurrPct, 'GrnIntMode', rawdat.GrnIntMode, 'GrnPDSum', rawdat.GrnPDSum, 'GrnTime', rawdat.GrnTime);
+        out.Grn = grn;
+    end
+end
+
+
 %Add extras
 out.off = off;
 out.cal = cal;
@@ -231,7 +302,7 @@ out.nums = inNums;
 out.files = file;
 out.comment = opts.comment;
 [~, f, ~] = fileparts(file{1});
-out.name = sprintf('%s%s%s.mat', path, pre, f);
+out.name = fullfile(path, sprintf('%s%s.mat',pre, f));
 out.timestamp = datestr(now, 'yy/mm/dd HH:MM:SS');
 
 %Get raw filesize (before .mat compression)

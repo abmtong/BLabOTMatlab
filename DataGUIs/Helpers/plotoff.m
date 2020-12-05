@@ -3,9 +3,14 @@ function plotoff(inoff)
 
 figure Name OffsetFile
 hold on
-plot(inoff.MX, inoff.AX, 'Color', 'b', 'LineWidth', 2);
-plot(inoff.MX, inoff.BX, 'Color', 'g', 'LineWidth', 2);
-plot(inoff.MX, inoff.AY, 'Color', 'b');
-plot(inoff.MX, inoff.BY, 'Color', 'g');
+if isfield(inoff, 'MX')
+    xx = inoff.MX;
+elseif isfield(inoff, 'TX')
+    xx = inoff.TX;
+end
+plot(xx, inoff.AX, 'Color', 'b', 'LineWidth', 2);
+plot(xx, inoff.BX, 'Color', 'g', 'LineWidth', 2);
+plot(xx, inoff.AY, 'Color', 'b');
+plot(xx, inoff.BY, 'Color', 'g');
 
 axis tight

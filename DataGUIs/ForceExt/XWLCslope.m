@@ -1,4 +1,4 @@
-function [outXpLm, outx] = XWLCm(F, P, S, kT)
+function [outXpLm, outx] = XWLCslope(F, P, S, kT)
 %Calculates the slope of the XWLC curve, which is proportional to SNR
 
 %Defaults
