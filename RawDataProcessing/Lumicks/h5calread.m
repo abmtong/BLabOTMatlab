@@ -25,14 +25,15 @@ for j = 1:length(calinf)
         out.(fn).(nm).ak = ka*al;
         %Just return the last cal, if multiple exist
         switch nm
+            %Lumicks traps are 1 fixed / 2 movable, usually with 2 to the right, so 1 is B and 2 is A
             case 'x1'
-                cn = 'AX';
-            case 'x2'
                 cn = 'BX';
+            case 'x2'
+                cn = 'AX';
             case 'y1'
-                cn = 'AY';
-            case 'y2'
                 cn = 'BY';
+            case 'y2'
+                cn = 'AY';
         end
         cal.(cn).k = ka;
         cal.(cn).a = al;

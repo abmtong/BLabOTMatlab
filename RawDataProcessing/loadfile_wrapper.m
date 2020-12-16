@@ -3,17 +3,19 @@ function [out, opts] = loadfile_wrapper(filepath, inOpts)
 %Outputs QPDs (V, {A B} x {X Y S}) and trap separation (nm, {TX TY})
 
 if nargin < 1
-    [f p] = uigetfile('*.dat');
+    [f, p] = uigetfile('*.dat');
     filepath = fullfile(p,f);
 end
 if nargin < 2
     inOpts = DataOptsPopup;
 end
 
-opts.offTrapX = 0;
-opts.offTrapY = 0;
-opts.convTrapX = 1;
-opts.convTrapY = 1;
+%Trap offsets should be set in inOpts, and if these are unset, 
+% opts.offTrapX = 0;
+% opts.offTrapY = 0;
+% opts.convTrapX = 1;
+% opts.convTrapY = 1;
+opts = [];
 
 switch inOpts.Instrument
     case 'HiRes'
@@ -89,31 +91,51 @@ switch inOpts.Instrument
     case 'Mini'
         error('Minis not yet handled!')
     case 'Lumicks'
+        opts = handleOpts(opts, inOpts);
+        
         rawdat = readh5all(filepath);
         %Lumicks outputs force directly, so divide by cal (in case we want to recalibrate) and make S = 1
         cal = rawdat.cal;
-        %Trap might be in opposite orders, let's handle this by negation
-        maxf = max(rawdat.ForceHF_Force2x - rawdat.ForceHF_Force1x);
-        minf = min(rawdat.ForceHF_Force2x - rawdat.ForceHF_Force1x);
-        %BX(2x) should be positive, so maxf should be > minf. If not, negate.
-        sgn = sign(maxf - minf);
-        dat.AX = sgn * rawdat.ForceHF_Force1x / cal.AX.ak; %Negate , for sign convention
-        dat.BX = sgn * rawdat.ForceHF_Force2x / cal.BX.ak;
-        dat.AY = sgn * rawdat.ForceHF_Force1y / cal.AY.ak;
-        dat.BY = sgn * rawdat.ForceHF_Force2y / cal.BY.ak;
+        %Lumicks traps are 1 fixed / 2 movable, usually with 2 to the right, so 1 is B and 2 is A
+        dat.AX = rawdat.ForceHF_Force2x / cal.AX.ak;
+        dat.BX = rawdat.ForceHF_Force1x / cal.BX.ak;
+        dat.AY = rawdat.ForceHF_Force2y / cal.AY.ak;
+        dat.BY = rawdat.ForceHF_Force1y / cal.BY.ak;
         dat.AS = ones(size(dat.AX));
         dat.BS = dat.AS;
-        %PiezoDistance might not always be ok, so check if it's all 0s or not
-        if all(~rawdat.Distance_PiezoDistance)
-            %PiezoDistance get from interpolating the Distance channel
-            d = abs(rawdat.Distance_Distance1.Value - rawdat.Distance_Distance2.Value)*1000; %um -> nm
-            t = double(rawdat.Distance_Distance1.Timestamp - rawdat.Distance_Distance1.Timestamp(1)) / 1e9; %Unit is ns, u64
-            dat.TX = interp1(t, d, (0:length(dat.AX))/78125, 'linear', median(d));
-            [~, f, ~] = fileparts(filepath);
-            warning('Lumicks file %s loaded using low-frequency distance. Distances may be off.', f)
-        else
-            dat.TX = rawdat.Distance_PiezoDistance*1000; %um -> nm
+        
+        %Do mirror calibration, if mirror options are not passed.
+        if opts.convTrapX == 0 %If = 0, then it isn't set, so calibrate it. This should be on the offset
+            %Calibrate the mirror by finding the linear relation between the video tracking and Trapposition_N1X
+            dd = rawdat.Distance_Distance1.Value(:)'*1000;
+            %Going to assume that the times are synched well enough, so we can use linspace to sample Trapposition_N1X
+            tt = round(linspace(1, length(rawdat.Trapposition_N1X), length(dd)+1));
+            mx = rawdat.Trapposition_N1X(tt(1:end-1));
+            %Some dd's will be 0, when bead tracking fails, so remove these
+            ddki = dd ~= 0;
+            mx = mx(ddki);
+            dd = dd(ddki);
+            %Linfit these
+            [pf, S] = polyfit(mx, dd, 1);
+            %Make sure this fit is okay. Let's use the R^2 value. Good fitting -> R2 = 0.99+
+            %...I know this isn't quite what R2 means, but eh.
+            r2 = 1 - sum(S.normr.^2) / sum( ( mean(dd) - dd ) .^2 );
+            if r2 < .99
+                [~, f, ~] = fileparts(filepath);
+                warning('Mirror fitting may be poor in file %s since R^2 is %0.3f, plotting ', f, r2)
+                figure('Name', sprintf('Mirror fitting for file %s', f))
+                plot(mx, dd), hold on, plot(mx, polyval(pf, mx))
+            end
+            %And set this polyfit to the TrapX conversions
+            opts.offTrapX = pf(2) / pf(1); %We're going to do y = m (x + b/m)
+            opts.convTrapX = pf(1);
+            %Assume the Y component is contained in the fitting between Distance and X, so zero them
+            opts.offTrapY = 0;
+            opts.convTrapY = 0;
         end
+        %Make TX from Trapposition_N1X
+        dat.TX = (rawdat.Trapposition_N1X + opts.offTrapX) * opts.convTrapX;
+
         %Lumicks subtracts out the bead diameters, add them back.
         dat.TX = dat.TX + inOpts.raA + inOpts.raB;
         
@@ -128,7 +150,7 @@ switch inOpts.Instrument
         end
         out = dat;
         opts.Fs = 78125 / dSamp;
-        opts.lumsgn = sgn; %Save this sign if it needs to be propagated (e.g. through offset + data)
+%         opts.lumsgn = sgn; %Save this sign if it needs to be propagated (e.g. through offset + data)
     otherwise
         error('Instrument %s not recognized', opts.Instrument)
 end

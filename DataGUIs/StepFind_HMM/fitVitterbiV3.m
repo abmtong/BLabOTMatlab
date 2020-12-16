@@ -51,7 +51,7 @@ npdf = @(ind) normpdf(mu, tr(ind), sig); %Shortcut
 
 %Define upper, lower bdys [slice of states we need to consider at each pt]
 maxdif = max(abs(diff(tr)));
-maxdif = max([maxdif, length(a)*opts.ssz*2, sig*2]);
+maxdif = max([maxdif, length(a)*opts.ssz*2, sig*5]);
 ub = min( ceil((tr+maxdif-yimin*opts.ssz+1)/opts.ssz), ns);
 lb = max(floor((tr-maxdif-yimin*opts.ssz+1)/opts.ssz), 1);
 lb3 = min( [lb; lb(2:end) inf ; inf lb(1:end-1)] , [] , 1);
@@ -62,13 +62,17 @@ widmx = max(wid);
 %vitterbi, just apply w/ inModel
 vitdp = zeros(len-1, widmx); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
 % vitdpim(1,:) = lb(1):ub(1);
-vitsc = pi .* npdf(1);
+vitsc = npdf(1).^2;
 for i = 1:len-1
     %Create matrix a
     aa = diag(ones(1,wid(i))*a(2)) + diag(ones(1,wid(i)-1),-1)*a(3) + diag(ones(1,wid(i)-1),1)*a(1);
     aa = bsxfun(@rdivide, aa, sum(aa,2));
     %Calculate proposed paths, take best
     [tsc, tvitdp] = max( bsxfun( @times, aa, vitsc(lb3(i):ub3(i))'), [], 1);
+    %Sanity: tsc > 0
+    if tsc == 0
+        error('Probability zeroed out, check (probably a backtrack in a non-backtracking staircase)') %Maybe deal in logprob instead...
+    end
     %Apply score, apply npdf, renormalize
     vitsc = [ zeros(1, lb3(i)-1) tsc zeros(1, ns-ub3(i)) ] .* npdf(i+1) / sum(tsc);
     %Save best paths

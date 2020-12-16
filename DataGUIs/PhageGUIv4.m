@@ -90,9 +90,9 @@ clrGraph  = uicontrol(panlef,                    'Units', 'normalized', 'Positio
 %This subpanel has the filtering text boxes
 panFil = uipanel(panlef, 'Position', [0 .8 1 .075]);
 filtFactT = uicontrol(panFil, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .67 .5 .33],  'String', 'Filt Fact');
-filtFact  = uicontrol(panFil, 'Style', 'edit', 'Units', 'normalized', 'Position', [0 .0 .5 .67],   'String', '10', 'Callback', @refilter_callback);
+filtFact  = uicontrol(panFil, 'Style', 'edit', 'Units', 'normalized', 'Position', [0 .0 .5 .67],   'String', '[]', 'Callback', @refilter_callback);
 deciFactT = uicontrol(panFil, 'Style', 'text', 'Units', 'normalized', 'Position', [.5 .67 .5 .33], 'String', 'Dec Fact');
-deciFact  = uicontrol(panFil, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .0 .5 .67],  'String', '2', 'Callback', @refilter_callback);
+deciFact  = uicontrol(panFil, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .0 .5 .67],  'String', '20', 'Callback', @refilter_callback);
 %This subpanel has the contour limit text boxes
 panConMx= uipanel(panlef, 'Position', [0 .725 1 .075]);
 conMinT = uicontrol(panConMx, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .67 .5 .33],  'String', 'Y Min');

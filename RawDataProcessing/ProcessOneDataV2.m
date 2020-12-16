@@ -143,27 +143,28 @@ switch opts.Protocol
                 for i = 1:length(fnames)
                     off.(fnames{i}) = windowFilter(@mean, rawoff.(fnames{i})(1:round(end/npul)), [], navg);
                 end
+                
+                %For Lumicks, mirror calibration is done here, so load it
+                if strcmp(inOpts.Instrument, 'Lumicks')
+                    opts = handleOpts(opts, rawoffopts);
+                end
+                    
         end
 end
 
 %Load data file
-[rawdat, rawdatopts] = loadfile_wrapper(fullfile(path, file{1}), opts);
+[rawdat, ~] = loadfile_wrapper(fullfile(path, file{1}), opts);
 
 %Create some name-index sets to do in loop
 detNames = {'AX' 'BX' 'AY' 'BY'};
 detSums =  {'AS' 'BS' 'AS' 'BS'};
-%Normalize, apply offset to each detector. Deal with possible sign differences from Lumicks
-if strcmp(inOpts.Instrument, 'Lumicks')
-    sgn = rawdatopts.lumsgn * rawoffopts.lumsgn;
-else
-    sgn = 1;
-end
+%Normalize, apply offset to each detector.
 for i = 1:4
     %Extract cell for convenience
     detNam = detNames{i};
     detSum = detSums{i};
     %Normalize offset and subtract it from the normalized data
-    rawdat.(detNam) = rawdat.(detNam) ./ rawdat.(detSum) - interp1( off.TX, sgn * off.(detNam)./off.(detSum), rawdat.TX, 'linear', 'extrap');
+    rawdat.(detNam) = rawdat.(detNam) ./ rawdat.(detSum) - interp1( off.TX, off.(detNam)./off.(detSum), rawdat.TX, 'linear', 'extrap');
     %Calculate force = AX * a * k
     out.(['force' detNam]) = rawdat.(detNam) * cal.(detNam).a * cal.(detNam).k;
 end
@@ -268,7 +269,6 @@ if opts.convToContour
             out.cut.(mirfnames{i}) = tempposcut;
         end
     end
-    
 else
     pre = 'ForceExtension';
 end

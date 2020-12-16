@@ -20,5 +20,5 @@ for i = 1:len
     fg = gcf;
     savefig(fg, sprintf('kn_%s.fig', f))
     %Cleanup
-    close all
+%     close all
 end

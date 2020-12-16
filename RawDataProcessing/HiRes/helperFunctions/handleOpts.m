@@ -6,7 +6,7 @@ if isempty(newOpts)
 end
 
 if isempty(oldOpts)
-%     oldOpts = newOpts;
+    oldOpts = newOpts;
     return
 end
 
