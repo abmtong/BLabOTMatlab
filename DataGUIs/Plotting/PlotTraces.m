@@ -86,16 +86,22 @@ for i = 1:length(files);
     if plotUncropped
         crop = [0 inf];
     else %Load crop
-        name = files{i}(6:end-4); %Extracts * from phage*.mat
-        cropfp = sprintf('%s\\CropFiles%s\\%s.crop', path, cropstr, name);
-        fid = fopen(cropfp);
-        if fid == -1
-            fprintf('Crop not found for %s\n', name)
+        %Old, crop for just phage
+%         name = files{i}(6:end-4); %Extracts * from phage*.mat
+%         cropfp = sprintf('%s\\CropFiles%s\\%s.crop', path, cropstr, name);
+%         fid = fopen(cropfp);
+%         if fid == -1
+%             fprintf('Crop not found for %s\n', name)
+%             continue
+%         else
+%             crop = textscan(fid, '%f');
+%             fclose(fid);
+%             crop = crop{1};
+%         end
+        %New, use loadCrop
+        crop = loadCrop('', path, files{i});
+        if isempty(crop)
             continue
-        else
-            crop = textscan(fid, '%f');
-            fclose(fid);
-            crop = crop{1};
         end
     end
     numPlotted = numPlotted + 1;

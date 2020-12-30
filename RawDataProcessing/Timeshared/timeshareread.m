@@ -180,7 +180,7 @@ if any(hdr(13) == [1 3])
             warning('Fluorescence values in file %s unexpectedly high, saving as uint64', file);
         end
         %Reshape counts
-        tmpfl = (reshape(tmpfl,2,[]));
+        tmpfl = (reshape(tmpfl(1:2*floor(end/2)),2,[]));
         dat.APD1 = tmpfl(1,:);
         dat.APD2 = tmpfl(2,:);
         dat.APDT = (0:length(dat.APD1)-1) * apddt + apddt/4;
