@@ -11,7 +11,7 @@ addOptional (p, 'FilterRank', 10, isInt )
 addParameter(p, 'PlotUncropped', 0, isBool )
 addParameter(p, 'CropStr', '', @ischar )
 addParameter(p, 'SelectFiles', 0, isBool )
-addParameter(p, 'NormContour', 0, isBool )
+addParameter(p, 'NormContour', 0, @isnumeric )
 addParameter(p, 'TimeShift', 3, isInt )
 addParameter(p, 'Name','', @ischar)
 addParameter(p, 'Axis', [], @(x)isgraphics(x,'axes'))
@@ -99,7 +99,7 @@ for i = 1:length(files);
 %             crop = crop{1};
 %         end
         %New, use loadCrop
-        crop = loadCrop('', path, files{i});
+        crop = loadCrop(cropstr, path, files{i});
         if isempty(crop)
             continue
         end
@@ -139,6 +139,8 @@ for i = 1:length(files);
         if isempty(timf)
             continue
         end
+        conf = windowFilter(@mean, conf, [], filterRank) ;
+        timf = windowFilter(@mean, timf, [], filterRank) ;
         if firstSeg
             offsetT = timf(1);
             if normCon
@@ -149,11 +151,13 @@ for i = 1:length(files);
             end
             firstSeg = 0;
         end
-        if normCon
+        if normCon == 2
+            dCon = -offsetCon;
+        elseif normCon
             dCon = 3000+(numPlotted-ceil(length(files)/2))*100-offsetCon;
         end
-        conf = windowFilter(@mean, conf, [], filterRank) + dCon;
-        timf = windowFilter(@mean, timf, [], filterRank) +numPlotted*dT-offsetT;
+        conf = conf + dCon;
+        timf = timf +numPlotted*dT-offsetT;
         if plotText
             text(double(timf(1)),double(conf(1))*ymult,files{i}(6:end-4))
             plotText = 0;

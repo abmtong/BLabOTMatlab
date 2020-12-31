@@ -60,7 +60,7 @@ pantop = uipanel('Position', [0 1-panwid_top 1 panwid_top]);
 loadFile = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [ 0, 0, .1, 1], 'String', 'Load File', 'Callback',@loadFile_callback);
 takeCrop = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.1, 0, .075, 1], 'String', 'Crop', 'Callback',@tempCrop_callback);
 takeCropL= uicontrol('Parent', pantop, 'Style', 'text', 'Units', 'normalized', 'Position', [.175, .5, .025, .5 ], 'String', 'CropN');
-takeCropT= uicontrol('Parent', pantop, 'Style', 'edit', 'Units', 'normalized', 'Position', [.175, 0, .025, .5 ], 'String', '1', 'Callback',@loadCrop_callback);
+takeCropT= uicontrol('Parent', pantop, 'Style', 'edit', 'Units', 'normalized', 'Position', [.175, 0, .025, .5 ], 'String', '', 'Callback',@loadCrop_callback);
 stepKlVi = uicontrol('Parent', pantop, 'Units', 'normalized', 'Position', [.2, 0, .05, 1], 'String', 'Fit XWLC' , 'Callback',@fitXWLC_callback);
 frcRange = uicontrol('Parent', pantop, 'Style', 'edit', 'Units', 'normalized', 'Position', [.25 0 .05 .5], 'String', '[5 35]');
 frcRangeT= uicontrol('Parent', pantop, 'Style', 'text', 'Units', 'normalized', 'Position', [.25 .5 .05 .5], 'String', 'Force Range');
@@ -127,7 +127,7 @@ fig.Visible = 'on';
         
         %Load the file
         load([path file],'ContourData');
-        name = file(15:end-4);
+        name = file(1:end-4);
         cla(mainAxis)
         fig.Name = sprintf('ForExtGUI %s', name);
         
@@ -183,7 +183,7 @@ fig.Visible = 'on';
         if cropstr == '1';
             cropstr = [];
         end
-        cropfp = sprintf('%s\\CropFiles%s\\%s.crop', path, cropstr, name);
+        cropfp = sprintf(['%s' filesep filesep 'CropFiles%s' filesep filesep '%s.crop'], path, cropstr, name);
         cropp = fileparts(cropfp);
         if ~exist(cropp, 'dir')
             mkdir(cropp)
@@ -207,17 +207,20 @@ fig.Visible = 'on';
         if cropstr == '1'
             cropstr = '';
         end
-        cropfp = sprintf('%s\\CropFiles%s\\%s.crop', path, cropstr, name);
-        fid = fopen(cropfp);
-        if fid == -1
+%         cropfp = sprintf('%s\\CropFiles%s\\%s.crop', path, cropstr, name);
+%         fid = fopen(cropfp);
+%         if fid == -1
+
+%         end
+%         
+%         ts = textscan(fid, '%f');
+%         fclose(fid);
+%         ts = ts{1};
+        cropT = loadCrop(cropstr, path, file);
+        if isempty(cropT)
 %             takeCrop.String = 'Crop not found';
             return
         end
-        
-        ts = textscan(fid, '%f');
-        fclose(fid);
-        ts = ts{1};
-        cropT = ts;
         
         %Delete old lines
         if ~isempty(cropLines{1,1})

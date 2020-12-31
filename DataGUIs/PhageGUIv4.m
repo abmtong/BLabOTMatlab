@@ -172,11 +172,13 @@ fig.Visible = 'on';
         %Check if it's regular phage data or something else
         if strcmp(sn, 'stepdata')
             stepdata = tmp;
-            if length(file) > 5 && strcmpi(file(1:5), 'phage')
-                name = file(6:end-4); %Strip leading 'phage' and trailing '.mat'
-            else
-                name = file(1:end-4); %Just strip trailing '.mat'
-            end
+            %Going to stop removing the preceding phage*, and handle it in loadCrop
+%             if length(file) > 5 && strcmpi(file(1:5), 'phage')
+%                 name = file(6:end-4); %Strip leading 'phage' and trailing '.mat'
+%             else
+%                 
+%             end
+            name = file(1:end-4); %Just strip trailing '.mat'
         else
             %If it's something else, convert to phage-like
             stepdata = renametophage(tmp, sn);
@@ -451,7 +453,7 @@ fig.Visible = 'on';
             return
         end
         %Create the filepath to the crop
-        cropfp = sprintf('%s\\CropFiles%s\\%s.crop', path, cropstr, name);
+        cropfp = sprintf(['%s' filesep filesep 'CropFiles%s' filesep filesep '%s.crop'], path, cropstr, name);
         cropp = fileparts(cropfp);
         %Create the folder, if it doesn't exist
         if ~exist(cropp, 'dir')
