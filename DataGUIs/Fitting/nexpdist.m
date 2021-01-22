@@ -2,7 +2,7 @@ function out = nexpdist(n)
 
 %A sum of N exp's, for getDist
 exppdf = @(x,a,k) a * k * exp(-x*k);
-expcdf = @(x,a,k) a * exp(-x*k);
+expcdf = @(x,a,k) a * exp(-x*k); %Actually the ccdf
 
 %Just do up to 5 pdfs. No great way to do this programatically?
 switch n
@@ -25,5 +25,5 @@ switch n
         error('%d is too many exps, need to add')
 end
 out.lb = repmat([0 0], 1, n);
-out.ub = repmat([1 inf], 1, n);
+out.ub = repmat([inf inf], 1, n);
 out.cmt = sprintf('Sum of %d exponentials, height x0(odd) and rate x0(even)', n);

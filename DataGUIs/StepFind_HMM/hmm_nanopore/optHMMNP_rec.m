@@ -3,6 +3,7 @@ function out = optHMMNP_rec(dat, mu, seq, lastnres, inOpts)
 iter = 1;
 
 lastn = 5;
+
 %To continue, rename the 'opt' in the workspace, then pass it as the lastnres arg.
 if nargin < 4
     lastnres = [];
@@ -10,6 +11,8 @@ else
     len = min(length(lastnres), lastn);
     lastnres = lastnres((1:len)-len + end);
 end
+
+lastnmu = cell(1,lastn);
 
 opts.verbose = 0;
 opts.trnsprb = 1e-20;
@@ -29,6 +32,7 @@ while true
     munew = updateMu(lastnres, mu, 0);
     mu = munew;
     out.munew = munew;
+    lastnmu{mod(iter-1,lastn)+1} = munew;
     %Assign result to workspace
     if mod(iter, 1) == 0
         assignin('base', 'tmp' , out)
@@ -36,6 +40,12 @@ while true
     end
 
     iter = iter + 1;
+    
+    %Check for convergence
+    if isequal(lastnmu{:})
+        fprintf('Converged after %d iters', iter)
+        break
+    end
 end
 
 

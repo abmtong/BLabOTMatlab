@@ -85,13 +85,13 @@ upst = mei(kiseq);
 upmu = newmu(kiseq);
 out = [upst(:) upmu(:)];
 
-%Sanity check: For Alan's current sequence, these codons should never be detected, error if they are [= bug found]
-nt = 'ATGC';
-forbid = [25    28    39    41    44    48    51    55    62    70    71    74    75    83    85    90    94    98   101   102   103   114   121   127   136   138   139   141   154   155   159   160   163   164   175   176   177   187   188   191   199   209   218   226   227   233   239   245   249   251];
-for i = 1:length(forbid)
-    if any(upst == forbid(i))
-        fprintf('Found state %s in Alan''s data, which is forbidden; data removed', nt(num2cdn (forbid(i))))
-        warning('MultiBTs found probably ?')
-        out = [];
-    end
-end
+% %Sanity check: For Alan's current sequence, these codons should never be detected, error if they are [= bug found]
+% nt = 'ATGC';
+% forbid = [25    28    39    41    44    48    51    55    62    70    71    74    75    83    85    90    94    98   101   102   103   114   121   127   136   138   139   141   154   155   159   160   163   164   175   176   177   187   188   191   199   209   218   226   227   233   239   245   249   251];
+% for i = 1:length(forbid)
+%     if any(upst == forbid(i))
+%         fprintf('Found state %s in Alan''s data, which is forbidden; data removed', nt(num2cdn (forbid(i))))
+%         warning('MultiBTs found probably ?')
+%         out = [];
+%     end
+% end

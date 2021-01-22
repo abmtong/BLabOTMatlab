@@ -10,8 +10,11 @@ xrng = [1.1e-3 1];
 for i = 1:len
     f = fn{i};
     dw = dwstruct.(f);
-    %Do fitbiexp
-    fitbiexp([dw{:}], xrng, 1, 1);
+%     %Do fitbiexp
+%     fitbiexp([dw{:}], xrng, 1, 1);
+    
+    fitnexp
+
     %Save figure
     fg = gcf;
     savefig(fg, sprintf('exp_%s.fig', f))

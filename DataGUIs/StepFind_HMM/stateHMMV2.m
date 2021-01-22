@@ -29,7 +29,13 @@ end
 
 
 if ~isfield(inModel, 'ns')
-    ns = 3;
+    if isfield(inModel, 'mu')
+        ns = length(inModel.mu);
+    elseif isfield(inModel, 'a')
+        ns = length(inModel.a);
+    else
+        ns = 3;
+    end
     inModel.ns = ns;
 else
     ns = inModel.ns;
@@ -39,11 +45,14 @@ end
 %generate missing model stuffs
 if ~isfield(inModel, 'a')
     a = ones(ns)/1e4 + diag(ones(1,ns));
-    a = bsxfun(@rdivide, a, sum(a,2));
+%     a = bsxfun(@rdivide, a, sum(a,2));
     inModel.a = a;
 else
     a = inModel.a;
+    
 end
+%Normalize a
+a = bsxfun(@rdivide, a, sum(a,2));
 
 if ~isfield(inModel, 'mu')
 %     mu = ((1:ns)+1)/(ns+2) * (max(tr) - min(tr)) + min(tr); %evenly divided by range
@@ -253,7 +262,7 @@ for i = len-1:-1:1
     st(i) = vitdp(i,st(i+1));
 end
 
-%vitterbi, just apply w/ inModel
+%viterbi, just apply w/ inModel
 vitdpim = zeros(len-1, ns); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
 vitdpim(1,:) = 1:ns;
 vitscim = pi .* npdf(1,:);

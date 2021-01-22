@@ -1,7 +1,9 @@
-function out = fitnexp(xdata, inOpts)
+function [out, outraw] = fitnexp(xdata, n)
 
 %Fits 1-5 exponentials, stops according to AIC
-n=5; %Max exponentials to fit, if >5 need to change @nexpdist
+if nargin < 2
+    n=5; %Max exponentials to fit, if >5 need to change @nexpdist
+end
 
 if iscell(xdata)
     xdata = [xdata{:}];
@@ -16,16 +18,26 @@ if verbose
     fg = figure;
 end
 
+%MLE options
+mleopts = statset;
+mleopts.MaxFunEvals = 1e12;
+
 xdata = sort(xdata, 'descend');
 xx = ((1:length(xdata))-1) / length(xdata);
 
 for i = 1:n
     ned = nexpdist(i);
-    %Make guesses: Mean, and then decaying means
-    kg = log(2)/median(xdata);
-    xg = [ 0.9.^(1:i); kg * (1:i) ];
-    xg = xg(:)';
-    [fts{i}, cis{i}] = mle(xdata, 'pdf', ned.pdf, 'start', xg, 'LowerBound', ned.lb, 'UpperBound', ned.ub);
+    %Make guess
+    if i == 1 %Use gneeric 1exp guess (full occupancy, estimate rate with median)
+        xg = [1, log(2)/median(xdata)];
+    else %Add onto previous result with slower + less occupant ones
+        xg = [fts{i-1} fts{i-1}(end-1:end)/4 ];
+    end
+    [ft, cis{i}] = mle(xdata, 'pdf', ned.pdf, 'start', xg, 'LowerBound', ned.lb, 'UpperBound', ned.ub);
+    
+    %Normalize amts
+    ft(1:2:end) = ft(1:2:end)/sum(ft(1:2:end));
+    fts{i} = ft;
     
     ftc = num2cell(fts{i});
     
@@ -37,7 +49,7 @@ for i = 1:n
     
     %Plot
     if verbose
-        subplot2([n 1], i)
+        subplot2([n 1], i);
         plot(xdata, xx, 'Color', .7 * [1 1 1])
         hold on
         plot(xdata, ned.cdf(xdata, ftc{:}));
@@ -65,8 +77,8 @@ end
 
 %Return nfit's results
 out.n = nfit;
-out.ft = fts(i);
-out.ci = cis(i);
+out.ft = fts(nfit);
+out.ci = cis(nfit);
 
 outraw.n = n;
 outraw.ft = fts;
