@@ -36,6 +36,7 @@ pts = round(wid/bin+1);
 
 outX = 0:bin:wid;
 outPWD = zeros(1,pts);
+
 for i = 1:len
     %check for NaN (Ghe code had some NaN, bc some F is negative)
     if any(isnan(inData{i}))

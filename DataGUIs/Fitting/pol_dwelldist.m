@@ -11,18 +11,15 @@ function out = pol_dwelldist(dwstruct)
    %
 %If it's not a struct, make it one
 if ~isstruct(dwstruct)
-    tmp.a = dwstruct;
-    dwstruct = tmp;
+    dwstruct = struct('a', dwstruct);
 end
    
-   
-fn = fieldnames(dwstruct);
-len = length(fn);
-xrng = [2e-3 inf];
+xrng = [2e-3 inf]; %Crop some of the shorter dwells, because fitting is wonk
 nmax = 10; %max exponentials to fit
 
+fn = fieldnames(dwstruct);
+len = length(fn);
 out = cell(1,len);
-
 
 for i = len:-1:1
     f = fn{i};

@@ -2,25 +2,31 @@ function outstats = ppKVv3p2(inst, inOpts)
 %PPause Part 2: now that we've stepfound, analyze bt events for stats
 %inst = the output of phagepauseKVv3
 
-
-opts.mincon = 5; %Minimum bt contour allowed: affects size of first bin in con plots
+opts.mincon = 0; %Minimum bt contour allowed: affects size of first bin in con plots
 opts.minstp = 2; %Minimum back steps required for an event
 opts.fbin = [5 15 25 35]; %Bin force by these bin edges
 opts.cols = {[0 0 1] [.5 0 .5] [1 0 0]}; %Colors, default blue > purple > red
 opts.Fs = 2.5e3;
 %Some bin/display params
-binmax.con = [10 200];
+opts.plotViolins = 0;
+binmax.con = [2.5 200];
 binmax.tim = [.05 2];
-binmax.vel = [20 500];
+binmax.vel = [10 500];
 binmax.dwl = [.01, .5];
 binmax.stp = [0.2, 15];
 binmax.nnn = [1, 20];
 opts.binmax = binmax;
+opts.conmult = 0.34; %Convert from bp to nm
 opts.smoothfact = 5; %Smooth dists by this amt
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
 end
+
+%Apply to conmult to binning
+opts.binmax.con = opts.binmax.con * opts.conmult;
+opts.binmax.stp = opts.binmax.stp * opts.conmult;
+opts.binmax.vel = opts.binmax.vel * opts.conmult;
 
 smoothfact = opts.smoothfact;
 binmax = opts.binmax;
@@ -86,27 +92,47 @@ for i = 1:size(toplot,1) %Hm, loop should be done over unique type/bt options in
         end
         %Apply calculation function
         nos = row{2}(crp, opts);
+        %Apply scaling if contour
+        if any(strcmp(row{3}, {'con', 'vel', 'stp'}))
+            nos = nos * opts.conmult;
+        end
+        
         %Form into a histogram
         [yy,xx] = nhistc(nos, binmax.(row{3})(1));
+        %Pad with zeros
+        yy = [yy zeros(1,1e2)]; %#ok<AGROW>
+        xx = [xx xx(end) + median(diff(xx)) * (1:1e2)]; %#ok<AGROW>
         %If contour, fiddle with first bin if necessary
         if strcmp(row{3}, 'con')
             %Fiddling is necessary if opts.mincon cuts into a bin
             %Assume that this would be the first bin
-            rm = rem( xx(1) - binmax.con(1)/2 , opts.mincon);
-            if rm
-                xx(1) = xx(1) + rm/2;
-                yy(1) = yy(1) * binsz / (binsz - rm);
+            if opts.mincon ~= 0
+                rm = rem( xx(1) - binmax.con(1)/2 , opts.mincon);
+                if rm
+                    xx(1) = xx(1) + rm/2;
+                    yy(1) = yy(1) * binsz / (binsz - rm);
+                end
             end
         end
         %Smooth
         yy = smooth(yy, smoothfact)';
         %And plot
-        plot(ax, xx, yy, 'Color', opts.cols{j})
+        if opts.plotViolins
+            %If violins, some of this calculation will be wasted, but eh whatever
+%             obs = violin(nos(:), 'facecolor', opts.cols{j}, 'mc', [], 'medc', 'k', 'bw', binmax.(row{3})(1)*opts.smoothfact, 'facealpha', 1, 'plotlegend', 0);
+%             obs(1).XData = obs(1).XData + (j-1);
+%             obs(3).XData = obs(3).XData + (j-1);
+            patch('XData',smooth([-yy yy(end:-1:1)], smoothfact), 'YData', [xx xx(end:-1:1)], 'FaceColor', opts.cols{j});
+            xlim([0 j+1])
+            ylim([0 binmax.(row{3})(2)])
+        else
+            plot(ax, xx, yy, 'Color', opts.cols{j})
+            xlim(ax, [0 binmax.(row{3})(2)])
+        end
         %Calculate stats
         outstats(i, 1+(j:3:end-1)) = cellfun(@(x) x(nos), tocalc(:,2), 'un', 0);
     end
-    %Fix axes
-    xlim(ax, [0 binmax.(row{3})(2)])
+    %Font, title
     ax.FontSize = 14;
     title(ax, row{1}, 'FontWeight', 'normal', 'FontSize', ax.FontSize-2)
 end

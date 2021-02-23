@@ -1,4 +1,4 @@
-function ft = phage_dwelldist(dws, method)
+function out = phage_dwelldist(dws, method)
 %Fits dws to some fcn
 
 if nargin < 2
@@ -42,7 +42,7 @@ switch method
 end
 
 oo = optimset(optimset('fminsearch'), 'MaxFunEvals', 1e4*length(xg), 'MaxIter', 1e4*length(xg));
-ft = mle(dws, 'pdf', mlepdf, 'start', xg, 'LowerBound', lb, 'UpperBound', ub, 'Options', oo);
+[ft, ci] = mle(dws, 'pdf', mlepdf, 'start', xg, 'LowerBound', lb, 'UpperBound', ub, 'Options', oo);
 
 %Plot data as histogram, ccdf
 [p, x] = nhistc(dws, .01);
@@ -70,3 +70,6 @@ switch method
     case 2
         fprintf('Gamma with mean %0.2f, shape %0.2f\n', ft)
 end
+
+out.ft = ft;
+out.ci = ci;

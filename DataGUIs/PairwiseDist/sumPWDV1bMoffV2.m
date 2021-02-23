@@ -1,4 +1,4 @@
-function [out, pws, si] = sumPWDV1bMoff(incon, varargin)
+function [out, pws, si] = sumPWDV1bMoffV2(incon, varargin)
 %Actually try to implement Moff's thing of evaluating a PWD by its Pspec sum
 
 if ~iscell(incon)

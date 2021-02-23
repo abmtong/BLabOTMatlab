@@ -1,5 +1,6 @@
 function[h,L,MX,MED,bw]=violin(Y,varargin)
 %Edited from file exchange @violin
+%Right now pretty much the same, will rewrite one day to be in line with my other tools
 
 % INPUT:
 % Y:     Data to be plotted, being either a matrix (one set per column) or a cell array (one set per cell)
@@ -36,7 +37,8 @@ plotlegend=1;
 plotmean=1;
 plotmedian=1;
 x = [];
-wid = 0.3;
+wid = 0.3; %Height of peak
+npts = 1e3; %NumPoints in ksdensity
 
 %% Convert input matrix to cell of columns
 if ~iscell(Y)
@@ -102,9 +104,9 @@ end
 %% Calculate the kernel density
 for i=n:-1:1
     if isempty(b)==0
-        [f, u, bb]=ksdensity(Y{i},'bandwidth',b(i));
+        [f, u, bb]=ksdensity(Y{i}, 'NumPoints', npts,'bandwidth',b(i));
     elseif isempty(b)
-        [f, u, bb]=ksdensity(Y{i});
+        [f, u, bb]=ksdensity(Y{i},'NumPoints',npts);
     end
     f=f/max(f)*wid; %Normalize by max height
     F(:,i)=f;
@@ -132,31 +134,35 @@ end
 for i=n:-1:1
     if isempty(lc) == 1
         if setX == 0
-            h(i)=fill([F(:,i)+i;flipud(i-F(:,i))],[U(:,i);flipud(U(:,i))],fc(i,:),'FaceAlpha',alp,'EdgeColor','none');
+            h(i,1)=fill([F(:,i)+i;flipud(i-F(:,i))],[U(:,i);flipud(U(:,i))],fc(i,:),'FaceAlpha',alp,'EdgeColor','none');
         else
-            h(i)=fill([F(:,i)+x(i);flipud(x(i)-F(:,i))],[U(:,i);flipud(U(:,i))],fc(i,:),'FaceAlpha',alp,'EdgeColor','none');
+            h(i,1)=fill([F(:,i)+x(i);flipud(x(i)-F(:,i))],[U(:,i);flipud(U(:,i))],fc(i,:),'FaceAlpha',alp,'EdgeColor','none');
         end
     else
         if setX == 0
-            h(i)=fill([F(:,i)+i;flipud(i-F(:,i))],[U(:,i);flipud(U(:,i))],fc(i,:),'FaceAlpha',alp,'EdgeColor',lc);
+            h(i,1)=fill([F(:,i)+i;flipud(i-F(:,i))],[U(:,i);flipud(U(:,i))],fc(i,:),'FaceAlpha',alp,'EdgeColor',lc);
         else
-            h(i)=fill([F(:,i)+x(i);flipud(x(i)-F(:,i))],[U(:,i);flipud(U(:,i))],fc(i,:),'FaceAlpha',alp,'EdgeColor',lc);
+            h(i,1)=fill([F(:,i)+x(i);flipud(x(i)-F(:,i))],[U(:,i);flipud(U(:,i))],fc(i,:),'FaceAlpha',alp,'EdgeColor',lc);
         end
     end
     hold on
     if setX == 0
         if plotmean == 1
             p(1)=plot([interp1(U(:,i),F(:,i)+i,MX(:,i)), interp1(flipud(U(:,i)),flipud(i-F(:,i)),MX(:,i)) ],[MX(:,i) MX(:,i)],mc,'LineWidth',2);
+            h(i,2) = p(1);
         end
         if plotmedian == 1
             p(2)=plot([interp1(U(:,i),F(:,i)+i,MED(:,i)), interp1(flipud(U(:,i)),flipud(i-F(:,i)),MED(:,i)) ],[MED(:,i) MED(:,i)],medc,'LineWidth',2);
+            h(i,3) = p(2);
         end
     elseif setX == 1
         if plotmean == 1
             p(1)=plot([interp1(U(:,i),F(:,i)+i,MX(:,i))+x(i)-i, interp1(flipud(U(:,i)),flipud(i-F(:,i)),MX(:,i))+x(i)-i],[MX(:,i) MX(:,i)],mc,'LineWidth',2);
+            h(i,2) = p(1);
         end
         if plotmedian == 1
             p(2)=plot([interp1(U(:,i),F(:,i)+i,MED(:,i))+x(i)-i, interp1(flipud(U(:,i)),flipud(i-F(:,i)),MED(:,i))+x(i)-i],[MED(:,i) MED(:,i)],medc,'LineWidth',2);
+            h(i,3) = p(2);
         end
     end
 end

@@ -15,7 +15,7 @@ F=F(2:floor(len/2));
 P=P(2:floor(len/2));
 len=length(F);
 
-n=100;
+n=10;
 w=exp( 5/n );
 lf = @(x) logfilter(x, n, w);
 figure, loglog(lf(F),lf(P))

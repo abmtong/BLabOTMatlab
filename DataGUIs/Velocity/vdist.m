@@ -32,24 +32,54 @@ cvel = cellfun(@(x) double(x)*opts.Fs, cvel, 'Uni', 0);
 %Concatenate velocities
 cf2 = [cvel{:}];
 
+%Apply transformation to velocity
+cf2 = cf2 * opts.velmult;
+
 %Bin values
 [ccts, xbins] = nhistc(cf2, opts.vbinsz);
 
 if opts.verbose
-    %Transform velocity to positive, nm
-    xbins = xbins*opts.velmult;
-    ccts = ccts / abs(opts.velmult);
+%     %Transform velocity to positive, nm
+%     xbins = xbins*opts.velmult;
+%     ccts = ccts / abs(opts.velmult);
     %Velocity cutoff for fitting
     vmin = opts.vfitlim(1);
     vmax = opts.vfitlim(2);
     xf = xbins(xbins>vmin & xbins < vmax);
     vf = ccts(xbins>vmin & xbins < vmax);
+    cfft = cf2(1:opts.sgp{1}:end);
+    cfft = cfft(cfft > vmin & cfft < vmax);
     
     %Gaussians
     npdf = @(x0, y) normpdf(y, x0(1), x0(2))*x0(3);
     bigauss = @(x0, y) normpdf(y, x0(1), x0(2))*x0(3) + normpdf(y, x0(4), x0(5))*x0(6) ;
     %Fit two gaussians, but with differing methods
     switch opts.fitmethod
+        case 11 %For Phage, MLE
+            %Fit two gaussians, one at zero, other positive
+            sdg = std(cfft)/2;
+            ampg = max(vf)*2.5/sdg/2;
+            xg = [ sdg ampg prctile(cfft, 60) sdg ampg];
+            lb = [ 0 0 0 0 0];
+            ub = [ inf 1 inf inf 1];
+            %Fit using MLE
+            fit = mle(cfft, 'pdf', @(x,sd1,a1, m2,sd2,a2) bigauss([0 sd1 a1 m2 sd2 a2], x) / (a1 + a2), 'start', xg,  'LowerBound', lb, 'UpperBound', ub);
+%             fit = lsqcurvefit(bigauss, xg, xf, vf, lb, ub, optimoptions('lsqcurvefit', 'Display', 'none'));
+            fit = [0 fit]; %add set 0
+            %Normalize heights
+            fit([3 6]) = fit([3 6])/sum(fit([3 6]));
+        case 13 %For Phage, MLE
+            %Fit two gaussians, one at zero, other positive
+            sdg = std(cfft)/2;
+            ampg = max(vf)*2.5/sdg/2;
+            xg = [0 sdg ampg prctile(cfft, 60) sdg ampg];
+            lb = [-inf 0 0 0 0 0];
+            ub = [inf inf 1 inf inf 1];
+            %Fit using MLE
+            fit = mle(cfft, 'pdf', @(x,m1,sd1,a1, m2,sd2,a2) bigauss([m1 sd1 a1 m2 sd2 a2], x) / (a1 + a2), 'start', xg,  'LowerBound', lb, 'UpperBound', ub);
+%             fit = lsqcurvefit(bigauss, xg, xf, vf, lb, ub, optimoptions('lsqcurvefit', 'Display', 'none'));
+            %Normalize heights
+            fit([3 6]) = fit([3 6])/sum(fit([3 6]));
         case 1 %For Phage
             %Fit two gaussians, one at zero, other positive
             sdg = std(cf2)/2;
@@ -57,6 +87,15 @@ if opts.verbose
             xg = [0 sdg ampg prctile(cf2, 60) sdg ampg];
             lb = [0 0 0 0 0 0];
             ub = [0 inf 1 inf inf 1];
+            %Fit using @lsqcurvefit
+            fit = lsqcurvefit(bigauss, xg, xf, vf, lb, ub, optimoptions('lsqcurvefit', 'Display', 'none'));
+        case 3 %For Phage
+            %Fit two gaussians [no restrictions]
+            sdg = std(cf2)/2;
+            ampg = max(vf)*2.5/sdg/2;
+            xg = [0 sdg ampg prctile(cf2, 60) sdg ampg];
+            lb = [-inf 0 0 0 0 0];
+            ub = [inf inf 1 inf inf 1];
             %Fit using @lsqcurvefit
             fit = lsqcurvefit(bigauss, xg, xf, vf, lb, ub, optimoptions('lsqcurvefit', 'Display', 'none'));
         case 2 %For polymerase, like Ronen

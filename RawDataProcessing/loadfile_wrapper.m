@@ -10,12 +10,12 @@ if nargin < 2
     inOpts = DataOptsPopup;
 end
 
-%Trap offsets should be set in inOpts, and if these are unset, 
-% opts.offTrapX = 0;
-% opts.offTrapY = 0;
-% opts.convTrapX = 1;
-% opts.convTrapY = 1;
-opts = [];
+%Trap offsets should be set in inOpts, but if these are unset, 
+opts.offTrapX = 0;
+opts.offTrapY = 0;
+opts.convTrapX = 1;
+opts.convTrapY = 1;
+% opts = [];
 
 switch inOpts.Instrument
     case 'HiRes'
@@ -36,6 +36,41 @@ switch inOpts.Instrument
             dat.TX = (dat.MX - opts.offTrapX) * opts.convTrapX;
             dat.TY = (dat.MY - opts.offTrapY) * opts.convTrapY;
             out = rmfield(dat, {'SA' 'SB' 'MX' 'MY'});
+        elseif exist(fullfile(p, [f '_init' e]), 'file')
+            %If the file with '_init' is appended, this is a two-trap save
+            %Read _init file, which is the values at time zero
+            %Oops, forgot to remove header(?), so first number is trash
+            initdat = readDat(fullfile(p, [f '_init' e]), 1, 9, opts.datType, opts.numEndian);
+            initdat = initdat(2:end);
+            %Read data file, which [should be] 2xn. Hardcode it, for now.
+            dat = readDat(filepath, 1, 2, opts.datType, opts.numEndian);
+            len = size(dat,2);
+            out.AY = initdat(1)*ones(1,len);
+            out.BY = initdat(2)*ones(1,len);
+            out.AX = dat(1,:);
+            out.BX = dat(2,:);
+            out.TX = (initdat(5)*ones(1,len) - opts.offTrapX) * opts.convTrapX;
+            out.TY = (initdat(6)*ones(1,len) - opts.offTrapY) * opts.convTrapY;
+            out.AS = initdat(7)*ones(1,len);
+            out.BS = initdat(8)*ones(1,len);
+            out.T = single((0:length(out.AX)-1) / opts.Fsamp);
+        elseif exist(fullfile(p, [f '_init2' e]), 'file')
+            %If the file with '_init' is appended, this is a two-trap save V2
+            % The only real difference is that the init file is properly sized
+            %Read _init file, which is the values at time zero
+            initdat = readDat(fullfile(p, [f '_init2' e]), 1, 8, opts.datType, opts.numEndian);
+            %Read data file, which [should be] 2xn. Hardcode it, for now.
+            dat = readDat(filepath, 1, 2, opts.datType, opts.numEndian);
+            len = size(dat,2);
+            out.AY = initdat(1)*ones(1,len);
+            out.BY = initdat(2)*ones(1,len);
+            out.AX = dat(1,:);
+            out.BX = dat(2,:);
+            out.TX = (initdat(5)*ones(1,len) - opts.offTrapX) * opts.convTrapX;
+            out.TY = (initdat(6)*ones(1,len) - opts.offTrapY) * opts.convTrapY;
+            out.AS = initdat(7)*ones(1,len);
+            out.BS = initdat(8)*ones(1,len);
+            out.T = single((0:length(out.AX)-1) / opts.Fsamp);
         else
             dat = readDat(filepath, opts.numSamples, opts.numLanes, opts.datType, opts.numEndian);
             out.AY = dat(1,:);
