@@ -5,15 +5,22 @@ function out = fitVitterbiV3(tr, inOpts)
 %V2: removed full-width transition matrix
 %V3: windowed operation for smaller matricies
 
+%Should rewrite using logprb, to avoid underflow
+
 opts.ssz = 1; %Spacing of states
 opts.off = 0; %Offset of states
 opts.dir = 1; %1 for POSITIVE only, -1 for NEG only, 0 for BOTH
-opts.trnsprb = 1e-3;
+opts.trnsprb = [1e-3 1e-3]; %[Positive, Negative] transition probability
 opts.sig = [];
 opts.mu = []; %If passing mu, keep in mind opts.dir refers to the element-order
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
+end
+
+%Make sure trnsprb is 2-element
+if length(opts.trnsprb) == 1
+    opts.trnsprb = opts.trnsprb * [1 1];
 end
 
 %Make state matrix, or use input mu
@@ -29,7 +36,7 @@ ns = length(mu);
 len=length(tr);
 
 %Make transition matrix, as Sparse
-a = [any(opts.dir == [0 1])  * opts.trnsprb 1 any(opts.dir == [0 -1]) * opts.trnsprb];
+a = [any(opts.dir == [0 1])  * opts.trnsprb(1) 1 any(opts.dir == [0 -1]) * opts.trnsprb(2)];
 a = bsxfun(@rdivide, a, sum(a,2));
 
 if isempty(opts.sig)

@@ -14,7 +14,7 @@ end
 %Trace props (mean dwell, noise)
 mdw = 30; %Pts
 noi = 3; %bp
-dwmul = 5; %Pauses are this many times longer
+dwmul = 15; %Pauses are this many times longer
 
 %Pause struct
 pau = struct('a', 83, 'b', 108, 'c', 141, 'd', 168, 'h', 236);

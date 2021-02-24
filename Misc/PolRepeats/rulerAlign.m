@@ -31,6 +31,7 @@ if iscell(tra)
     else
         [out, outraw] = cellfun(@(x) rulerAlign(x), tra, 'Un', 0);
     end
+    outraw = [outraw{:}];
     return
 end
 
@@ -123,7 +124,7 @@ o = o(ji);
 off = opts.start + o*binsz;
 
 %Output: Scaled trace
-out = (tra - off) * scl;
+out = tra  * scl - off;
 
 outraw.off = off;
 outraw.scl = scl;
