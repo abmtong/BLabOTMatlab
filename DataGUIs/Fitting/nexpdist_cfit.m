@@ -3,7 +3,6 @@ function out = nexpdist_cfit(n)
 %A sum of N exp's, for getDist
 exppdf = @(x,a,k) a * k * exp(-x*k);
 expcdf = @(x,a,k) a * exp(-x*k); %Actually the ccdf
-explcdf =@(x,a,k) log(a) -x*k; %Actually the ccdf 
 
 function out = nexppdf(x0,x)
     out = zeros(size(x));
@@ -19,16 +18,9 @@ function out = nexpcdf(x0,x)
     end
 end
 
-function out = nexplcdf(x0,x)
-    out = zeros(size(x));
-    for i = 1:n
-        out = out + explcdf(x, x0( (i-1)*2+1 ), x0( (i-1)*2+2 ));
-    end
-end
-
 out.pdf = @nexppdf;
 out.ccdf = @nexpcdf;
-out.lccdf = @nexplcdf;
+
 
 % switch n
 %     case 1

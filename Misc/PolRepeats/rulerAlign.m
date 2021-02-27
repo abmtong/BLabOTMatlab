@@ -6,16 +6,16 @@ function [out, outraw] = rulerAlign(tra, inOpts)
 %out is data scaled and offset to start at the begining of the repeat section
 %outraw is extra info (scale/offset params, histogram data)
 
-dbg = 0;
-
-%General options
-% opts.Fs = 3125; %Default Fs for Lumicks files. Just there for speeds, not really necessary
-opts.filwid = 20; %Smoothing filter width
-opts.binsm = 20; %Smooth the histogram, since npts is low [alternatively, replace histogram binning with kdf]
+%Filtering options
+opts.filwid = 20; %Smoothing filter half-width
+opts.binsm = 20; %Residence time histogram filter half-width
+opts.persmsd = 0.5; %Smooth the period scores with a gaussian filter of this std (bp)
+opts.offsmsd = 1; %Smooth the offset scores with a gaussian filter of this std (bp)
 
 %Options: Repeat pause characteristics
 opts.start = tra(1); %Start position, bp
-opts.pau = struct('a', {83 .15}, 'b', {108 .25}, 'c', {141 .15}, 'd', {168 0.25}, 'h', {236 0.25}); %Pause names and their location, strength (taken from doi:10.1038/s41467-018-05344-9)
+opts.pauloc = [83 108 141 168 236]; %Known pause location
+opts.paustr = [.15 .25 .15 .25 .25]; %Known pause strength (taken from doi:10.1038/s41467-018-05344-9)
 opts.per = 239; %Repeat length, bp
 opts.persch = [.9 1.1]; %Search range, proportion of period
 opts.perschd = .05; %Granularity of search, bp; also doubles as the bin size [was .025nm in Antony code, which is .07bp]
@@ -24,7 +24,13 @@ opts.nrep = 8; %Number of repeats
 %Options: Alignment analysis
 opts.trim = 0; %Trim edges of the estimated repeat range by this amount
 
-%If input is cell, 
+opts.verbose = 1;
+
+if nargin > 1
+    opts = handleOpts(opts, inOpts);
+end
+
+%If input is cell, loop
 if iscell(tra)
     if nargin > 1
         [out, outraw] = cellfun(@(x) rulerAlign(x, inOpts), tra, 'Un', 0);
@@ -32,11 +38,22 @@ if iscell(tra)
         [out, outraw] = cellfun(@(x) rulerAlign(x), tra, 'Un', 0);
     end
     outraw = [outraw{:}];
+    
+    %Plot some stats
+    offs = [outraw.off];
+    scls = [outraw.scl];
+    offscrs = [outraw.offscr];
+    sclscrs = [outraw.sclscr];
+    figure
+    scatter(offs, scls, [], offscrs/range(offscrs) + sclscrs/range(sclscrs), 'filled')
+    colormap winter
+    colorbar
+    
+    %Plot aligned traces
+    figure, hold on, cellfun(@(x)plot( windowFilter(@mean, x, opts.filwid, 1) ), out)
+    xl = xlim;
+    arrayfun(@(x) plot(xl, x * [1 1]), bsxfun(@plus, opts.pauloc, (0:opts.nrep-1)'*opts.per))
     return
-end
-
-if nargin > 1
-    opts = handleOpts(opts, inOpts);
 end
 
 %Filter the data
@@ -73,7 +90,7 @@ rpts = cell(1,len);
 
 %Score each period
 for i = 1:len
-    %Generate cyclic histogram (sum together repeats)
+    %Generate period histogram (sum together repeats)
     %Take mean of the residence times
 %     rpt = mean( reshape(php(1:opts.nrep*persn(i)), persn(i), opts.nrep),2)';
     %Use median instead of mean - should better handle random pausing?
@@ -83,8 +100,9 @@ for i = 1:len
     %Try out various scoring methods...
     %Score by taking its mean quadratic error
     scr(i) = var(rpt, 1);
-    
 end
+%Smooth period score
+scr = gausmooth(scr, opts.perschd, opts.persmsd, 0);
 
 %Choose best score
 [~, maxi] = max(scr); %Is there a better way to get this? Maybe interp spline?
@@ -92,45 +110,58 @@ per = pers(maxi); %Period
 rpt = rpts{maxi}; %Repeat histogram
 scl = opts.per/per; %Scaling factor
 
+%Judge 'goodness' by findpeaks
+fp = sort(findpeaks(scr), 'descend');
+if length(fp) == 1
+    fp = [fp min(fp)];
+end
+%Judge score by relative height of second peak
+sclscr = 1-(fp(2) - fp(end)) / range(fp);
+
 %Find offset by finding best overlap with peak locations
 %Get locations of pauses in this frame of reference
-pauloc = struct2cell(opts.pau(1));
-paustr = struct2cell(opts.pau(2));
-paustr = [paustr{:}];
-paulocscl = [pauloc{:}] / scl;
+paulocscl = opts.pauloc / scl;
 pauind = round(paulocscl / binsz); %Get pause locations in terms of indicies
 
 %Sum along every possible pause location
 rptpau = zeros(1, persn(maxi));
 for i = 1:length(pauind);
-    rptpau = rptpau + circshift(rpt, [0, -pauind(i)]) * paustr(i);
-%     rptpau = rptpau + circshift(rpt, [0, -pauind(i)+1]);
-%     rptpau = rptpau + circshift(rpt, [0, -pauind(i)-1]);
+    rptpau = rptpau + circshift(rpt, [0, -pauind(i)]) * opts.paustr(i);
 end
-% rptpau = rptpau / length(pauind);
+%Gaussian smooth this : if per is off by a bit, peaks are flat
+rptpau = gausmooth(rptpau, opts.perschd, opts.offsmsd, 1);
+
+%Judge 'goodness' by findpeaks
+fp = sort(findpeaks(rptpau), 'descend');
+%Judge score by relative height of second peak
+offscr = 1-(fp(2) - fp(end)) / range(fp);
+
+%% Not certain this isn't off by +-1 perschd ... but who cares?
+
+%Choose maximum
 [~, maxi] = max(rptpau);
-
-if dbg
-    figure, plot((0:length(rptpau)-1)*binsz*scl,circshift(rpt,[0,-maxi])), hold on, plot((0:length(rptpau)-1)*binsz*scl,rptpau)
-    yl=ylim;
-    cellfun(@(x) plot( x * [ 1 1] , yl), pauloc)
-end
-
-%Convert maxi to offset
+%Convert to offset
 maxi = maxi - 1;
-o = [maxi length(rptpau)-maxi];
-[~, ji] = min(abs(o));
-o = o(ji);
-off = opts.start + o*binsz;
+off = hx(1) + maxi*binsz;
+%Handle sign: shift by wid to be closest to start
+off = off + round( (opts.start - off) / opts.per*scl ) * opts.per*scl;
 
 %Output: Scaled trace
-out = tra  * scl - off;
+out = (tra  - off)* scl;
 
 outraw.off = off;
 outraw.scl = scl;
-%Aligned repeat histogram [not offset fixed]
+%Aligned repeat histogram
 outraw.rephist = circshift(rpt, [0 -maxi]);
+outraw.rephistx = (0:length(rptpau)-1)*binsz*scl;
 %Histograms from which the scale/offset are found. May want to check that these have one obvious peak.
-outraw.sclraw = scr; %Period score
-outraw.ohist = rptpau; %Histogram for offset
+outraw.sclraw = scr; %Period score graph
+outraw.sclrawx = pers;
+outraw.sclscr = sclscr;
+outraw.ohist = rptpau; %Offset score graph
+outraw.ohistx = outraw.rephistx;
+outraw.offscr = offscr;
 
+if opts.verbose
+    rulerAlignChk(outraw, opts.pauloc)
+end

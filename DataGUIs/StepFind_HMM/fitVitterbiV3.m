@@ -58,7 +58,7 @@ npdf = @(ind) normpdf(mu, tr(ind), sig); %Shortcut
 
 %Define upper, lower bdys [slice of states we need to consider at each pt]
 maxdif = max(abs(diff(tr)));
-maxdif = max([maxdif, length(a)*opts.ssz*2, sig*5]);
+maxdif = max([maxdif*2, length(a)*opts.ssz*2, sig*5]);
 ub = min( ceil((tr+maxdif-yimin*opts.ssz+1)/opts.ssz), ns);
 lb = max(floor((tr-maxdif-yimin*opts.ssz+1)/opts.ssz), 1);
 lb3 = min( [lb; lb(2:end) inf ; inf lb(1:end-1)] , [] , 1);

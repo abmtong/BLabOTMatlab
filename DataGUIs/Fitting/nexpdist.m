@@ -22,7 +22,7 @@ switch n
         out.pdf = @(x,a1,k1,a2,k2,a3,k3,a4,k4,a5,k5)(exppdf(x, a1,k1) + exppdf(x, a2,k2) + exppdf(x, a3,k3) + exppdf(x, a4,k4) + exppdf(x, a5,k5))/(a1+a2+a3+a4+a5);
         out.cdf = @(x,a1,k1,a2,k2,a3,k3,a4,k4,a5,k5)(expcdf(x, a1,k1) + expcdf(x, a2,k2) + expcdf(x, a3,k3) + expcdf(x, a4,k4) + expcdf(x, a5,k5))/(a1+a2+a3+a4+a5);
     otherwise
-        error('%d is too many exps, need to add')
+        error('%d is too many exps, need to add') %Is there a way to do this programmatically? eval could do it, or {:}'ing the cfit one
 end
 out.lb = repmat([0 0], 1, n);
 out.ub = repmat([inf inf], 1, n);

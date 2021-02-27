@@ -42,7 +42,7 @@ for i = 1:len
     end
     
     outraw{i} = fitVitterbiV3(dat{i}, opts);
-    ins{i} = tra2ind(outraw{i});
+    ins{i} = tra2ind(removeTrBts(outraw{i}));
     fprintf('\b-\n')
 end
 fprintf('\b]\n')

@@ -9,7 +9,7 @@ opts.Fs = 2500; %Frequency of Sampling
 % Options for plotting, if requested
 opts.verbose = 1;
 opts.velmult = 1; %Velocity conversion, e.g. from bp to nm
-opts.vfitlim = [0 100]; %Velocity to fit over
+opts.vfitlim = [-inf inf]; %Velocity to fit over
 opts.fitmethod = 1;
 opts.xlim = [-100 100];
 
@@ -20,6 +20,9 @@ end
 fg = figure('Name', sprintf('vdst_b, SGP {%d %d}', opts.sgp{1}, opts.sgp{2}));
 
 len = length(datacell);
+
+%Plot first in datacell on top
+datacell = datacell(end:-1:1);
 
 xlims = [.05 .95];
 ylims = .05 + .9 * (0:len)/len ;
