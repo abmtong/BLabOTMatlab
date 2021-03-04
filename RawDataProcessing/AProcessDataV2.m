@@ -42,6 +42,11 @@ fclose(fid);
 txtlines = txtlines{1};
 %First is date, format into string [should be ok to use as-is, but might have whitespace]
 mmddyy = sprintf('%06d', str2double(txtlines{1}));
+%Sanity check for mmddyy
+if ~(str2double(txtlines{1}) > 010000)
+    inp = input('Date seems wrong, whats is the date?');
+    mmddyy = sprintf('%06d', str2double(inp));
+end
 len = length(txtlines)-1;
 %Preallocate the matrix to hold data numbers, comments, and options changes
 nndat = zeros(len, 3);
@@ -102,7 +107,7 @@ switch opts.Instrument
 end
 
 %To debug, we can't have the error be caught for dbstop to fire
-debug = 1; %#ok<*UNRCH>
+debug = 0; %#ok<*UNRCH>
 if debug
     warning('Debugging AProcessData')
 end

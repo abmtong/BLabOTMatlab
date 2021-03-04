@@ -17,6 +17,7 @@ end
 len = length(infp);
 
 yla = [2900 3100];
+ywid = 200;
 
 npts = 2; %Points to click per graph
 
@@ -46,15 +47,25 @@ for i = 1:len
     cla(ax1)
     cla(ax2)
     plot(ax1, c);
-    ylim(ax1, yla)
+    drawnow
+    yl=ylim(ax1);
+    ylim(ax1, yl(1) + [0 ywid])
     plot(ax2, fax);
     plot(ax2, fbx);
     wid = length(c);
     xlim([0 wid*1.1])
-    text(ax1, 1, mean(yla), sprintf('%d', i));
+    fn = fileparts(infp{i});
+    text(ax1, 1, mean(yla), sprintf('%d, %s', i, fn));
     
     [a, ~] = ginput(2);
     a=round(a);
+    %Choose reverse to ignore (i.e. ambiguous)
+    if ~issorted(a)
+        islong(:,i) = [0 0];
+        gout(:,i) = [0 0];
+        frc(i) = 0;
+        continue
+    end
     in = a>wid; %If a point is chosen after the end, acknowledge
     a(in) = wid;
     frc(i) = mean( f(a(1):a(end)) );

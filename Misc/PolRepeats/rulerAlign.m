@@ -22,7 +22,7 @@ opts.perschd = .05; %Granularity of search, bp; also doubles as the bin size [wa
 opts.nrep = 8; %Number of repeats
 
 %Options: Alignment analysis
-opts.trim = 0; %Trim edges of the estimated repeat range by this amount
+opts.trim = 0; %Trim edges of the estimated repeat range by this amount (e.g. 0.01 to trim 1% from top and bottom)
 
 opts.verbose = 1;
 
