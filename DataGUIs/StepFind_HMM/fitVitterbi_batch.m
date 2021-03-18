@@ -7,8 +7,8 @@ opts.binsz = 0.02; %Bin size
 opts.tscal = 1; %Scale time for... reasons?
 opts.Fs = 1000; %Trace sampling frequency
 
-%Alignment options: Should we try to align the step size ?
-opts.alignkdf = 0;
+% %Alignment options: Should we try to align the step size ?
+% opts.alignkdf = 0;
 
 %Opts also needs the options for fitVitterbi, most notably:
 opts.ssz = 1; %Spacing of states
@@ -34,18 +34,45 @@ ins = cell(1,len);
 pipe = '|';
 fprintf(['[' pipe(ones(1,len)) ']\n[\n'])
 
-for i = 1:len
-    if opts.alignkdf
-        [y, x] = kdf(dat{i}, 0.1);
-        [~,mx] = max(y);
-        opts.off = x(mx);
-    end
+pp = gcp('nocreate');
+if isempty(pp)
     
-    outraw{i} = fitVitterbiV3(dat{i}, opts);
-    ins{i} = tra2ind(removeTrBts(outraw{i}));
-    fprintf('\b-\n')
+    for i = 1:len
+%         if opts.alignkdf
+%             [y, x] = kdf(dat{i}, 0.1);
+%             [~,mx] = max(y);
+%             opts.off = x(mx);
+%         end
+        
+        outraw{i} = fitVitterbiV3(dat{i}, opts);
+        if ~isempty(outraw{i})
+            ins{i} = tra2ind(removeTrBts(outraw{i}));
+            fprintf('\b-\n')
+        else
+            ins{i} = [];
+            fprintf('\b*\n')
+        end
+        
+    end
+    fprintf('\b]\n')
+else
+    parfor i = 1:len
+%         if opts.alignkdf
+%             [y, x] = kdf(dat{i}, 0.1);
+%             [~,mx] = max(y);
+%             opts.off = x(mx);
+%         end
+        outraw{i} = fitVitterbiV3(dat{i}, opts);
+        if ~isempty(outraw{i})
+            ins{i} = tra2ind(removeTrBts(outraw{i}));
+            fprintf('\b-\n')
+        else
+            ins{i} = [];
+            fprintf('\b*\n')
+        end
+    end
+    fprintf('\b]\n')
 end
-fprintf('\b]\n')
 
 din = cellfun(@diff, ins, 'Un', 0);
 out = cellfun(@(x) x/opts.Fs, din,'Un',0);

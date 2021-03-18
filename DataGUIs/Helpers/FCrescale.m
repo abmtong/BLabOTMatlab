@@ -12,7 +12,7 @@ if nargin < 1
     end
 end
 
-[p, f, ~] = fileparts(inpf);
+[p, f, e] = fileparts(inpf);
 %Load file
 sd = load(inpf, 'stepdata');
 sd = sd.stepdata;
@@ -24,15 +24,21 @@ end
 
 
 %Load crop
-fid = fopen(sprintf('%s\\CropFiles%s\\%s.crop',p, cropstr, f(6:end)));
-if fid == -1
+% fid = fopen(sprintf('%s\\CropFiles%s\\%s.crop',p, cropstr, f(6:end)));
+% if fid == -1
+%     fprintf('No Crop%s for %s\n', cropstr, f)
+%     sd=[];
+%     return
+% end
+% ts = textscan(fid, '%f');
+% fclose(fid);
+% crop = ts{1};
+crop = loadCrop(cropstr, p, [f e], 1);
+if isempty(crop)
     fprintf('No Crop%s for %s\n', cropstr, f)
     sd=[];
     return
 end
-ts = textscan(fid, '%f');
-fclose(fid);
-crop = ts{1};
 
 %apply crop
 %find start/end crop indicies
@@ -42,6 +48,8 @@ indend = cellfun(@(x)find(x<crop(2),1,'last'), sd.time,'Uni',0);
 con = cellfun(@(ce,st,en)ce(st:en),sd.contour, indsta, indend, 'Uni',0);
 frc = cellfun(@(ce,st,en)ce(st:en),sd.force, indsta, indend, 'Uni',0);
 tim = cellfun(@(ce,st,en)ce(st:en),sd.time, indsta, indend, 'Uni',0);
+dt = cellfun(@diff, tim, 'Un', 0);
+Fs = 1/median([dt{:}]);
 % ext = cellfun(@(ce,st,en)ce(st:en),sd.extension, indsta, indend, 'Uni',0);
 
 % mir = sd.mxpos;
@@ -60,6 +68,12 @@ ind2 = find(~isnan(avgtim), 1, 'last');
 ctot = avgcon(ind1) - avgcon(ind2);
 ttot = avgtim(ind1) - avgtim(ind2);
 
+%Check for zero (only one section, and return empty
+if ctot == 0
+    warning('Not enough segments in %s to FCRescale', f)
+    return
+end
+
 %get avg vel of good part in bp/s
 % [vp, vx] = vdist(con);
 % vbar = sum(vp .* vx / sum(vp));
@@ -67,7 +81,7 @@ ttot = avgtim(ind1) - avgtim(ind2);
 % vbar = sum(vp(vx<0) .* vx(vx<0) / sum (vp(vx<0)));
 
 vbar = cellfun(@(x)sgolaydiff(x, {1 101}), con, 'un', 0);
-vbar = mean([vbar{:}])*2500; %Fs
+vbar = mean([vbar{:}])*Fs;
 
 factor = (ctot/ttot) / vbar;
 

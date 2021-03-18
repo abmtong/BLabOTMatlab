@@ -3,7 +3,7 @@ function [out, outraw] = fitnexp_cfit(xdata, n, verbose)
 
 %Fits 1-5 exponentials, stops according to AIC
 if nargin < 2
-    n=5; %Max exponentials to fit, if >5 need to change @nexpdist
+    n=5; %Max exponentials to fit
 end
 
 if iscell(xdata)

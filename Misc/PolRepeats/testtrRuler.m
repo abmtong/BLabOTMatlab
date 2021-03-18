@@ -13,7 +13,7 @@ end
 
 %Trace props (mean dwell, noise)
 mdw = 30; %Pts
-noi = .5; %bp
+noi = 3; %bp
 dwmul = 10; %Pauses are this many times longer
 
 %Pause struct

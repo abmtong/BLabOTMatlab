@@ -4,7 +4,7 @@ function [ax, pos] = subplot2(infg, dims, num, wid)
 % If you want a larger axis, pass an array num, and it will make the axes that contains all of the subaxes defined by num
 
 if nargin < 4
-    wid = 0.05;
+    wid = [0.05 0.1]; %xwidth, ywidth
 end
 
 narginchk(2,4)
@@ -28,9 +28,13 @@ if max(num) > prod(dims)
     error('num must be <= prod(dims)')
 end
 
+if length(wid) == 1
+    wid = [wid wid];
+end
+
 %Plots are a grid with wid between them
-widx = (1 - wid*dims(2)-wid) / dims(2);
-widy = (1 - wid*dims(1)-wid) / dims(1);
+widx = (1 - wid(1)*dims(2)-wid(1)) / dims(2);
+widy = (1 - wid(2)*dims(1)-wid(2)) / dims(1);
 
 %If there are too many plots in one direction and wid is large enough, we could run out of space
 if widx<=0 || widy<=0
@@ -38,8 +42,8 @@ if widx<=0 || widy<=0
 end
 
 %Get lower-left corner [posxs, posys] of each plot
-posxs = wid + (0:dims(2)-1) * (widx+wid);
-posys = wid + (0:dims(1)-1) * (widy+wid);
+posxs = wid(1) + (0:dims(2)-1) * (widx+wid(1));
+posys = wid(2) + (0:dims(1)-1) * (widy+wid(2));
 posys = fliplr(posys); %matrix numbering starts up-left, position numbering starts bottom-left. Dims uses matrix numbering
 
 %Get x,y position of each value of ind (ind array = larger graph, like in @subplot)

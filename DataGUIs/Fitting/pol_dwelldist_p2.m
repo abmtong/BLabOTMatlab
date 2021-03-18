@@ -4,7 +4,8 @@ function out = pol_dwelldist_p2(dws, inOpts)
 %Fitting options
 opts.xrng = [2e-3 inf]; %Crop some of the shorter dwells, because fitting is wonk
 opts.prcmax = 99.9; %Crop the few superlong dwells by percentile - may cause pdf to underflow during search (esp. during mle, as it tries to fit that pt)
-opts.nmax = 5; %max exponentials to fit
+opts.nmax = 8; %max exponentials to fit
+opts.fitsing = 1; %Fit traces separately?
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
@@ -31,14 +32,15 @@ if isstruct(dws)
     %Take each output in out
     dat = nan( nrow, ncol );
     datmcilo= nan(nrow, ncol);
-    datmcihi= nan(nrow, ncol);
+
     datc= nan( nrow, ncol );
     for i = 1:nrow
         %MLE fit
         tmp = out.(rn{i}).fit;
         tmp = reshape(tmp, 2, []);
-        %Normalize by a's
-        tmp(1,:) = tmp(1,:)/sum(tmp(1,:));
+        %Normalize by a's ... or keep reg 
+        asum = sum(tmp(1,:));
+        tmp(1,:) = tmp(1,:)/asum;
         %Sort by k's
         [~, si] = sort(tmp(2,:), 'descend');
         tmp = tmp(:,si);
@@ -46,11 +48,10 @@ if isstruct(dws)
         dat(i,1:length(tmp)) = tmp;
         %Get CIs too
         [~, opti] = min(out.(rn{i}).fitraw.aics);
-        tmpci = out.(rn{i}).fitraw.mfcis(opti);
+        tmpci = out.(rn{i}).fitraw.mfcis{opti}';
         tlo = tmpci(:,1)';
-        thi = tmpci(:,2)';
+        tlo(1:2:end) = tlo(1:2:end)/asum;
         datmcilo(i,1:length(tlo)) = tlo;
-        datmcihi(i,1:length(thi)) = thi;
         
         %Curve fit
         [~, opti] = min(out.(rn{i}).fitraw.aicscf);
@@ -64,20 +65,41 @@ if isstruct(dws)
         tmpc = tmpc(:)';
         datc(i,1:length(tmpc)) = tmpc;
     end
-    tbldat = mat2cell([dat; datmcilo; datmcihi], nrow*3, ones(1,ncol) );
-    tbl = table( tbldat{:}, 'RowNames', [rn; rn; rn], 'VariableNames', cn);
-    %Write to file
-    writetable(tbl, 'pol_dwelldistMLE.xls', 'WriteRowNames', true)
-    
+    tbldat = mat2cell([dat; datmcilo], nrow*2, ones(1,ncol) );
+    tbl = table( tbldat{:}, 'RowNames', [rn; strcat(rn, '_CI')], 'VariableNames', cn);
+    try
+        writetable(tbl, 'pol_dwelldistMLE.xls', 'WriteRowNames', true)
+    catch
+        warning('Writing MLE to .xls failed, try running in the same folder as %s', mfilename);
+    end
+    out.tblMLE = tbl;
     tbldat = mat2cell(datc, nrow, ones(1,ncol) );
     tbl = table( tbldat{:}, 'RowNames', rn, 'VariableNames', cn );
     %Write to file
-    writetable(tbl, 'pol_dwelldistCfit.xls', 'WriteRowNames', true)
+    try
+        writetable(tbl, 'pol_dwelldistCfit.xls', 'WriteRowNames', true)
+    catch
+        warning('Writing Cfit to .xls failed, try running in the same folder as %s', mfilename);
+    end
+    out.tblCfit = tbl;
+    %Plot graphs of ki's and ai's
+    %Crop to furthest right non-NaN column in dat
+    maxcol = find(all(isnan(dat),1), 1, 'first')-1;
+    if isempty(maxcol)
+        maxcol = length(cn);
+    end
+    %Save args for p3 and run it
+    out.pddp3 = {rn, cn(1:maxcol), dat(:,1:maxcol), datmcilo(:,1:maxcol)};
+    pol_dwelldist_p3(out.pddp3{:})
     return
 end
 
-%Fit each trace separately
-[o, or] = cellfun(@(x) fitnexp_hybrid(x( x > opts.xrng(1) & x < min(opts.xrng(2), prctile(x, opts.prcmax)) ), opts.nmax, 0), dws, 'Un', 0);
+if opts.fitsing
+    %Fit each trace separately
+    [o, or] = cellfun(@(x) fitnexp_hybrid(x( x > opts.xrng(1) & x < min(opts.xrng(2), prctile(x, opts.prcmax)) ), opts.nmax, 0), dws, 'Un', 0);
+    out.sfit = o;
+    out.sfitraw = or;
+end
 
 %Fit together
 dwall = [dws{:}];
@@ -86,5 +108,4 @@ dwall = [dws{:}];
 %Save results in out
 out.fit = oa;
 out.fitraw = ora;
-out.sfit = o;
-out.sfitraw = or;
+out.n = length(dwall);

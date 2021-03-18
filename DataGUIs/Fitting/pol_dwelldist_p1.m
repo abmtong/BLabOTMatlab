@@ -21,6 +21,9 @@ end
 
 %If data is struct, this is a struct of cells (eg for separate conditions) - batch
 if isstruct(data)
+    if nargout < 2
+        warning('If you want to capture backtracks, make sure to capture the second output')
+    end
     [out, isbt] = structfun(@(x) pol_dwelldist_p1(x, opts), data, 'Un', 0);
     return
 end
@@ -30,14 +33,18 @@ if ~iscell(data)
     data = {data};
 end
 
-%Do fitVitterbi, take staircases
+%Do fitVitterbi, take staircases. Dwell dist will be wrong if dir = -1
 [~, trs] = fitVitterbi_batch(data, opts.fvopts);
+%Remove empty (failed traces)
+trs = trs(~cellfun(@isempty, trs));
 %Join backtracks
-[trs, isbt] = cellfun(@removeTrBts, trs, 'Un', 0);
-%Convert staircases to ind, mea, and force direction to positive
-[dws, mes] = cellfun(@(x) tra2ind(x * opts.dir), trs, 'Un', 0);
-%Sanity check means
-assert( all(cellfun(@(x) all(diff(x) == opts.fvopts.ssz), mes)), 'Unknown Error: steps not uniform');
+[trs, isbt] = cellfun(@(x)removeTrBts(x, opts.dir), trs, 'Un', 0);
+%Convert staircases to ind, mea
+[dws, mes] = cellfun(@(x) tra2ind(x), trs, 'Un', 0);
+%Sanity check means. Use eps-thresholded equals
+if ~all(cellfun(@(x) all( abs(diff(x) * opts.dir - opts.fvopts.ssz) < 10*eps( max( max(abs(x)), opts.fvopts.ssz) )), mes))
+    warning('Unknown Error: steps not uniform');
+end
 
 %Convert to dwells, and from points to time
 dws = cellfun(@(x) diff(x) / opts.Fs, dws, 'Un', 0);

@@ -130,13 +130,13 @@ for i = 1:size(nndat,1)
             try
                 %Swap off and cal
                 ProcessOneDataV2(p, nndat(i,[1 3 2]), opts);
-                warning('Data/off/cal [%d %d %d] rearranged to [%d, %d, %d].', nndat(i,:), nndat(i,[1 3 2]));
+                warning('Data/off/cal %s [%d %d %d] rearranged to [%d, %d, %d].', mmddyy, nndat(i,:), nndat(i,[1 3 2]));
             catch
                 try %Add one to dat and off
                     ProcessOneDataV2(path, nndat(i,:)+[0 1 1], opts);
-                    warning('Data/off/cal [%d %d %d] shifted to [%d, %d, %d].', nndat(i,:), nndat(i,:)+[0 1 1]);
+                    warning('Data/off/cal %s [%d %d %d] shifted to [%d, %d, %d].', mmddyy, nndat(i,:), nndat(i,:)+[0 1 1]);
                 catch
-                    warning('Data/off/cal [%d %d %d] failed.\n', nndat(i,:));
+                    warning('Data/off/cal %s [%d %d %d] failed.\n', mmddyy, nndat(i,:));
                 end
             end
         end

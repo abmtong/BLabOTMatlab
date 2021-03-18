@@ -1,29 +1,35 @@
-function out = nexpdist(n)
+function out = nexpdist(n, ver)
+%A sum of N exp's
 
-%A sum of N exp's, for getDist
-exppdf = @(x,a,k) a * k * exp(-x*k);
-expcdf = @(x,a,k) a * exp(-x*k); %Actually the ccdf
+%ver is whether a1 is a variable (ver=1) or implicitly 1 (ver=2)
 
-%Just do up to 5 pdfs. No great way to do this programatically?
-switch n
-    case 1
-        out.pdf = @(x,a,k)exppdf(x, a, k) / a;
-        out.cdf = @(x,a,k)expcdf(x, a, k) / a;
-    case 2
-        out.pdf = @(x,a1,k1,a2,k2) (exppdf(x, a1,k1) + exppdf(x, a2,k2)) / (a1+a2);
-        out.cdf = @(x,a1,k1,a2,k2) (expcdf(x, a1,k1) + expcdf(x, a2,k2)) / (a1+a2);
-    case 3
-        out.pdf = @(x,a1,k1,a2,k2,a3,k3)(exppdf(x, a1,k1) + exppdf(x, a2,k2) + exppdf(x, a3,k3))/(a1+a2+a3);
-        out.cdf = @(x,a1,k1,a2,k2,a3,k3)(expcdf(x, a1,k1) + expcdf(x, a2,k2) + expcdf(x, a3,k3))/(a1+a2+a3);
-    case 4
-        out.pdf = @(x,a1,k1,a2,k2,a3,k3,a4,k4)(exppdf(x, a1,k1) + exppdf(x, a2,k2) + exppdf(x, a3,k3) + exppdf(x, a4,k4))/(a1+a2+a3+a4);
-        out.cdf = @(x,a1,k1,a2,k2,a3,k3,a4,k4)(expcdf(x, a1,k1) + expcdf(x, a2,k2) + expcdf(x, a3,k3) + expcdf(x, a4,k4))/(a1+a2+a3+a4);
-    case 5
-        out.pdf = @(x,a1,k1,a2,k2,a3,k3,a4,k4,a5,k5)(exppdf(x, a1,k1) + exppdf(x, a2,k2) + exppdf(x, a3,k3) + exppdf(x, a4,k4) + exppdf(x, a5,k5))/(a1+a2+a3+a4+a5);
-        out.cdf = @(x,a1,k1,a2,k2,a3,k3,a4,k4,a5,k5)(expcdf(x, a1,k1) + expcdf(x, a2,k2) + expcdf(x, a3,k3) + expcdf(x, a4,k4) + expcdf(x, a5,k5))/(a1+a2+a3+a4+a5);
-    otherwise
-        error('%d is too many exps, need to add') %Is there a way to do this programmatically? eval could do it, or {:}'ing the cfit one
+if nargin < 2
+    ver = 1;
 end
-out.lb = repmat([0 0], 1, n);
-out.ub = repmat([inf inf], 1, n);
-out.cmt = sprintf('Sum of %d exponentials, height x0(odd) and rate x0(even)', n);
+
+exppdf = @(x,a,k) a * k * exp(-x*k); %#ok<NASGU>
+expcdf = @(x,a,k) a * exp(-x*k); %#ok<NASGU> %Actually the ccdf
+
+%Use eval to assemble the function handle, as there's no great way to do so otherwise(?)
+str1 = sprintf(',a%d,k%d', [1:n ; 1:n]); %',aI,kI'
+str2 = sprintf('exppdf(x,a%d,k%d)+', [1:n ; 1:n]); %'expcdf(x,aI,kI)+'
+str2b= sprintf('expcdf(x,a%d,k%d)+', [1:n ; 1:n]); %'exppdf(x,aI,kI)+'
+str3 = sprintf('a%d+', 1:n); %'aI+'
+
+if ver == 1 %f(x,a1,k1,a2,k2,...)
+    out.lb = repmat([0 0], 1, n);
+    out.ub = repmat([inf inf], 1, n);
+    out.cmt = sprintf('Sum of %d exponentials, height aI and rate kI', n);
+elseif ver == 2 %Set a1 == 1, should work better with MLE (makes ai's independent)
+    %Strip ',a1' from str1, replace 'a1' with '1' in others
+    str1 = strrep(str1, ',a1','');
+    str2 = strrep(str2, 'a1','1');
+    str2b= strrep(str2b,'a1','1');
+    str3 = strrep(str3, 'a1','1');
+    out.lb = zeros(1,2*n-1);
+    out.ub =   Inf(1,2*n-1);
+    out.cmt = sprintf('Sum of %d exponentials, height aI and rate kI. a1 = 1 (not passed)', n);
+end
+
+out.pdf = eval( sprintf( '@(x%s) ( %s 0 ) / (%s 0)', str1, str2 , str3 ));
+out.cdf = eval( sprintf( '@(x%s) ( %s 0 ) / (%s 0)', str1, str2b, str3 ));

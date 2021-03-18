@@ -119,6 +119,10 @@ radioKDF2.Value = true; %Default to KDF Quick
 loadFile_callback
 
 %Now that we've made the figure and loaded the data, draw the figure
+if strcmp(file, 'phageMMDDYYN00.mat') %If loadFile was canceled, just exit
+    close(fig)
+    return
+end
 fig.Visible = 'on';
 
 %% Main Callbacks

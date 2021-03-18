@@ -1,6 +1,11 @@
-function [outtr, isbt] = removeTrBts(tr)
+function [outtr, isbt] = removeTrBts(tr, stepdir)
 %Takes in an increasing staircase (eg an output from fitVitterbi) and removes backtracks
 %Output is the trace and isbt, a bool if the step is a backtrack or not (i.e., if ind=tra2ind(outtr), ind(i) is the start of a backtrack)
+
+%dir = 1 for positive, -1 for negative
+if nargin < 2
+    stepdir = 1;
+end
 
 tr0 = tr;
 
@@ -9,7 +14,7 @@ while true
     [ind, mea] = tra2ind(tr);
     
     %Find reverse steps
-    neg = diff(mea) < 0;
+    neg = diff(mea) * stepdir < 0;
     
     %If no negative steps, we're done
     if ~any(neg)

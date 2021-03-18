@@ -1,4 +1,4 @@
-function out = getFilWid(data, inOpts)
+function getFilWid(data, inOpts)
 
 opts.Fs = 2500;
 

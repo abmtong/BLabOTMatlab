@@ -25,7 +25,7 @@ ccyl = log(ccy);
 ccx = sort(xdata);
 
 %Initial guess. Choosing something to guarantee no underflow
-% ftg = [1 1/prctile(xdata, 100/exp(1))]; %Actual guess
+% ftg = [1 1/prctile(xdata, 100/exp(1))];
 ftg = [1 200/max(ccx)];
 aic = inf;
 
@@ -52,25 +52,14 @@ for i = 1:n
     aicscf(i) = 2*length(ftg) + length(xdata) * log( var(rsd) );
     
     %Use this result to MLE fit
-    mcf = nexpdist(i,2); %With a1
-    mfh{i} = nexpdist(i,1); %Without a1
+    mcf = nexpdist(i);
+    mfh{i} = mcf;
     %Curve fitting is in logspace, convert amplitudes to linear (not exactly the same, but better than not converting?)
     mlgu = ftc; 
     mlgu(1:2:end) = exp(mlgu(1:2:end));
-    %Normalize a's to a1, remove 
-    mlgu(1:2:end) = mlgu(1:2:end)/mlgu(1);
-    mlgu = mlgu(2:end);
-    %And fit
     [ftm, ftmci] = mle(xdata, 'pdf', mcf.pdf, 'start', mlgu, 'LowerBound', mcf.lb, 'UpperBound', mcf.ub, 'Options', mleopts);
-    %Take average ci (they should be even-sided, anyway?)
-    ftmci = diff(ftmci, 1, 1)/2;
-    %Save, add back a1
-    mfits{i} = [1 ftm];
-    if i > 1
-        mfcis{i} = [sqrt(sum(ftmci(2:2:end).^2)) ftmci]; %Error on a1 propogate from others (sum ai = 1)
-    else
-        mfcis{i} = [0 ftmci];
-    end
+    mfits{i} = ftm;
+    mfcis{i} = ftmci;
     
     %Check for end: AIC (= k - logprob) increases
     mcfcell = num2cell(ftm);
@@ -83,7 +72,7 @@ for i = 1:n
     
     %Update
     aic = aicnew;
-    ftg = [mfits{i} mfits{i}(end-1:end) * 1/3];
+    ftg = [ftm ftm(end-1:end) * 1/3];
     
     if i == n
         optiter = n;
