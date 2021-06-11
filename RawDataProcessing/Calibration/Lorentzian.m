@@ -62,8 +62,8 @@ switch lortype
     case 7 %Lorentzian #3 + 1/f noise
         %Extra params: inverse F noise
         finv = inParams(5);
-        outP = sum( D/2/pi^2./(fc^2+inFF.^2) .* (al^2 + (1-al^2) ./ (1+ (inFF/f3).^2)) + finv./inFF );
+        outP = sum( D/2/pi^2./(fc^2+inFF.^2) .* (al^2 + (1-al^2) ./ (1+ (inFF/f3).^2)) + finv./inFF , 1);
     otherwise %'case 1'
         %Pure Lorentzian, no filters. Used in Timeshareds (?)
-        outP = sum( D/2/pi^2./(fc^2+inFF.^2));
+        outP = sum( D/2/pi^2./(fc^2+inFF.^2), 1);
 end

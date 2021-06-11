@@ -1,4 +1,4 @@
-function [out, isbt] = pol_dwelldist_p1(data, inOpts)
+function [out, isbt, trs] = pol_dwelldist_p1(data, inOpts)
 %Takes in transcription data, fits a staircase and converts to dwelltimes
 
 %Because of artifacts(?), short fitting is a bit wonk, leading to fitting of additional very fast decays.
@@ -24,7 +24,7 @@ if isstruct(data)
     if nargout < 2
         warning('If you want to capture backtracks, make sure to capture the second output')
     end
-    [out, isbt] = structfun(@(x) pol_dwelldist_p1(x, opts), data, 'Un', 0);
+    [out, isbt, trs] = structfun(@(x) pol_dwelldist_p1(x, opts), data, 'Un', 0);
     return
 end
 

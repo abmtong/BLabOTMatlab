@@ -1,6 +1,9 @@
 function out = cropAlan(iny, npts)
 
 %Some way to programmatically [or just plot and do by hand] crop these 77 traces
+if nargin <2
+    npts = 2;
+end
 
 %Start with easycrop with bounds [20, 90]
 yr = [20 100];
@@ -12,11 +15,10 @@ enI = find(di == -1)-1;
 wid = enI-stI;
 [~, ii] = max(wid);
 out = iny(stI(ii):enI(ii));
-if nargin == 1
+
+if npts == 0
     return
 end
-
-
 
 plot(out)
 xlim( xlim + range(xlim) * [-.1 .1])

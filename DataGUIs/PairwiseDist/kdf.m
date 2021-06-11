@@ -1,5 +1,13 @@
-function [out, y] = kdf(indata, dy, ysd)
+function [out, y] = kdf(indata, dy, ysd, yrng)
 %calculates the kdf of a set of data by placing a gaussian at each pt with sd ysd
+
+%yrange: whatever encompasses or a set one.
+%Note that the algorithm changes depending slightly, mostly on edge cases
+% Passed yrng has an actual gaussian deacy, while empty is less steep
+% Might remove isempty case ...
+if nargin < 4
+    yrng = [];
+end
 
 if nargin < 3
     %If the std has not been stated, 
@@ -13,15 +21,22 @@ end
 [out, y] = cdf(indata, dy);
 out = [0 diff(out)];
 
-%Pad edges with zeros -- use width 2*sd
-pad = ceil(5*ysd/dy);
-out = [zeros(1,pad) out zeros(1,pad)];
-y = [ (-pad:-1)*dy+y(1)  y y(end) + dy*(1:pad) ];
-
-gaufh = @(x)sum(x.*(normpdf((1:length(x))*dy,dy*(length(x)/2+.5),ysd)));
-
-out = windowFilter(gaufh, out, ceil(5*ysd/dy), 1);
-
+if isempty(yrng)
+    %Pad edges with zeros -- use width 2*sd
+    pad = ceil(5*ysd/dy);
+    out = [zeros(1,pad) out zeros(1,pad)];
+    y = [ (-pad:-1)*dy+y(1)  y y(end) + dy*(1:pad) ];
+    gaufh = @(x)sum(x.*(normpdf((1:length(x))*dy,dy*(length(x)/2+.5),ysd)));
+    out = windowFilter(gaufh, out, ceil(5*ysd/dy), 1);
+else
+    cdfy = out;
+    cdfx = y;
+    y = yrng(1):dy:yrng(2);
+    out = zeros(1,length(y));
+    for i = 1:length(cdfy)
+       out = out + cdfy(i) * normpdf(y, cdfx(i), ysd);
+    end
+end
 
 % %calc gauss for pt +-5sd. Set up y-binning first
 % wid = ceil(ysd/dy*5); %+-5sd, time difference between 3/4/5 sd is negligible so opt for 5, max difference from using full-length y is 1e-2/1e-3/1e-5 respectively

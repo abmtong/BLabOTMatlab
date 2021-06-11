@@ -1,6 +1,18 @@
-function [out, outraw] = rulerAlign(tra, inOpts)
+function [out, outraw] = rulerAlignV2(tra, inOpts)
 %Time to just write it in matlab...
 %Works okay!? Method is distinct from Antony's but seems to work
+
+%{
+Editing to be more Antony-like
+RTH: Instead of binning points, bin 'segments' : draw a line between i and i+1-th pt, [still one per pt.]
+  They did this to ensure no 0 bins, if log is taken. Gaussian smoothing does this for me, though.
+%Probably not essential for my case
+
+Similarity Score
+I use var(), reference uses third moment of logprb, they used prob chk
+  (third moment, using the hist as a prob dist.)
+
+%}
 
 %Input data unit is bp
 %out is data scaled and offset to start at the begining of the repeat section
@@ -9,6 +21,7 @@ function [out, outraw] = rulerAlign(tra, inOpts)
 %Filtering options
 opts.filwid = 20; %Smoothing filter half-width
 opts.binsm = 20; %Residence time histogram filter half-width
+opts.rptsmsd = 1; %Smooth the histogram
 opts.persmsd = 0.5; %Smooth the period scores with a gaussian filter of this std (bp)
 opts.offsmsd = 1; %Smooth the offset scores with a gaussian filter of this std (bp)
 
@@ -19,7 +32,10 @@ opts.paustr = [.15 .25 .15 .25 .25]; %Known pause strength (taken from doi:10.10
 opts.per = 239; %Repeat length, bp
 opts.persch = [.9 1.1]; %Search range, proportion of period
 opts.perschd = .05; %Granularity of search, bp; also doubles as the bin size [was .025nm in Antony code, which is .07bp]
+opts.permeth = 2; %Method to generate average RTH, see code
+opts.scrmeth = 1; %Method to score a RTH, see code
 opts.nrep = 8; %Number of repeats
+
 
 %Options: Alignment analysis
 opts.trim = 0; %Trim edges of the estimated repeat range by this amount (e.g. 0.01 to trim 1% from top and bottom)
@@ -32,10 +48,11 @@ end
 
 %If input is cell, loop
 if iscell(tra)
+    thisfcn = str2func(mfilename);
     if nargin > 1
-        [out, outraw] = cellfun(@(x) rulerAlign(x, inOpts), tra, 'Un', 0);
+        [out, outraw] = cellfun(@(x) thisfcn(x, inOpts), tra, 'Un', 0);
     else
-        [out, outraw] = cellfun(@(x) rulerAlign(x), tra, 'Un', 0);
+        [out, outraw] = cellfun(@(x) thisfcn(x), tra, 'Un', 0);
     end
     outraw = [outraw{:}];
     
@@ -91,16 +108,34 @@ rpts = cell(1,len);
 
 %Score each period
 for i = 1:len
-    %Generate period histogram (sum together repeats)
-    %Take mean of the residence times
-    rpt = mean( reshape(php(1:opts.nrep*persn(i)), persn(i), opts.nrep),2, 'omitnan')';
-    %Use median instead of mean - should better handle random pausing?
-%     rpt = median( reshape(php(1:opts.nrep*persn(i)), persn(i), opts.nrep),2, 'omitnan')';
-    rpts{i} = rpt;
-    
+    %Generate period histogram (across repeats)
+    switch opts.permeth
+        case 1 %Take mean of the residence times
+            rpt = mean( reshape(php(1:opts.nrep*persn(i)), persn(i), opts.nrep),2, 'omitnan')';
+        case 2 %Use median instead of mean - should better handle random pausing?
+            rpt = median( reshape(php(1:opts.nrep*persn(i)), persn(i), opts.nrep),2, 'omitnan')';
+    end
+    rpts{i} = gausmooth(rpt, opts.per/persn(i), opts.rptsmsd, 1);
+
     %Try out various scoring methods...
-    %Score by taking its mean quadratic error
-    scr(i) = var(rpt, 1);
+    switch opts.scrmeth
+        case 1 %Score by taking its mean quadratic error [as a proxy for 'spikiness']
+            scr(i) = var(rpt, 1);
+        case 2 %Herbert 2006, skewness of log-rth [third moment]
+            %First smooth to remove 0s
+            tmp = gausmooth(rpt, opts.per/persn(i), opts.persmsd, 0);
+            %Take log of probability
+            tmp = log(tmp);
+            %Normalize
+            tmp = tmp / sum(tmp);
+            %Skewness = E[ (X-mu/std)^3 ]
+            x = linspace(0, opts.per, persn(i)+1);
+            x = x(1:end-1);
+            mu = sum(x.*tmp);
+            sd = sqrt(sum( (x - mu).^2 .* tmp )) ;
+            scr(i) = sum( (x - mu).^3 .* tmp ) / sd^3;
+            scr(i) = skewness(tmp);
+    end
 end
 %Smooth period score
 scr = gausmooth(scr, opts.perschd, opts.persmsd, 0);
@@ -115,6 +150,8 @@ scl = opts.per/per; %Scaling factor
 fp = sort(findpeaks(scr), 'descend');
 if length(fp) == 1
     fp = [fp min(fp)];
+elseif isempty(fp)
+    fp = [1 1 0];
 end
 %Judge score by relative height of second peak
 sclscr = 1-(fp(2) - fp(end)) / range(fp);
@@ -129,8 +166,8 @@ rptpau = zeros(1, persn(maxi));
 for i = 1:length(pauind);
     rptpau = rptpau + circshift(rpt, [0, -pauind(i)]) * opts.paustr(i);
 end
-%Gaussian smooth this : if per is off by a bit, peaks are flat
-rptpau = gausmooth(rptpau, opts.perschd, opts.offsmsd, 1);
+%Gaussian smooth this : if per is off by a bit, peaks are flat; gaussian smoothing helps find the center
+rptpau = gausmooth(rptpau, opts.per/length(rptpau), opts.offsmsd, 1);
 
 %Judge 'goodness' by findpeaks
 fp = sort(findpeaks(rptpau), 'descend');

@@ -1,6 +1,6 @@
 function prepforrelease(filnam, folnam, links)
 %Readies a function for release to others.
-% It does so by fetching its dependent .m fi les and finding the dependent toolboxes, too
+% It does so by fetching its dependent .m files and finding the dependent toolboxes, too
 % Misses function calls in @eval (or similar)
 %Prep multiple files for release in the same folder by doing:
 % cellfun(@(x)prepforrelease(x, foldername), filenamescell)

@@ -122,9 +122,10 @@ for i = 1:size(toplot,1) %Hm, loop should be done over unique type/bt options in
 %             obs = violin(nos(:), 'facecolor', opts.cols{j}, 'mc', [], 'medc', 'k', 'bw', binmax.(row{3})(1)*opts.smoothfact, 'facealpha', 1, 'plotlegend', 0);
 %             obs(1).XData = obs(1).XData + (j-1);
 %             obs(3).XData = obs(3).XData + (j-1);
-            patch('XData',smooth([-yy yy(end:-1:1)], smoothfact), 'YData', [xx xx(end:-1:1)], 'FaceColor', opts.cols{j});
+            patch('XData',smooth([-yy yy(end:-1:1)]+j, smoothfact), 'YData', [xx xx(end:-1:1)], 'FaceColor', opts.cols{j});
             xlim([0 j+1])
             ylim([0 binmax.(row{3})(2)])
+            line(j + interp1(xx, yy, median(nos)) * [-1 1] , median(nos) * [1 1], 'Color', 'k', 'LineWidth', 2);
         else
             plot(ax, xx, yy, 'Color', opts.cols{j})
             xlim(ax, [0 binmax.(row{3})(2)])

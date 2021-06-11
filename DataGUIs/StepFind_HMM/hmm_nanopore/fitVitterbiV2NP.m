@@ -1,8 +1,11 @@
-function out = fitVitterbi(tr, inOpts)
-%Fits a staircase with known state sequence mu. This one is 'unoptimized' for monotonic staircases, so can handle any sort of staircase
+function out = fitVitterbiV2NP(tr, inOpts)
 
 %Does vitterbi fitting for a given [mu, sig]. Transition matrix decided by trnsprb, with allowed directions dir.
 % Default states is a grid defined by [ssz, off].
+%Optimized cf. fitVitterbi to remove full-width transition matrix
+%Can remove more memory constraint by giving it the findStepHMM treatment
+
+%NP: start at state 1, end at state end
 
 opts.ssz = 1; %Spacing of states
 opts.off = 0; %Offset of states
@@ -10,34 +13,25 @@ opts.dir = 1; %1 for POSITIVE only, -1 for NEG only, 0 for BOTH
 opts.trnsprb = 1e-3;
 opts.sig = [];
 opts.mu = [];
-opts.a = [];
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
 end
 
-%Apply offset
-tr = tr - opts.off;
 if isempty(opts.mu)
-    %Make state matrix    
+    %Make state matrix
     indSta = floor(min(tr/opts.ssz));
     indEnd = ceil(max(tr/opts.ssz));
-    mu = (indSta:indEnd) * opts.ssz;
+    mu = (indSta:indEnd) * opts.ssz + opts.off;
 else
     mu = opts.mu;
 end
 ns = length(mu);
 len=length(tr);
 
-if isempty(opts.a)
-    %Make transition matrix, as Sparse
-    a = sparse(diag(ones(1,ns))) + ...
-        any(opts.dir == [0 1])  * opts.trnsprb*sparse(diag(ones(1,ns-1), 1)) +  ...
-        any(opts.dir == [0 -1]) * opts.trnsprb*sparse(diag(ones(1,ns-1),-1));
-    a = bsxfun(@rdivide, a, sum(a,2));
-else
-    a = opts.a;
-end
+%Make transition matrix, as Sparse
+a = [any(opts.dir == [0 1])  * opts.trnsprb 1 any(opts.dir == [0 -1]) * opts.trnsprb];
+a = bsxfun(@rdivide, a, sum(a,2));
 
 if isempty(opts.sig)
     sig = sqrt(estimateNoise(tr));
@@ -56,11 +50,21 @@ npdf = bsxfun(@rdivide, npdf, sum(npdf,2));
 
 %vitterbi, just apply w/ inModel
 vitdpim = zeros(len-1, ns); %vitdp(t,p) = q means the best way to get to (t+1,p) is from (t,q)
-vitdpim(1,:) = 1:ns;
-vitscim = npdf(1,:).^2;
-for i = 1:len-1
+vitdpim(1,:) = ones(1,ns); %Set starting state as all ones
+vitscim = npdf(1,1) * ones(1,ns);
+for i = 2:len-1
     for j = 1:ns
-        [vitscim(j), vitdpim(i,j)] = max( a(:,j) .* vitscim' );
+        if j == 1
+            [vitscim(j), tvitdp] = max( vitscim(j:j+1) .* a(2:3) );
+            vitdpim(i,j) = tvitdp + j - 1;
+        elseif j == ns
+            [vitscim(j), tvitdp] = max( vitscim(j-1:j) .* a(1:2) );
+            vitdpim(i,j) = tvitdp + j - 2;
+        else
+            
+            [vitscim(j), tvitdp] = max( vitscim(j-1:j+1) .* a );
+            vitdpim(i,j) = tvitdp + j - 2;
+        end
     end
 %     [vitsc, vitdp(i,:)] = max(bsxfun(@times, newa, vitsc'), [], 1);
     vitscim = vitscim .* npdf(i+1,:) / sum(vitscim); %renormalize
@@ -68,7 +72,7 @@ end
 
 %assemble path via backtracking
 st2 = zeros(1,len);
-[~, st2(len)] = max(vitscim);
+st2(len) = ns; %Set final state as last state
 for i = len-1:-1:1
     st2(i) = vitdpim(i,st2(i+1));
 end
