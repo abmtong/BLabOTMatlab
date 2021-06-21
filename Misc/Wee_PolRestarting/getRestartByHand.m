@@ -2,7 +2,6 @@ function out = getRestartByHand(infp)
 %Lets user click start and end to get timescales
 % Made for pol restarting (start of flow to start of Tx)
 
-
 if nargin < 1
     [f, p] = uigetfile('*.mat', 'Mu', 'on');
     if ~p

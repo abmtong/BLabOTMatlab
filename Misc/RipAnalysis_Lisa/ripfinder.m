@@ -1,6 +1,6 @@
 function out = ripfinder(x, f, inOpts)
 %Finds the location, size of rip(s)
-
+%UNFINISHED
 %A rip is a [large, instantaneous, negative] change in F 
 
 %To do refoldings, then swap with -f

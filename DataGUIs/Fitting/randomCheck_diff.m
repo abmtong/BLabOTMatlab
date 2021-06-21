@@ -2,6 +2,7 @@ function out = randomCheck_diff(seq)
 
 %Check differing distributions of diff(seq)
 % I guess the idea is if there are state correlations, there will be more near-0 diff's
+%NAH doesnt seem to work
 
 dseq = ( diff(seq) );
 len = length(seq);

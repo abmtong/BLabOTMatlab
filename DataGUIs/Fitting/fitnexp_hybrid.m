@@ -3,7 +3,7 @@ function [out, outraw] = fitnexp_hybrid(xdata, n, verbose)
 
 %Fits up to n exponentials, stops according to AIC
 if nargin < 2
-    n=5; %Max exponentials to fit, if >5 need to change @nexpdist
+    n=5; %Max exponentials to fit, if AIC minimum is not found
 end
 
 %Concatenate data, if cell

@@ -4,15 +4,17 @@ function [out, kn] = pol_dwelldist_p3b(rawdat, p1tra, p2exps, inOpts)
 %  p1tra is the third output of p1
 %  p2exps is list of the fit exponentials [a1, k2, a2, k2, ...], taken from the output of p2
 
-
+%Fsamp (Hz)
 opts.Fs = 1000;
-
-opts.bstrap = 0; %Also calculate boostrapped probability?
+%Extra analyses to do
+opts.bstrap = 1; %Also calculate boostrapped probability?
+opts.blockp = 1; %Also do Block's 'pauses per 100bp' thing ? [pause = non-major a_i] - Only for cell batch
 
 %Cell batch-mode options
 opts.dt = 2; %delay by each trace by dt in cell-mode.
 opts.toff = 0;
 opts.ax = [];
+opts.figtitle = '';
 
 if nargin > 3
     opts = handleOpts(opts, inOpts);
@@ -27,8 +29,8 @@ if isstruct(rawdat)
     fns = fieldnames(rawdat);
     nn = length(fns);
     for i = 1:nn
+        opts.figtitle = fns{i};
         [out.(fns{i}), kn.(fns{i})] = pol_dwelldist_p3b(rawdat.(fns{i}), p1tra.(fns{i}), p2exps.(fns{i}).fit, opts);
-        title(gca, fns{i})
     end
 
     return
@@ -36,6 +38,8 @@ end
 if iscell(rawdat)
     figure Name PolDwellDistP3b
     opts.ax = gca;
+    
+    hold on
     nn = length(rawdat);
     out = zeros(nn+1,5);
     kn = cell(1,nn);
@@ -43,6 +47,9 @@ if iscell(rawdat)
         opts.toff = (i-1)*opts.dt;
     	[out(i,:), kn{i}] = pol_dwelldist_p3b(rawdat{i},p1tra{i},p2exps, opts);
     end
+    title(opts.figtitle)
+    xlabel('Time (s)')
+    ylabel('Position (bp)')
     
     %Do random test on all
     if opts.bstrap
@@ -52,6 +59,36 @@ if iscell(rawdat)
         out(nn+1,:) = [op, oraw.nruns, mean(oraw.nboot), std(oraw.nboot), length(oraw.nboot) ];
     end
     
+    if opts.blockp
+        dwbin = 100; %dwbin should be > offset variance
+        %For each dwbin bp, calculate pause chance
+        [~, mes] = cellfun(@tra2ind, p1tra, 'Un', 0);
+        bins = (floor(min([mes{:}]/dwbin)):ceil(max([mes{:}]/dwbin)))*dwbin;
+        %Group means and kn's
+        allme = [mes{:}];
+        allkn = [kn{:}];
+        %Find the highest a_i and call this the 'pause-free' and take anything slower as a pause
+        as = p2exps(1:2:end);
+        [~, kpfv] = max(as);
+        %Store number of pauses, dwells in each region
+        npau = zeros(1, length(bins)-1);
+        ndw  = zeros(1, length(bins)-1);
+        for i = 1:length(bins)-1
+            kncrop = allkn( allme >= bins(i) & allme < bins(i+1) );
+            ndw(i) = length(kncrop);
+            npau(i) = sum(kncrop > kpfv); %Slower than kpfv (= higher k_i) = pause
+        end
+        cimult = 1.96; %SD to 95%CI for a count [i.e. Z-score for 0.05]
+        
+        figure('Name', 'PDDp3b Block - Pause Probability')
+        %Plot pause prob. as bars, with errorbars
+        bar(bins(1:end-1), npau./ndw, 'FaceColor', [.5 .5 1])
+        hold on
+        errorbar(bins(1:end-1), npau./ndw, npau.^0.5./ndw * cimult, 'LineStyle', 'none');
+        title(opts.figtitle)
+        xlabel('Position (nm)')
+        ylabel('Pause Chance')
+    end
     
     return
 end
@@ -126,14 +163,15 @@ colormap(cmap)
 colorbar
 
 
-%Calculate boostrapped clustering probability
-out = [];
-if opts.bstrap
+if opts.bstrap || nargout > 1
     %For each dwell, calculate most likely source exponential
     [~, kn] = arrayfun(@(x) max( as .* ks .* exp(- ks * x ) ) , dws); %pdf = ai * ki * exp(-ki t)
-    
+end
+
+%Calculate boostrapped clustering probability
+out = nan(1,5);
+if opts.bstrap
     [op, oraw] = randomCheck_bstrap(kn);
     out = [op, oraw.nruns, mean(oraw.nboot), std(oraw.nboot), length(oraw.nboot) ]; %p, nruns, bstrap mean, bstrap sd, nboot
     text(opts.ax, double(xs(end))/opts.Fs + opts.toff, double(ys(end)), sprintf('%0.3f', op) );
 end
-

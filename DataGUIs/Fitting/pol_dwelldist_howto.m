@@ -24,5 +24,7 @@ Step 3: Run dwellfinding
 Step 4: Run dwellfitting
   bfit = pol_dwelldist_p2(afit);
    This outputs figures of the fits and two .xls in the working dir with stats
+
+Porobably write this as a script
 %}
 
