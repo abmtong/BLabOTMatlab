@@ -11,19 +11,21 @@ RTH: Instead of binning points, bin 'segments' : draw a line between i and i+1-t
 Similarity Score
 I use var(), reference uses third moment of logprb, they used prob chk
   (third moment, using the hist as a prob dist.)
-
 %}
+
+ %check effect of binsm, filwid, etc.
 
 %Input data unit is bp
 %out is data scaled and offset to start at the begining of the repeat section
 %outraw is extra info (scale/offset params, histogram data)
 
 %Filtering options
-opts.filwid = 20; %Smoothing filter half-width
-opts.binsm = 20; %Residence time histogram filter half-width
+opts.filwid = 20; %Smoothing filter half-width (pts)
+opts.binsm = 1; %Residence time histogram filter half-width (bp)
 opts.rptsmsd = 1; %Smooth the histogram
-opts.persmsd = 0.5; %Smooth the period scores with a gaussian filter of this std (bp)
+opts.persmsd = 0.1; %Smooth the period scores with a gaussian filter of this std (bp)
 opts.offsmsd = 1; %Smooth the offset scores with a gaussian filter of this std (bp)
+opts.Fs = 3125; %Fsamp, just for plotting
 
 %Options: Repeat pause characteristics
 opts.start = tra(1); %Start position, bp
@@ -36,6 +38,10 @@ opts.permeth = 2; %Method to generate average RTH, see code
 opts.scrmeth = 1; %Method to score a RTH, see code
 opts.nrep = 8; %Number of repeats
 
+
+%To improve:
+%Hm seems to be sensitive to filtering (i.e. binsm) - fixed, binsm now is in bp, not pts (now only pts field is filwid)
+% Make sure filtering is centered (or filter the xdata as well?) - guessing some shifting may be occurring [not too bad for offset, but bad for per]
 
 %Options: Alignment analysis
 opts.trim = 0; %Trim edges of the estimated repeat range by this amount (e.g. 0.01 to trim 1% from top and bottom)
@@ -54,23 +60,33 @@ if iscell(tra)
     else
         [out, outraw] = cellfun(@(x) thisfcn(x), tra, 'Un', 0);
     end
-    outraw = [outraw{:}];
+    ki = ~cellfun(@isempty, out);
+    nums = 1:length(tra);
+    
+    nums = nums(ki);
+    out = out(ki);
+    outraw = [outraw{ki}];
     
     %Plot some stats
     offs = [outraw.off];
     scls = [outraw.scl];
     offscrs = [outraw.offscr];
     sclscrs = [outraw.sclscr];
-    figure
+    figure('Name', sprintf('RulerAlign Scatter %s', inputname(1)))
     scatter(offs, scls, [], offscrs/range(offscrs) + sclscrs/range(sclscrs), 'filled')
+    for i = 1:length(offs)
+        text(offs(i), scls(i), sprintf('%d', nums(i)));
+    end
     colormap winter
     colorbar
     
     %Plot aligned traces
-    figure, hold on, cellfun(@(x)plot( windowFilter(@mean, x, opts.filwid, 1) ), out)
+    figure('Name', sprintf('RulerAlign Traces %s', inputname(1)))
+    hold on
+    cellfun(@(x)plot((1:floor(length(x)/(2*opts.filwid+1)))/opts.Fs*(2*opts.filwid+1), windowFilter(@mean, x, [], 2*opts.filwid+1) ), out)
     xl = xlim;
     arrayfun(@(x) plot(xl, x * [1 1]), bsxfun(@plus, opts.pauloc, (0:opts.nrep-1)'*opts.per))
-    cellfun(@(x, y) text( length(x), x(end), sprintf('%d', y) ), out, num2cell(1:length(out)))
+    cellfun(@(x, y) text( length(x)/(2*opts.filwid+1), x(end), sprintf('%d', y) ), out, num2cell(nums))
     return
 end
 
@@ -89,7 +105,14 @@ ki = hx > rng(1) & hx < rng(2);
 hx = hx(ki); %Hm this isn't used, but we probably want to use hx to reference where we are?
 hp = hp(ki);
 
-hp = windowFilter(@mean, hp, opts.binsm, 1);
+%If none of the trace is in the search region, return
+if all(~ki)
+    out = [];
+    outraw=[];
+    return
+end
+
+hp = windowFilter(@mean, hp, ceil(opts.binsm/opts.perschd), 1);
 
 %Generate periods to search over
 persn = (opts.persch * opts.per)/opts.perschd; %Generate range
@@ -135,6 +158,10 @@ for i = 1:len
             sd = sqrt(sum( (x - mu).^2 .* tmp )) ;
             scr(i) = sum( (x - mu).^3 .* tmp ) / sd^3;
             scr(i) = skewness(tmp);
+        case 3 %Something closer to Antony's code: Probability of each repeat given the other repeats
+            
+            
+            
     end
 end
 %Smooth period score

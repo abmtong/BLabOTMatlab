@@ -6,6 +6,7 @@ opts.xrng = [2e-3 inf]; %Crop some of the shorter dwells, because fitting is won
 opts.prcmax = 99.9; %Crop the few superlong dwells by percentile - may cause pdf to underflow during search (esp. during mle, as it tries to fit that pt)
 opts.nmax = 8; %max exponentials to fit
 opts.fitsing = 1; %Fit traces separately?
+opts.groupdws = 1; %Group N dwells together, fit as Gammas
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
@@ -96,14 +97,26 @@ end
 
 if opts.fitsing
     %Fit each trace separately
-    [o, or] = cellfun(@(x) fitnexp_hybrid(x( x > opts.xrng(1) & x < min(opts.xrng(2), prctile(x, opts.prcmax)) ), opts.nmax, 0), dws, 'Un', 0);
+    if opts.groupdws == 1
+        [o, or] = cellfun(@(x) fitnexp_hybrid(x( x > opts.xrng(1) & x < min(opts.xrng(2), prctile(x, opts.prcmax)) ), opts.nmax, 0), dws, 'Un', 0);
+    else
+        %Group dwells
+        dwsgrp = cellfun(@(x) sum( reshape( x(1: opts.groupdws*floor(length(x)/opts.groupdws)), opts.groupdws, []), 1), dws, 'Un', 0);
+        [o, or] = cellfun(@(x) fitngam_hybrid(x( x > opts.xrng(1) & x < min(opts.xrng(2), prctile(x, opts.prcmax)) ), opts.groupdws, opts.nmax, 0), dwsgrp, 'Un', 0);
+    end
     out.sfit = o;
     out.sfitraw = or;
 end
 
 %Fit together
-dwall = [dws{:}];
-[oa, ora] = fitnexp_hybrid(dwall( dwall > opts.xrng(1) & dwall < min(opts.xrng(2), prctile(dwall, opts.prcmax)) ), opts.nmax, 1);
+if opts.groupdws == 1
+    dwall = [dws{:}];
+    [oa, ora] = fitnexp_hybrid(dwall( dwall > opts.xrng(1) & dwall < min(opts.xrng(2), prctile(dwall, opts.prcmax)) ), opts.nmax, 1);
+else
+    dwsgrp = cellfun(@(x) sum( reshape( x(1: opts.groupdws*floor(length(x)/opts.groupdws)), opts.groupdws, []), 1), dws, 'Un', 0);
+    dwall = [dwsgrp{:}];
+    [oa, ora] = fitngam_hybrid(dwall( dwall > opts.xrng(1) & dwall < min(opts.xrng(2), prctile(dwall, opts.prcmax)) ), opts.nmax, opts.groupdws, 1);
+end
 
 %Save results in out
 out.fit = oa;

@@ -1,51 +1,51 @@
-function [out, xc] = plotNucHist(intr, inOpts)
-%ZJ's version is a bit more developed [+filtering]
+function plotNucHist(xs, ys, inOpts)
 
-opts.binsz = 0.1; %RTH binsize
-opts.roi = [600 800]; %Region of interest
+%Display options
+opts.disp = [558 631 704]-16; %Location of lines
+opts.normmeth = 2;
 
-if nargin > 1
+%Pause info
+opts.pauloc = 59;
+opts.per = 64;
+opts.nrep = 8;
+
+if nargin > 2
     opts = handleOpts(opts, inOpts);
 end
 
-len = length(intr);
-ycs = cell(1,len);
-
-%For each trace
-for i = 1:len
-    %Compute the residence time
-    [y, x] = nhistc(intr{i}, opts.binsz);
-    %Pad front and end with NaNs
-    if x(1) > opts.roi(1)
-        npad = ceil(x(1) - opts.roi(1) ) / opts.binsz;
-        y = [nan(1,npad) y];
-        x = [x(1) - (1:npad) * opts.binsz x];
-    end
-    if x(end) < opts.roi(2)
-        npad = ceil(opts.roi(2) - x(end)) / opts.binsz;
-        y = [y nan(1,npad)];
-        x = [x x(end) + (1:npad) * opts.binsz];
-    end
-    
-    %Crop to the ROI
-    ki = x >= opts.roi(1) & x <= opts.roi(2);
-    
-    %Apply crop
-    xc = x(ki);
-    yc = y(ki);
-    %These should all be the same length, = diff(roi)/binsz + 1
-    
-    %Renormalize: Say median(yc) == 1
-    yc = yc / median(yc, 'omitnan');
-    
-    %Save the yc
-    ycs{i} = yc(:);
+figure('Name', sprintf('PlotNucHist %s', inputname(1)))
+hold on
+if iscell(ys)
+    cellfun(@plot, xs, ys)
+else
+    plot(xs, ys)
+end
+%Add lines for pauses
+xs = bsxfun(@plus, (0:opts.nrep-1)*opts.per, opts.pauloc');
+xs = xs(:)';
+yl = ylim;
+for i = 1:length(xs)
+    line(xs(i) * [1 1], yl)
+end
+%Red lines for n+1 and -1, in case base offset is wrong
+xs2 = bsxfun(@plus, ([-1 opts.nrep])*opts.per, opts.pauloc');
+xs2 = xs2(:)';
+for i = 1:length(xs2)
+    line(xs2(i) * [1 1], yl, 'Color', 'r')
 end
 
-%Take the median, omitnan to ignore cropped regions
-ycm = [ycs{:}]; %ycs is column arrays, so this makes a matrix
-ycm = median(ycm, 2, 'omitnan');
+%Green lines for display stuff
 
-out = ycm;
+xs3 = opts.disp;
+for i = 1:length(xs3)
+    line(xs3(i) * [1 1], yl, 'Color', 'g')
+end
 
-figure, plot(xc, out)
+%Labels
+xlabel('Position (bp)')
+switch opts.normmeth
+    case 1
+        ylabel('Residence time (relative to median)')
+    case 2
+        ylabel('Residence time (s/bp)')
+end

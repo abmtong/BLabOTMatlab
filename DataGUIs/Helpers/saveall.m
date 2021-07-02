@@ -1,6 +1,7 @@
 function saveall(name, whattosave)
-
 %whattosave: wkspc (1), figs(2), or both (0)
+
+
 if nargin < 2
     whattosave = 0;
 end

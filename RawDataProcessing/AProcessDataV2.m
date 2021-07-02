@@ -12,7 +12,7 @@ function AProcessDataV2(infp, opts)
 
 
 %Load text file. This must be located where the other .dat files are
-if nargin < 1
+if nargin < 1 || isempty(infp)
     [f, p] = uigetfile('*.txt', 'Mu', 'on');
     if ~p
         return

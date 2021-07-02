@@ -37,7 +37,7 @@ butcens= uicontrol( 'Units', 'normalized', 'Position', [.30, .90, .05, .05],    
 
 %If no inst passed, select files
 if isempty(dat)
-    [f, p] = uigetfile('*.mat', 'Mu', 'on');
+    [f, p] = uigetfile('D:\Data\%OthersData\Wee_Misincorporation\Data\*.mat', 'Mu', 'on');
     if ~p
         return
     end
@@ -55,7 +55,7 @@ if isempty(dat)
         fa = smooth([sd.forceAX{:}],sm)';
         fb = smooth(-[sd.forceBX{:}],sm)';
         [~, nam, ~] = fileparts(infp{i});
-        dat = [dat struct('nam', nam, 'f', fr, 'c', cn, 'a', fa, 'b', fb, 'ind', zeros(0,2), 'islong', [], 'frc', [])]; %#ok<AGROW>
+        dat = [dat struct('nam', nam, 'f', fr, 'c', cn, 'a', fa, 'b', fb, 'ind', zeros(0,2), 'islong', [], 'frc', [], 'cmt', sd.comment)]; %#ok<AGROW>
     end
 end
 
@@ -67,7 +67,7 @@ cycleData([],[],0)
         %Change to the next data, +1 or -1 depending on d
         num = mod( num-1+d, length(dat) ) + 1;
         %Extract trace from dat
-        fg.Name = dat(num).nam;
+        fg.Name = sprintf('%s - %s', dat(num).nam, dat(num).cmt);
         numtext.String = sprintf('%d/%d', num, length(dat));
         c = dat(num).c;
         fax = dat(num).a;
@@ -81,7 +81,7 @@ cycleData([],[],0)
         plot(ax2, fax);
         plot(ax2, fbx);
         wid = length(c);
-        xlim([0 wid*1.1])
+        xlim([0 wid*1.05])
         
         plotCrop
         
@@ -151,7 +151,7 @@ cycleData([],[],0)
 
     function addwkspc(~,~,tfclose)
         %Assign to workspace, on button press or on exit
-        assignin('base', sprintf('dat%s', datestr(datetime('now'), 'HHMM')), dat)
+        assignin('base', sprintf('grbh%s', datestr(datetime('now'), 'HHMM')), dat)
         if tfclose
             delete(fg)
         end

@@ -5,10 +5,10 @@ function [outp, outraw] = randomCheck_bstrap(seq)
 % Computes empirical [mean, sd] of the number of runs of the resampled sequences, returns P-value
 
 
-method = 2;
+method = 2; %Generating new samples via permutation or resampling with replacement (bootstrapping)
 
-
-nstrap = 1e4; %Simulate 1e4 boostraps
+nstrap = 1e4; %Simulate 1e4 bootstraps
+% nstrap = min(max(1e4, length(seq)*10), 1e5); %Simulate 1e4 to 1e5 boostraps
 %Calculate run lengths
 in = tra2ind(seq);
 nruns = length(in) - 1;
@@ -33,6 +33,18 @@ pct = sum(nbs <= nruns) / length(nbs);
 
 %Convert to two-tailed
 outp = 2 * min(pct, 1-pct);
+
+%if pct == 0, outside of nstrap: assume gaussian and calculate p, warn for
+if pct == 0
+    mu = mean(nbs);
+    sd = std(nbs);
+    
+    zscr = (mu - nruns) / sd;
+    
+    % Calculate p value from Z-score (two-tailed)
+    outp = normcdf( - abs(zscr) , 0, 1) *2;
+    warning('Input case too rare to be found via bootstrapping, either use p from extrapolation (%04g) or nboot (<%04g)', outp, 1/nstrap)
+end
 
 % mu = mean(nbs);
 % sd = std(nbs);

@@ -8,7 +8,7 @@ function [out, kn] = pol_dwelldist_p3b(rawdat, p1tra, p2exps, inOpts)
 opts.Fs = 1000;
 %Extra analyses to do
 opts.bstrap = 1; %Also calculate boostrapped probability?
-opts.blockp = 1; %Also do Block's 'pauses per 100bp' thing ? [pause = non-major a_i] - Only for cell batch
+opts.blockp = 0; %Also do Block's 'pauses per 100bp' thing ? [pause = non-major a_i] - Only for cell batch
 
 %Cell batch-mode options
 opts.dt = 2; %delay by each trace by dt in cell-mode.
@@ -41,7 +41,7 @@ if iscell(rawdat)
     
     hold on
     nn = length(rawdat);
-    out = zeros(nn+1,5);
+    out = zeros(nn+1,6);
     kn = cell(1,nn);
     for i = 1:nn
         opts.toff = (i-1)*opts.dt;
@@ -56,7 +56,7 @@ if iscell(rawdat)
         %For each dwell, calculate most likely source exponential
         kns = [kn{:}];
         [op, oraw] = randomCheck_bstrap(kns);
-        out(nn+1,:) = [op, oraw.nruns, mean(oraw.nboot), std(oraw.nboot), length(oraw.nboot) ];
+        out(nn+1,:) = [op, length(kns), oraw.nruns, mean(oraw.nboot), std(oraw.nboot), length(oraw.nboot) ];
     end
     
     if opts.blockp
@@ -169,9 +169,9 @@ if opts.bstrap || nargout > 1
 end
 
 %Calculate boostrapped clustering probability
-out = nan(1,5);
+out = nan(1,5); %[p nsteps nruns mean(bstrap) sd(bstrap) nboot]
 if opts.bstrap
     [op, oraw] = randomCheck_bstrap(kn);
-    out = [op, oraw.nruns, mean(oraw.nboot), std(oraw.nboot), length(oraw.nboot) ]; %p, nruns, bstrap mean, bstrap sd, nboot
+    out = [op, length(kn), oraw.nruns, mean(oraw.nboot), std(oraw.nboot), length(oraw.nboot) ]; %p, nruns, bstrap mean, bstrap sd, nboot
     text(opts.ax, double(xs(end))/opts.Fs + opts.toff, double(ys(end)), sprintf('%0.3f', op) );
 end

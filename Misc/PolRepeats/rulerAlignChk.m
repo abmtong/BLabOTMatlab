@@ -1,5 +1,6 @@
 function rulerAlignChk(outraw, pauloc)
 
+
 if nargin < 2
     pauloc = [83 108 141 168 236];
 end
