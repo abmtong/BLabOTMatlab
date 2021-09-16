@@ -1,6 +1,7 @@
 function modelspwmV2c(isrna)
 %Models the 'helical inchworm'
 %2b: open ring to open ring-- reverse order
+%2c: no ring movement, i.e. why ring must open + close
 
 if nargin < 1
     isrna = 0;
@@ -54,8 +55,8 @@ ddna(ax, dopts(1));
 addlight(ax)
 setcmap(ax)
 % ax.Projection = 'perspective'; %Use MATLAB 3D
-addframe('outgif.gif', gcf, 1, gifres)
-addframe('outfr.gif', gcf, 1, frres)
+addframe('outgif2c.gif', gcf, 1, gifres)
+addframe('outfr2c.gif', gcf, 1, frres)
 
 %Tween between nframes
 twfrms = [1 1 5 5 5 5 1 1 5 5 5 5];

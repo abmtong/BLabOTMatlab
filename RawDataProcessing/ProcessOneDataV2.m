@@ -1,5 +1,5 @@
 function out = ProcessOneDataV2(path, inNums, inOpts)
-%Processes one data-offset-cal combo, numbers specified in inNums, path to the root folder, with options
+%% Processes one data-offset-cal combo, numbers specified in inNums, path to the root folder, with options
 
 if nargin < 3
     inOpts = DataOptsPopup;
@@ -8,7 +8,7 @@ if nargin < 3
     end
 end
 
-%Compose filenames
+%% Compose filenames
 if nargin < 2 || isempty(inNums)
     if nargin < 1
         path = [];
@@ -50,7 +50,7 @@ startT = tic;
 %No default opts, so just rename for now
 opts = inOpts;
 
-%Calibrate
+%% Calibrate
 %Assemble Cal options
 calopts = opts.cal;
 calopts.raA = opts.raA;
@@ -74,8 +74,8 @@ switch calopts.Instrument
 end
 
 
+%% Offset
 %Offset data is taken by holding the beads at a varying distance apart, to see laser-bead interactions (without tether)
-
 switch opts.Protocol
     case 'One Trap'
         %If it's in one-trap mode, just take the mean as the offset.
@@ -123,7 +123,7 @@ switch opts.Protocol
                 %  fprintf('Using Ghe''s offset.\n');
             otherwise
                 %These should just be a single f-d curve. Average down and use
-                [rawoff, rawoffopts] = loadfile_wrapper(fullfile(path, file{2}), opts);
+                [rawoff, ~] = loadfile_wrapper(fullfile(path, file{2}), opts);
                 %Average down to 100pts
                 if isfield(rawoff, 'meta') && isfield(rawoff.meta, 'scanNSteps')
                     npul = max(round(rawoff.meta.scanNSteps/rawoff.meta.scanCycPerStep),1); %Scans in Timeshared are two-way, take the first way.
@@ -144,21 +144,24 @@ switch opts.Protocol
                     off.(fnames{i}) = windowFilter(@mean, rawoff.(fnames{i})(1:round(end/npul)), [], navg);
                 end
                 
-                %For Lumicks, mirror calibration is done here, so load it
+                %For Lumicks, offset is weird, set farthest trap sep as zero
                 if strcmp(inOpts.Instrument, 'Lumicks')
-                    opts = handleOpts(opts, rawoffopts);
+                    for i = {'AX' 'AY' 'BX' 'BY'};
+                        off.(i{1}) = off.(i{1}) - off.(i{1})(end);
+                    end
+%                     opts = handleOpts(opts, rawoffopts);
                 end
                     
         end
 end
 
-%Load data file
+%% Load data file
 [rawdat, ~] = loadfile_wrapper(fullfile(path, file{1}), opts);
 
 %Create some name-index sets to do in loop
 detNames = {'AX' 'BX' 'AY' 'BY'};
 detSums =  {'AS' 'BS' 'AS' 'BS'};
-%Normalize, apply offset to each detector.
+%% Normalize, apply offset to each detector.
 for i = 1:4
     %Extract cell for convenience
     detNam = detNames{i};
@@ -169,7 +172,7 @@ for i = 1:4
     out.(['force' detNam]) = rawdat.(detNam) * cal.(detNam).a * cal.(detNam).k;
 end
 
-%Calculate extension  = hypot( TrapX + BeadsX , TrapY + BeadsY) - Bead Radii
+%% Calculate extension  = hypot( TrapX + BeadsX , TrapY + BeadsY) - Bead Radii
 %                      (Mirror(V)  -offsetMir(V)) *convMir(nm/V)  + A(NV)*alphaA(nm/NV) - B(NV)*alphaB(nm/NV)
 out.extension = hypot( rawdat.TX + cal.AX.a*rawdat.AX - cal.BX.a*rawdat.BX, ...
                        rawdat.TY + cal.AY.a*rawdat.AY - cal.BY.a*rawdat.BY )...
@@ -189,7 +192,7 @@ out.extension = hypot( (rawdat(5,:)-opts.offTrapX)*opts.convTrapX + cal.AX.a*dat
                        (rawdat(6,:)-opts.offTrapY)*opts.convTrapY + cal.AY.a*dat.AY*aAY - cal.BY.a*dat.BY*aBY )...
                        - opts.raA - opts.raB;
 %}
-%Calculate total force = hypot( forX, forY ) using differential force (average of forces)
+%% Calculate total force = hypot( forX, forY ) using differential force (average of forces)
 out.force = hypot((out.forceBX - out.forceAX)/2, ...
                   (out.forceBY - out.forceAY)/2);
 
@@ -224,7 +227,7 @@ out.time = single(0:length(out.extension)-1) / opts.Fsamp;
 %         end
 %     end
 
-%Convert to contour if requested
+%% Convert to contour if requested
 if opts.convToContour
     pre = 'Phage';
     out.contour = out.extension ./ XWLC(out.force, opts.dnaPL, opts.dnaSM, opts.dnakT) / opts.dnaBp;

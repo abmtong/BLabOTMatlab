@@ -2,7 +2,7 @@ function [outXpLm, outx] = XWLCslope(F, P, S, kT)
 %Calculates the slope of the XWLC curve, which is proportional to SNR
 
 %Defaults
-if nargin < 1
+if nargin < 1 || isempty(F)
     F = 0.1:0.1:60;
 end
 if nargin < 2

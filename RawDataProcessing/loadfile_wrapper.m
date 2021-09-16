@@ -2,8 +2,8 @@ function [out, opts] = loadfile_wrapper(filepath, inOpts)
 %Loads an .dat file, handles a variety of sources, and renames the output so they can be processed similarly
 %Outputs QPDs (V, {A B} x {X Y S}) and trap separation (nm, {TX TY})
 
-if nargin < 1
-    [f, p] = uigetfile('*.dat');
+if nargin < 1 || isempty(filepath)
+    [f, p] = uigetfile({'*.dat' 'Raw Data'; '*.h5' 'Lumicks Files'});
     filepath = fullfile(p,f);
 end
 if nargin < 2

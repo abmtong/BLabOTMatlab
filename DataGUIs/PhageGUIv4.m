@@ -711,15 +711,21 @@ fig.Visible = 'on';
     end
 
     function custom03_callback(~,~)
-        %Does FC rescaling, so you can see the effect before you make the files. See @FCrescale for more info.
-        % Alters the figure's stepdata, so rescale is useable for e.g. takePWD
-        customB3.String = 'ScaleFCs';
-        str = permCropB.String;
-        tmp = FCrescale([path file], str);
-        if ~isempty(tmp)
-            stepdata = tmp;
-            refilter_callback
-        end
+%         %Does FC rescaling, so you can see the effect before you make the files. See @FCrescale for more info.
+%         % Alters the figure's stepdata, so rescale is useable for e.g. takePWD
+%         customB3.String = 'ScaleFCs';
+%         str = permCropB.String;
+%         tmp = FCrescale([path file], str);
+%         if ~isempty(tmp)
+%             stepdata = tmp;
+%             refilter_callback
+%         end
+        
+        %Fit crop to a line, adjust to make it flat. For checking drift (Lumicks/Fran)
+        csd = cropstepdata(stepdata, cropT, 0);
+        pf = polyfit([csd.time{:}], [csd.contour{:}], 1);
+        stepdata.contour = cellfun(@(x,y) y - x * pf(1) , stepdata.time, stepdata.contour, 'Un', 0);
+        refilter_callback;
     end
 
     function printFig_callback(~,~)

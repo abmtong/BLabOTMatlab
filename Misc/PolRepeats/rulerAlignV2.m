@@ -19,6 +19,11 @@ I use var(), reference uses third moment of logprb, they used prob chk
 %out is data scaled and offset to start at the begining of the repeat section
 %outraw is extra info (scale/offset params, histogram data)
 
+%Convert to double
+if isa(tra, 'single')
+    tra = double(tra);
+end
+
 %Filtering options
 opts.filwid = 20; %Smoothing filter half-width (pts)
 opts.binsm = 1; %Residence time histogram filter half-width (bp)
@@ -86,7 +91,7 @@ if iscell(tra)
     cellfun(@(x)plot((1:floor(length(x)/(2*opts.filwid+1)))/opts.Fs*(2*opts.filwid+1), windowFilter(@mean, x, [], 2*opts.filwid+1) ), out)
     xl = xlim;
     arrayfun(@(x) plot(xl, x * [1 1]), bsxfun(@plus, opts.pauloc, (0:opts.nrep-1)'*opts.per))
-    cellfun(@(x, y) text( length(x)/(2*opts.filwid+1), x(end), sprintf('%d', y) ), out, num2cell(nums))
+    cellfun(@(x, y) text( length(x)/opts.Fs, x(end), sprintf('%d', y) ), out, num2cell(nums))
     return
 end
 

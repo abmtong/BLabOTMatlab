@@ -142,3 +142,44 @@ if any(longs)
     xlabel('Restart Force (pN)')
     ylabel('Restart Chance')
 end
+
+%Fit to arrhenius, linear + linear+flat
+%ln(t_restart) = -Fdx + ln(C)
+medrsts = zeros(1,nf);
+medfrcc = cell(1,nf);
+for i = 1:nf
+     tmp = out(i).dws;
+     tmp(isinf(tmp)) = [];
+     medrsts(i) = median(tmp);
+end
+
+figure('Name', 'Arrhenius fitting')
+plot(fs, log(medrsts), 'ok')
+ylabel('log(t_{restart})')
+xlabel('Force (pN)')
+hold on
+
+%REMOVE 5pN PT AS OUTLIER
+rmi = fs>5 & fs < 6;
+fs(rmi) = [];
+medrsts(rmi) = [];
+warning('Removed 5pN point from fitting')
+
+%Linear fit: polyfit
+pf = polyfit(fs, log(medrsts),1);
+xx = linspace(0,max(fs)*1.1, 101);
+yy = polyval(pf, xx);
+plot(xx,yy)
+%Display eqn
+text(1, log(median(medrsts)), sprintf('[m,b] = [%0.2f,%0.2f]', -pf(1)*4.14, exp(pf(2))))
+
+%Linear + flat fit
+fitfcn = @(x0,x) (x0(1)*x + x0(2)) .* (x<x0(3)) + (x>=x0(3)) .* ( x0(3) * x0(1) + x0(2));
+ft = lsqcurvefit(fitfcn, [pf 10], fs, log(medrsts) );
+
+plot(xx, fitfcn(ft, xx))
+text(1, log(median(medrsts))-0.5, sprintf('[dx,t0,xmax] = [%0.2f,%0.2f,%0.2f]', -ft(1)*4.14, exp(ft(2)), ft(3)))
+
+%% Maybe switch to fitting individual points instead of medians ?
+
+

@@ -37,11 +37,14 @@ end
 % Could also do this for other filters that can use @filter, but edge cases need to be different
 %  I don't use non-@mean filters anyway, so w/e
 % Not using @smooth because that requires a toolbox
-%Might be slower if inDecimate is large, bc filters the whole thing first?
+%Might be slower if inDecimate / trace is large, bc filters the whole thing first?
 if isequal(filterFcn, @mean)
-    %if inHalfWidth is empty, use inDec. Make odd.
+    %if filtering and decimating, use a different algorithm (not @smooth) for speed
+    % This shifts points from edges to centers, but eh it'll be consistent
     if isempty(inHalfWidth)
-        inHalfWidth = floor(inDecimate/2);
+%         inHalfWidth = floor((inDecimate - 1) / 2 ) + 1;
+        outData = mean( reshape( inData(1: floor((length(inData)/inDecimate))*inDecimate), inDecimate, [] ), 1 );
+        return
     end
     if inHalfWidth * 2 - 1 > length(inData)
         inHalfWidth = max(length(inData) / 2 - 1,0);
