@@ -14,7 +14,7 @@ fila = normpdf( (-ngau:ngau) * dy, 0, sd);
 if circ
     rptpausm = filter( fila, 1,[y y]);
     rptpausm = rptpausm( rpl + (1:length(y)) );
-    out = circshift(rptpausm, [0 -rpl-ngau-1]);
+    out = circshift(rptpausm, [0 -rpl-ngau]); %-1?
 else
     %Filter, pad edge with... zero?
     out = filter(fila, 1, [y zeros(1,ngau)]);

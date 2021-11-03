@@ -92,6 +92,14 @@ if iscell(tra)
     xl = xlim;
     arrayfun(@(x) plot(xl, x * [1 1]), bsxfun(@plus, opts.pauloc, (0:opts.nrep-1)'*opts.per))
     cellfun(@(x, y) text( length(x)/opts.Fs, x(end), sprintf('%d', y) ), out, num2cell(nums))
+    %Plot aligned histogram
+    [sumy, sumx] = sumNucHist(out, setfield(opts, 'disp', [])); %#ok<SFLD>
+    %Plot sum histogram
+    inds = arrayfun(@(x) find(sumx >= x, 1, 'first'), (0:opts.nrep)*opts.per);
+    yy = median( reshape( sumy(inds(1):inds(end)-1), [], opts.nrep ), 2 )';
+    xx = sumx(inds(1):inds(2)-1);
+    figure, plot(xx,yy);
+    
     return
 end
 
@@ -203,9 +211,12 @@ rptpau = gausmooth(rptpau, opts.per/length(rptpau), opts.offsmsd, 1);
 
 %Judge 'goodness' by findpeaks
 fp = sort(findpeaks(rptpau), 'descend');
-%Judge score by relative height of second peak
-offscr = 1-(fp(2) - fp(end)) / range(fp);
-
+if length(fp) == 1
+    offscr = 1;
+else
+    %Judge score by relative height of second peak
+    offscr = 1-(fp(2) - fp(end)) / range(fp);
+end
 %% Not certain this isn't off by +-1 perschd ... but who cares?
 
 %Choose maximum

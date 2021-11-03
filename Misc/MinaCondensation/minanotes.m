@@ -16,6 +16,15 @@ Compare results of minis to HiRes? LUMICKS???
 
 
 
+New Notes
+
+Have very noisy, potentially baseline-shifting steps(?)
+Stepfinding seems good at picking out levels, but step size doesn't show a trend,
+ while e.g. different conditions show different behaviors (eg cond. amt.)
+
+
+
+
 
 
 

@@ -31,7 +31,7 @@ out = zeros(5,len);
 
 %Does vdist to datacell{i} and plots them stacked
 for i = 1:len
-    vdist(datacell{i}, opts);
+    vdist(datacell{i}, setfield(opts, 'verbose', 1));%#ok<SFLD> %vdist needs == 1 for vd_batch
     drawnow
     tfg = gcf;
     ax = gca;

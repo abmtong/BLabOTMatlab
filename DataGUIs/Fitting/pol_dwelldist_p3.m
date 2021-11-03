@@ -7,6 +7,15 @@ if nargin < 4
     daterr = zeros(size(dat));
 end
 
+if isempty(xlabs)
+    xlabs = arrayfun(@(x) sprintf('n%d', x), 1:size(dat, 1), 'Un', 0);
+end
+
+if isempty(ylabs)
+    ylabs = [ arrayfun( @(x) sprintf('a%d', x), 1:size(dat, 2)/2, 'Un', 0); arrayfun( @(x) sprintf('k%d', x), 1:size(dat, 2)/2, 'Un', 0)];
+    ylabs = ylabs(:)';
+end
+
 nx = length(xlabs);
 ny = length(ylabs);
 
@@ -32,4 +41,7 @@ for i = 1:ny
     %Font/etc.
     title(ax, ylabs{i})
     ax.FontSize = 14;
+    axis(ax, 'tight')
+    yl = ylim(ax);
+    ylim(ax, [0 yl(2)]);
 end

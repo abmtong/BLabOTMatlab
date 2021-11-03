@@ -4,6 +4,8 @@ function [out, isbt, trs] = pol_dwelldist_p1(data, inOpts)
 %Because of artifacts(?), short fitting is a bit wonk, leading to fitting of additional very fast decays.
 % Maybe try limiting decay spds / further cropping short times? Or just handle after-the-fact
 
+%Hmm for splitting traces, should use pi from previous sections
+
 %Data options
 opts.Fs = 4000/3; %For converting pts to time
 opts.roi = [-inf inf]; %Steps of interest: will only take steps with means within the ROI

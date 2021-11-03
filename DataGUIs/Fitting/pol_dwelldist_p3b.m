@@ -6,6 +6,7 @@ function [out, kn] = pol_dwelldist_p3b(rawdat, p1tra, p2exps, inOpts)
 
 %Fsamp (Hz)
 opts.Fs = 1000;
+opts.fil = 10; %Filter by this many pts
 %Extra analyses to do
 opts.bstrap = 1; %Also calculate boostrapped probability?
 opts.blockp = 0; %Also do Block's 'pauses per 100bp' thing ? [pause = non-major a_i] - Only for cell batch
@@ -154,7 +155,7 @@ if isempty(opts.ax)
     figure
     opts.ax = gca;
 end
-plot(opts.ax, (1:length(rawdat))/opts.Fs + opts.toff, rawdat, 'Color', [.7 .7 .7])
+plot(opts.ax, (1:length(rawdat))/opts.Fs + opts.toff, windowFilter(@mean, rawdat, ceil(opts.fil/2), 1), 'Color', [.7 .7 .7])
 hold on
 surface(opts.ax, [xs; xs]/opts.Fs + opts.toff, [ys; ys], zeros(2, length(xs)), [cs; cs], 'EdgeColor', 'interp', 'LineWidth', 1)
 ax = gca;

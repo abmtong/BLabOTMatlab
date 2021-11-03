@@ -40,7 +40,7 @@ if ~isempty(towrite)
         arr = [arr abs(diff(y))];
     end
     if any(towrite == 'm')
-        str = [str 'm = %0.2f, '];
+        str = [str 'm = %0.2g, '];
         arr = [arr abs(diff(y))/abs(diff(x))];
     end
     str = sprintf(str, arr);

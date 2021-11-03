@@ -27,6 +27,18 @@ end
 if ~iscell(dat)
     dat = {dat};
 end
+
+if opts.dir == 0
+    [~, ind] = max(opts.trnsprb);
+    if ind == 1
+        rtbdir = 1;
+    else
+        rtbdir = -1;
+    end
+else
+    rtbdir = opts.dir;
+end
+
 len = length(dat);
 
 outraw = cell(1,len);
@@ -46,7 +58,7 @@ if isempty(pp)
         
         outraw{i} = fitVitterbiV3(dat{i}, opts);
         if ~isempty(outraw{i})
-            ins{i} = tra2ind(removeTrBts(outraw{i}));
+            ins{i} = tra2ind(removeTrBts(outraw{i}, rtbdir));
             fprintf('\b-\n')
         else
             ins{i} = [];
@@ -64,7 +76,7 @@ else
 %         end
         outraw{i} = fitVitterbiV3(dat{i}, opts);
         if ~isempty(outraw{i})
-            ins{i} = tra2ind(removeTrBts(outraw{i}));
+            ins{i} = tra2ind(removeTrBts(outraw{i}, rtbdir));
             fprintf('\b-\n')
         else
             ins{i} = [];
