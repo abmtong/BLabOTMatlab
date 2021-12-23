@@ -118,6 +118,16 @@ switch opts.Protocol
                 off.TY = (rawoff(6,:) - opts.offTrapY) * opts.convTrapY;
                 off.AS = rawoff(7,:);
                 off.BS = rawoff(8,:);
+                
+                %If the date is Dec 22 2021 or later, negate the four forces (PSD > QPD swap)
+                dt = daysdif( '12/22/2021', datetime(f(1:6), 'InputFormat', 'MMddyy') ); %Assumes file starts MMDDYY
+                if dt >= 0
+                    off.AY = off.AY * -1;
+                    off.BY = off.BY * -1;
+                    off.AX = off.AX * -1;
+                    off.BX = off.BX * -1;
+                end
+                
                 %Ghe's offset is this
                 %  rawoff = offset_legacy(sprintf('%s\\%sN%02d.dat', path, mmddyy, inNums(2)));
                 %  fprintf('Using Ghe''s offset.\n');
