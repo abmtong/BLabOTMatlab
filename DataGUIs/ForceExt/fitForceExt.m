@@ -34,7 +34,7 @@ end
 [inExt, inFor] = trimTrace(inExt, inFor, opts.loF, opts.hiF);
 
 %Fitfcn: ext(F)
-fitfcn = @(opts,force)( opts(3) * .34 * XWLC(force-opts(5), opts(1),opts(2), [], 2) + opts(4) );
+fitfcn = @(opts,force)( opts(3) * .34 * XWLC(force-opts(5), opts(1),opts(2)) + opts(4) );
 
 %Fit ext-force curve
 [outXWLC, ~, outResid, exflag] = lsqcurvefit(fitfcn, opts.x0, inFor, inExt, opts.lb, opts.ub, optimoptions(@lsqcurvefit, 'Display', 'off'));
@@ -61,7 +61,9 @@ if nargin >= 4 && verbose
     hold off
         msg = sprintf('PerLen=%0.2fnm, StrMod=%0.2fpN, ConLen=%0.2fbp, OffsetX=%0.2fnm, OffsetF = %0.2fpN\n' ,outXWLC);
     text(inExt(1),opts.hiF,msg)
-    disp(msg)
+    fprintf(msg)
     subplot(3,1,3)
+    hold on
     plot(inExt, outResid, 'o')
+    plot([min(inExt), max(inExt)], [0 0], 'k', 'LineWidth', 1)
 end

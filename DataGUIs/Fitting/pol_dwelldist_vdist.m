@@ -18,12 +18,21 @@ if nargin > 2
 end
 
 opts.vdist.Fs = opts.Fs;
-
+ 
 if isstruct(dat)
-    datc = struct2cell(dat);
-    inp1trc = struct2cell(inp1tr);
-    [~, outraw] = cellfun(@(x,y)pol_dwelldist_vdist(x,y,opts), datc, inp1trc, 'Un', 0);
-    out = vdist_batch(outraw, opts.vdist);
+    [~, outraw] = structfun(@(x,y)pol_dwelldist_vdist(x,y,opts), dat, inp1tr);
+%     datc = struct2cell(dat);
+%     fns = fieldnames(dat);
+%     inp1trc = struct2cell(inp1tr);
+%     [~, outraw] = cellfun(@(x,y)pol_dwelldist_vdist(x,y,opts), datc, inp1trc, 'Un', 0);
+%     prestr = [fns ; outraw];
+%     outraw = struct(prestr{:});
+    out = vdist_batch({outraw.tloc}, opts.vdist);
+    figure('Name', 'Pause Dists')
+    hold on
+    pcc = @(x) plot( sort(x), (1:length(x))/length(x));
+    cellfun(@(x) pcc(cellfun(@length, x)), {outraw.pcc})
+    legend( fieldnames(dat) )
     return
 end
 
@@ -35,6 +44,7 @@ end
 
 len = length(dat);
 trcrps = cell(1,len);
+trpaus = cell(1,len);
 maxpts = opts.maxdw * opts.Fs;
 for i = 1:len
     dt = dat{i};
@@ -45,6 +55,9 @@ for i = 1:len
     st = find( diff([0 tf]) ==  1 );
     en = find( diff([tf 0]) == -1 );
     trcrps{i} = arrayfun(@(x,y) dt(x:y), st, en, 'Un', 0);
+    st = find( diff([0 ~tf]) ==  1 );
+    en = find( diff([~tf 0]) == -1 );
+    trpaus{i} = arrayfun(@(x,y) dt(x:y), st, en, 'Un', 0);
     
     if opts.verbose
         dtsm = windowFilter(@mean, dt, opts.vdist.sgp{2}, 1);
@@ -54,11 +67,17 @@ for i = 1:len
 end
 
 %Gather
-outraw = [trcrps{:}];
+outraw.tloc = [trcrps{:}];
+outraw.pau = [trpaus{:}];
 
 %Pass to vdist
-[vdn, vdx] = vdist(outraw, opts.vdist);
+[vdn, vdx] = vdist(outraw.tloc, opts.vdist);
 out = [vdx' vdn'];
+
+ntloc = cellfun(@range, inp1tr);
+npau = cellfun(@length, trpaus);
+
+outraw.paus = [ntloc' npau']; %[total_bp n_pauses] = sum(paus,1)
 
 
 

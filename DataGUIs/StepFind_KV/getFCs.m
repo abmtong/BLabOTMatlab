@@ -1,7 +1,8 @@
 function [outCons, outExts, outFrcs, outTrNs, outNames] = getFCs(cropstr, path, newxwlc)
 if nargin < 1
-    cropstr = '';
+    cropstr = ''; %Crop string, set in PhageGUI. Pass -1 to get full traces instead
 end
+
 %newxwlc changes con to have new XWLC params, defined by {PL, SM}
 if nargin >=3
     %might input [PL, SM] instead, if so fix for user
@@ -28,16 +29,17 @@ else
     files = {d.name};
 end
 
-    function outXpL = XWLC(F, P, S, kT)
-        %Simplification var.s
-        C1 = F*P/kT;
-        C2 = exp(nthroot(900./C1,4));
-        outXpL = 4/3 ...
-            + -4./(3.*sqrt(C1+1)) ...
-            + -10*C2 ./sqrt(C1) ./(C2-1).^2 ...
-            + C1.^1.62 ./ (3.55+ 3.8* C1.^2.2) ...
-            + F./S;
-    end
+%Use global XWLC fcn
+%     function outXpL = XWLC(F, P, S, kT)
+%         %Simplification var.s
+%         C1 = F*P/kT;
+%         C2 = exp(nthroot(900./C1,4));
+%         outXpL = 4/3 ...
+%             + -4./(3.*sqrt(C1+1)) ...
+%             + -10*C2 ./sqrt(C1) ./(C2-1).^2 ...
+%             + C1.^1.62 ./ (3.55+ 3.8* C1.^2.2) ...
+%             + F./S;
+%     end
 
 outCons = {};
 outExts = {};
@@ -47,7 +49,11 @@ outNames = {}; %Trace name
 for i = 1:length(files)
     file = files{i};
     %Load crop
-    crop = loadCrop(cropstr, path, file);
+    if cropstr == -1 %Cropstr -1 means take all
+        crop = [-inf inf];
+    else
+        crop = loadCrop(cropstr, path, file);
+    end
     if isempty(crop)
         fprintf('Crop%s not found for %s\n', cropstr, file)
         continue

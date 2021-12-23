@@ -10,6 +10,14 @@ if length(y) ~= len
     warning('Some Inf/NaN values ignored in @nhistc')
 end
 
+if ~~isempty(y)
+    outx = [];
+    outp = [];
+    outsd = [];
+    outn = [];
+    return
+end
+
 if nargin < 2
     binsz = 2*iqr(y)*numel(y)^(-1/3); %F-D rule of thumb
 end

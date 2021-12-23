@@ -1,4 +1,4 @@
-function [outcond outext] = splitcond2(con, frc, inOpts)
+function [outcond, outext] = splitcond2(con, frc, inOpts)
 %Alternative to splitcond, 
 
 %Just take condensing parts (low F)

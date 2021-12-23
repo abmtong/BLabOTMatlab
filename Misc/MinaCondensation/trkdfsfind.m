@@ -1,8 +1,10 @@
-function outtr = trkdfsfind(intr, pkloc)
+function outtr = trkdfsfind(intr, pkloc, filwid)
 
 %Max- and min-filter the trace to create an envelope
 % Interp at each pkloc to get boundaries
-filwid = 10; %For true gaussian noise, this gets ~95% there in ~10pts
+if nargin < 3
+    filwid = 20;
+end
 
 ub = windowFilter(@max, intr, filwid, 1);
 lb = windowFilter(@min, intr, filwid, 1);
@@ -16,8 +18,14 @@ ub = ub * dir;
 lb = lb * dir;
 
 %Find crossing pts of line y=pkloc(i)
-cra = arrayfun(@(x) find( 1 == diff( [0 ub>x] )), pkloc*dir);
-crb = arrayfun(@(x) find( 1 == diff( [0 lb>x] )), pkloc*dir);
+cra = arrayfun(@(x) find( 1 == diff( [0 ub>x] ), 1, 'first'), pkloc*dir, 'Un', 0);
+crb = arrayfun(@(x) find( 1 == diff( [0 lb>x] ), 1, 'last'), pkloc*dir, 'Un', 0);
+%The lines may not cross, if so assign to edges
+cra( cellfun(@isempty, cra) ) = {1};
+crb( cellfun(@isempty, crb) ) = {length(intr)};
+
+cra = [cra{:}];
+crb = [crb{:}];
 
 %Create output trace
 outx = [cra; crb];

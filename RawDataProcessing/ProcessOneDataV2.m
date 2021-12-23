@@ -167,7 +167,7 @@ for i = 1:4
     detNam = detNames{i};
     detSum = detSums{i};
     %Normalize offset and subtract it from the normalized data
-    rawdat.(detNam) = rawdat.(detNam) ./ rawdat.(detSum) - interp1( off.TX, off.(detNam)./off.(detSum), rawdat.TX, 'linear', 'extrap');
+    rawdat.(detNam) = rawdat.(detNam) ./ rawdat.(detSum) - interp1( off.TX, off.(detNam)./off.(detSum), rawdat.TX, 'linear', median( off.(detNam)./off.(detSum) ) ); % Was interp1(--, 'extrap'), but this handles out-of-range poorly
     %Calculate force = AX * a * k
     out.(['force' detNam]) = rawdat.(detNam) * cal.(detNam).a * cal.(detNam).k;
 end

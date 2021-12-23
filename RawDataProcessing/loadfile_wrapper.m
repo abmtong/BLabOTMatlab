@@ -71,6 +71,23 @@ switch inOpts.Instrument
             out.AS = initdat(7)*ones(1,len);
             out.BS = initdat(8)*ones(1,len);
             out.T = single((0:length(out.AX)-1) / opts.Fsamp);
+        elseif exist(fullfile(p, [f '_init3' e]), 'file')
+            %If _init3, this is 500kHz with 3 lanes AX BX MX
+            %Read _init file, which is the values at time zero
+            initdat = readDat(fullfile(p, [f '_init3' e]), 1, 9, opts.datType, opts.numEndian); %Wrong header
+            initdat = initdat(2:end);
+            %Read data file, which [should be] 2xn. Hardcode it, for now.
+            dat = readDat(filepath, 1, 3, opts.datType, opts.numEndian);
+            len = size(dat,2);
+            out.AY = initdat(1)*ones(1,len);
+            out.BY = initdat(2)*ones(1,len);
+            out.AX = dat(1,:);
+            out.BX = dat(2,:);
+            out.TX = (dat(3,:) - opts.offTrapX) * opts.convTrapX;
+            out.TY = (initdat(6)*ones(1,len) - opts.offTrapY) * opts.convTrapY;
+            out.AS = initdat(7)*ones(1,len);
+            out.BS = initdat(8)*ones(1,len);
+            out.T = single((0:length(out.AX)-1) / opts.Fsamp);
         else
             dat = readDat(filepath, opts.numSamples, opts.numLanes, opts.datType, opts.numEndian);
             out.AY = dat(1,:);
@@ -82,6 +99,15 @@ switch inOpts.Instrument
             out.AS = dat(7,:);
             out.BS = dat(8,:);
             out.T = single((0:length(out.AX)-1) / opts.Fsamp);
+        end
+        
+        %If the date is Dec 22 2021 or later, negate the four forces (PSD > QPD swap)
+        dt = daysdif( '12/22/2021', datetime(f(1:6), 'InputFormat', 'MMddyy') ); %Assumes file starts MMDDYY
+        if dt >= 0
+            out.AY = out.AY * -1;
+            out.BY = out.BY * -1;
+            out.AX = out.AX * -1;
+            out.BX = out.BX * -1;
         end
     case 'Meitner'
         opts.datType = 'int16';

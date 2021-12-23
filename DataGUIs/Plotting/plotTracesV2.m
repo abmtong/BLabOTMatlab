@@ -3,7 +3,7 @@ function plotTracesV2(inOpts)
 %Default options
 opts.path = [];
 opts.nameTraces = 1;
-opts.normCon = 1;
+opts.normCon = 0;
 opts.dT = 3;
 opts.fwid = [];
 opts.fdec = 10;
@@ -80,7 +80,10 @@ if opts.nameTraces
     cellfun(@(x,y,z)text(ax,x,y,z, 'Interpreter', 'none'), num2cell(tn), num2cell(double(yn+yoff(ci))), datnam(ci))
 end
 
-
+%Set up axis
+xlabel(ax, 'Time (s)')
+ylabel(ax, 'Position (bp)')
+ax.FontSize = 16;
 
 
 

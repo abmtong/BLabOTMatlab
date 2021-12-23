@@ -22,7 +22,7 @@ col = [0 100 300 400]; %Column positions, we're gonna do [Text Box   Text Box]
 %Add stuff to the figure
 
 %Row 1: Dropdown menus to choose presets
-optInstr = {'HiRes' 'Meitner' 'Boltzmann' 'Mini' 'Lumicks'};
+optInstr = {'HiRes' 'Meitner' 'Boltzmann' 'Mini' 'Lumicks' 'HiRes-legacy'};
 optProt  = {'Semipassive' 'Force feedback' 'Force-Extension' 'One Trap'};
 dropInstL= uicontrol(fg, 'Style', 'text'     , 'Position', [col(1) rx(1) 100 txty], 'String', 'Instrument: ', 'HorizontalAlignment', 'right', 'FontSize', 12); %#ok<*NASGU>
 dropInst = uicontrol(fg, 'Style', 'popupmenu', 'Position', [col(2) rx(1) 200 txty], 'String', optInstr, 'Callback', @dropInst_cb);
@@ -150,16 +150,17 @@ delete(fg)
 %By instrument
     function dropInst_cb(src,~)
         switch src.Value
-            case 1 %HiRes
+            case 1 %HiRes 12 22 21 and on
                 txtFsamp.Enable = 'on';
                 txtFsamp.String = '2500';
                 txtTConvXY.Enable = 'on';
                 txtTOffV.Enable = 'on';
                 txtTConvXY.String = '[758.4 577.2]'; %Mirror calibrated 041719. Trap B offsets found by eye
                 txtTOffV.String = '[1.35 1.30]'; %Changed from 1.40,1.05 on 201022
-                txtLorFlt.Value = 3;
+                txtLorFlt.Value = 1;
                 txtLorFlt.Enable = 'on';
                 txtWaterV.Enable = 'on';
+                txtCustom.String = '{''cal.Fmax'', ''1e4'';}';
             case 2 %Meitner
                 txtFsamp.Enable = 'off';
                 txtTConvXY.Enable = 'on';
@@ -169,6 +170,7 @@ delete(fg)
                 txtLorFlt.Value = 1;
                 txtLorFlt.Enable = 'on';
                 txtWaterV.Enable = 'on';
+                txtCustom.String = '{''field'', ''value'';}';
             case 3 %Boltzmann
                 warning('Should check Boltzmann Instrument Calibration values')
                 txtFsamp.Enable = 'off';
@@ -179,6 +181,7 @@ delete(fg)
                 txtLorFlt.Value = 1;
                 txtLorFlt.Enable = 'on';
                 txtWaterV.Enable = 'on';
+                txtCustom.String = '{''field'', ''value'';}';
             case 4 %Mini
                 txtFsamp.Enable = 'off';
                 txtTConvXY.Enable = 'off';
@@ -188,6 +191,7 @@ delete(fg)
                 txtLorFlt.Value = 1;
                 txtLorFlt.Enable = 'on';
                 txtWaterV.Enable = 'on';
+                txtCustom.String = '{''field'', ''value'';}';
             case 5 %Lumicks
                 txtFsamp.Enable = 'on';
                 txtFsamp.String = '3125';
@@ -198,6 +202,18 @@ delete(fg)
                 txtLorFlt.Value = 1;
                 txtLorFlt.Enable = 'off';
                 txtWaterV.Enable = 'off';
+                txtCustom.String = '{''field'', ''value'';}';
+            case 6 %HiRes-legacy
+                txtFsamp.Enable = 'on';
+                txtFsamp.String = '2500';
+                txtTConvXY.Enable = 'on';
+                txtTOffV.Enable = 'on';
+                txtTConvXY.String = '[758.4 577.2]'; %Mirror calibrated 041719. Trap B offsets found by eye
+                txtTOffV.String = '[1.35 1.30]'; %Changed from 1.40,1.05 on 201022
+                txtLorFlt.Value = 3;
+                txtLorFlt.Enable = 'on';
+                txtWaterV.Enable = 'on';
+                txtCustom.String = '{''field'', ''value'';}';
             otherwise
                 error('Dropdown menu for Instruments can''t handle value %d', src.Value)
         end

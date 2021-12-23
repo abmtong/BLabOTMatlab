@@ -15,7 +15,7 @@ opts.rmburst = 0; %Remove bursts in kdfdwellfind
 opts.verbose = 1; %Plot
 
 if nargin > 1
-    opts = hanldeOpts(opts, inOpts);
+    opts = handleOpts(opts, inOpts);
 end
 
 %Generating fit requires batch operation, so send into batch mode if not
@@ -27,6 +27,10 @@ end
 if iscell(incon)
     [pkloc, ssz] = cellfun(@(x) kdfsfind(x, inOpts),incon,'Un',0);
     ssz = [ssz{:}];
+    if isempty(ssz)
+        return
+    end
+    
     %Fit the step size distribution to a gaussian, calculate M+-SEM
     %Get histogram
 %     [~, xx, ~, yy] = nhistc(ssz, opts.binsz);

@@ -1,10 +1,10 @@
-function [out, xc, offs] = sumNucHist(intr, inOpts)
+function [out, xc, ycs] = sumNucHist(intr, inOpts)
 %ZJ's version is a bit more developed [+filtering]
 
 %RTH options
 opts.binsz = 0.5; %RTH binsize, best if this divides 1
 opts.roi = [-200 800]; %Region of interest
-opts.normmeth = 2; %1= median, 2= s/bp; seems no real difference? (median is used to average across traces either way)
+opts.normmeth = 2; %1= 1/median, 2= s/bp; seems no real difference? (median is used to average across traces either way)
 opts.Fs = 3125;
 
 %Display options

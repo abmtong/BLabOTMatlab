@@ -26,6 +26,15 @@ else
     testplot = 0;
 end
 
+%Handle out-of-range F
+if any(F <= 0)
+    F = abs(F);
+    if any(F == 0)
+        F(F==0) = eps(1);
+    end
+    warning('Negative forces detected, taking absolute value')
+end
+
 switch method
     case 2 %Legacy (used in Phage before me, kept here for historical reasons)
         % Simplification Variables

@@ -330,7 +330,9 @@ fig.Visible = 'on';
                 pkcen = (pkloc(1:end-1) + pkloc(2:end))/2;
                 pkheis = mean([pkhei(1:end-1); pkhei(2:end)], 1);
                 pkdsts = diff(pkloc);
-                arrayfun(@(x,y,z)text(mainRAxis,y,x,sprintf('%0.2f',z), 'Clipping', 'on'), pkcen, pkheis, pkdsts)
+                if pkdsts %If there's only one peak, theres no pkdsts
+                    arrayfun(@(x,y,z)text(mainRAxis,y,x,sprintf('%0.2f',z), 'Clipping', 'on'), pkcen, pkheis, pkdsts)
+                end
                 %plot lines from 0 to peak
                 lx = [pkloc; pkloc; pkloc];
                 lx = lx(:);
@@ -362,7 +364,7 @@ fig.Visible = 'on';
                 ub = [20 20 length(cts)];
                 fit = lsqcurvefit(gauss, [10 2 max(cts)], xp, cts, lb, ub, lsqopts);
                 %Plot the gaussian fit
-                arrayfun(@(x)plot(xp, gauss(fit, xp)), [subRAxisT, subRAxisB]);
+                arrayfun(@(x)plot(x, xp, gauss(fit, xp)), [subRAxisT, subRAxisB]);
                 %Display fit stats as text
                 text(subRAxisB, fit(1), 1.1*gauss(fit, fit(1)), sprintf('%0.2f+-%0.2f', fit(1), fit(2)), 'HorizontalAlignment', 'left')
                 text(subRAxisT, fit(1), 1.1*gauss(fit, fit(1)), sprintf('%0.2f+-%0.2f', fit(1), fit(2)), 'HorizontalAlignment', 'left')
