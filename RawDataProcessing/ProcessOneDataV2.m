@@ -120,7 +120,7 @@ switch opts.Protocol
                 off.BS = rawoff(8,:);
                 
                 %If the date is Dec 22 2021 or later, negate the four forces (PSD > QPD swap)
-                dt = daysdif( '12/22/2021', datetime(f(1:6), 'InputFormat', 'MMddyy') ); %Assumes file starts MMDDYY
+                dt = daysdif( '12/22/2021', datetime(file{2}(1:6), 'InputFormat', 'MMddyy') ); %Assumes file starts MMDDYY
                 if dt >= 0
                     off.AY = off.AY * -1;
                     off.BY = off.BY * -1;
