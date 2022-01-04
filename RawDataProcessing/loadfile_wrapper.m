@@ -102,7 +102,8 @@ switch inOpts.Instrument
         end
         
         %If the date is Dec 22 2021 or later, negate the four forces (PSD > QPD swap)
-        dt = daysdif( '12/22/2021', datetime(f(1:6), 'InputFormat', 'MMddyy') ); %Assumes file starts MMDDYY
+%         dt = daysdif( '12/22/2021', datetime(f(1:6), 'InputFormat', 'MMddyy') ); %Assumes file starts MMDDYY
+        dt = dateislater('122221',  f(1:6), 'MMDDYY'); %Rewrite to remove financial toolbox dependency in @daysdif
         if dt >= 0
             out.AY = out.AY * -1;
             out.BY = out.BY * -1;

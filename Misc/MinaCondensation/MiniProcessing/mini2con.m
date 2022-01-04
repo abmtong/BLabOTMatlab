@@ -3,24 +3,24 @@ function outfit = mini2con(infp, inOpts)
 %Expects a file with F-X curves and data in one file,
 % with F-X curves contained within cropstring 'fx'
 
-%I think mini data doesn't add the bead extension, but that should be 'absorbed' into SM, since they're the same idea.
+%I think mini data doesn't add the bead extension, but that should be 'absorbed' into SM, since they're both springs.
 % Need to calculate extension offset
 
 %OR since we're doing per-trace, just fit the f-x to a nth-poly and use that? hmm dont get offset though unless I assume some things
+
+dnalen = 6256; %DNA length, for XWLC fitting
 
 opts.fil=50; %XWLC fit filter (dsamp)
 
 %fitForceExt opts
 %Cutoff forces, for fitting
-opts.loF = 1;
-opts.hiF = 20; %Some fit funny ? like they get stiffer at high F? Just need to cover ~1=15pN
+opts.loF = 1; %Not all pulling curves go this low, unfortunately. Will make do?
+opts.hiF = 20; %Some fit funny ? like they get stiffer at high F? Maybe Mini rolloff is different. Just need to cover ~1=15pN
 %Guess for fitting: [ PL(nm) SM(pN) CL(bp) Off(nm) Off(F) ]
-opts.x0 = [20 200 6256 -1500 0];
-%Fitting bounds: Override to allow for e.g. force/ext offsets to be set
-opts.lb = [0   0   6256 -1e4 -0];
-opts.ub = [1e3 1e4 6256  1e4  0];
-
-%Best options? F offset? F range?
+opts.x0 = [20 200 dnalen -1500 0]; %Empirical offset guess
+%Fitting bounds
+opts.lb = [0   0   dnalen -1e4 -0];
+opts.ub = [1e3 1e4 dnalen  1e4  0];%Fits look better with F offset [of course], but theoretically mini should have very precise F?
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);

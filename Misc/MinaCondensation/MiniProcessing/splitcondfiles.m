@@ -5,9 +5,9 @@ function splitcondfiles(infp, inOpts)
 
 opts.fthr = 5; %pN
 opts.trim = [2 2]; %Trim by these many pts on each side, negative = expand by that amount
-opts.filwid = 50; %Median filter
+opts.filwid = 50; %Median filter width for force thresholding
 opts.minsz = 2000; %Minimum size, pts
-opts.cropstr = []; %Only consider cropstr data, use -1 for all
+opts.cropstr = []; %Only consider cropped data (under cropstr), use -1 for all data
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);

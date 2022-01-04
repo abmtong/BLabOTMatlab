@@ -4,6 +4,8 @@ function out = mina2conV3(inpf)
 
 %V3: Use high force to set k such that SM = 1200
 
+%Outdated: try mini2con
+
 dnalen = 6200*.34; %nm, DNA length
 ffitrng = [1.5 inf]; %pN, force fit range
 xmeth = 3; %XWLC method, doesn't really matter
