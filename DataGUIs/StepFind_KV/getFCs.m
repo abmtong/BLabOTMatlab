@@ -69,12 +69,14 @@ for i = 1:length(files)
     outCons = [outCons con]; %#ok<AGROW>
     outTrNs = [outTrNs ones(1,length(con)) * i]; %#ok<AGROW>
     outNames = [outNames repmat({file}, 1,length(con))]; %#ok<AGROW>
-    if nargout > 1 || nargin > 1 %convert to extension, from contour
-        %Con = Ext/XWLC/.34, so Ext = Con*XWLC*.34
+    %Gather frc and ext, too
+    if isfield(stepdata, 'force')
         frc = cellfun(@(ce,st,en)ce(st:en),stepdata.force, indsta, indend, 'UniformOutput',0);
-        ext = cellfun(@(c,f)c .* XWLC(f, 60, 550, 4.14) *.34, con, frc, 'Uni', 0);
-        outExts = [outExts ext]; %#ok<AGROW>
         outFrcs = [outFrcs frc]; %#ok<AGROW>
+    end
+    if isfield(stepdata, 'extension')
+        ext = cellfun(@(ce,st,en)ce(st:en),stepdata.extension, indsta, indend, 'UniformOutput',0);
+        outExts = [outExts ext]; %#ok<AGROW>
     end
 end
 ki = ~cellfun(@isempty,outCons);

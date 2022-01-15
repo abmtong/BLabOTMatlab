@@ -19,7 +19,7 @@ end
 if nargin < 2 || isempty(P)
     P = 50; %nm
 end
-if nargin < 1 || isempty(F)
+if nargin < 1 || all(F == -1)
     F = 0.1:0.1:45;
     testplot = 1;
 else
