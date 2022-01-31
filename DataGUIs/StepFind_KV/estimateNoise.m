@@ -26,7 +26,7 @@ if ver == 2
         inWidth = 1;
     end
     din = inContour(inWidth+1:end) - inContour(1:end-inWidth);
-    outNoise = ( mad(din,1) / 2 / erfinv(.5) ).^2 ;
+    outNoise = ( mad(din,1) / sqrt(2) / erfinv(.5) ).^2 ; %Oops, for a while this was /2 instead of /sqrt(2) ...
 else
     %Subtract the moving average to remove the signal [requires tuning of inWidth]
     %For a phi29 trace at 2.5kHz, 125 works well. Scaling linearly with frequency seems to work fine.

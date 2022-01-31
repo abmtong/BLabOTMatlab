@@ -3,7 +3,6 @@ function [pkloc, ssz, histfit, dws, tra] = kdfsfindV2(incon, inOpts)
 
 
 %V2: Change from inputParser to opts struct
-
 opts.fpre = {10,1}; %pre filter
 opts.binsz = 0.1; %bin size, for kdf and hist
 opts.kdfsd = 1; %kdf gaussian sd
@@ -13,6 +12,8 @@ opts.kdfmpp = .5; %Multiplier to kdf MinPeakProminence
 opts.histfitx = [0 15]; %X range to fit histfit to
 opts.rmburst = 0; %Remove bursts in kdfdwellfind
 opts.verbose = 1; %Plot
+
+opts.Fs = 2500; %Fs, only required for dwell times (nargout > 3)
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
@@ -25,7 +26,7 @@ end
 
 %If first input is cell, batch process
 if iscell(incon)
-    [pkloc, ssz] = cellfun(@(x) kdfsfind(x, inOpts),incon,'Un',0);
+    [pkloc, ssz] = cellfun(@(x) kdfsfind(x, opts),incon,'Un',0);
     ssz = [ssz{:}];
     if isempty(ssz)
         return
@@ -63,6 +64,8 @@ if iscell(incon)
         [ymx, ymxi] = max(yy);
         %N is fit(1)/binsz, print mean +- sem
         text(xx(ymxi), ymx*1.1,sprintf('%0.2f +- %0.2f, est. %0.2f%% good steps\n', gfit(2), gfit(3)/sqrt(gfit(1)/opts.binsz/opts.histdec), gfit(1)/opts.binsz/opts.histdec/length(ssz)*100))
+        xlabel('Step Size (bp)')
+        ylabel('Probability')
     end
     histfit.fit = gfit;
     histfit.x = xx;
@@ -105,15 +108,14 @@ if iscell(incon)
         dws = [dws{:}];
         dws(dws<.01)=[];
         %Convert pts to time
-        Fs = 2.5e3; %hard-coded Fs
-        dws=dws/Fs;
+        dws=dws/opts.Fs;
         %Calculate histogram
 %         fitgamma(dws)
         if opts.rmburst
             bus = cellfun(@(x) x(2:end-1), oib, 'Un', 0);
             bus = [bus{:}];
             bus = bus/2.5e3;
-            [yy2,xx2] = nhistc(bus, 10/Fs);
+            [yy2,xx2] = nhistc(bus, 10/opts.Fs);
             figure, plot(xx2,yy2)
         end
     end

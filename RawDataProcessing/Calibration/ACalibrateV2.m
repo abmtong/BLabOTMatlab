@@ -13,11 +13,12 @@ opts.raA = 1000/2;
 opts.raB = 1000/2;
 opts.verbose = 1;
 opts.lortype = 3;
+opts.normalize = 1;
 %Colors of plots: [lightGreen lightBlue; darkGreen darkBlue]
 opts.colors = {[.2039 .5961 .8588] [.1608 .5020 .7255];...
                [.1804 .8000 .4431] [.1529 .6824 .3765]};
 
-% %Add requried paths %BROKEN FOR NOW
+% %Add requried paths %BROKEN FOR NOW, use @startup
 % thispath = fileparts(mfilename('fullpath'));
 % addpath(thispath);
 % addpath([thispath '\..\helperFunctions\']); %Where @handleOpts, @processHiFreq is
@@ -70,12 +71,29 @@ opts.SumB = mean(dat.BS);
 
 %Char arrays for naming structs
 c1 = 'AB';
-c2 = 'XY';
+if strcmp(opts.Instrument, 'HiRes bPD') %Only X on bPDs
+    c2 = 'X';
+    emptycal = [];
+    emptycal.fit = [];
+    emptycal.a = 1;
+    emptycal.k = 1;
+    emptycal.opts = [];
+    emptycal.F = [];
+    emptycal.Fall =[];
+    emptycal.P = [];
+    emptycal.Pall = [];
+    emptycal.dC = [];
+    emptycal.D = [];
+    out.AY = emptycal;
+    out.BY = emptycal;
+else
+    c2 = 'XY';
+end
 %Calculate calibration, organize into figure
-for i = 1:2
+for i = 1:length(c1)
     I = c1(i);
     opts.ra = opts.(['ra' I]);
-    for j = 1:2
+    for j = 1:length(c2)
         J = c2(j);
         opts.name = [I J];
         opts.color = colors{i,j};
@@ -83,7 +101,11 @@ for i = 1:2
         if opts.verbose
             opts.ax = axes('Position',[-.45+0.5*i, 1.05-0.5*j,  0.43, 0.43]);
         end
-        out.([I J]) = Calibrate(dat.([I J])./dat.([I 'S']), opts);
+        if opts.normalize
+            out.([I J]) = Calibrate(dat.([I J])./dat.([I 'S']), opts);
+        else
+            out.([I J]) = Calibrate(dat.([I J]), opts);
+        end
     end
 end
 

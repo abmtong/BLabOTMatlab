@@ -22,7 +22,7 @@ if nargin < 2 || isempty(inNums)
     [file{1}, path] = uigetfile([path filesep '*.dat'], 'Pick your data file');
 else
     switch inOpts.Instrument
-        case 'HiRes'
+        case {'HiRes' 'HiRes-legacy' 'HiRes bPD'}
             spfn = '%sN%02d.dat';
         case 'Boltzmann'
             spfn = '%s_%03d.dat';
@@ -56,10 +56,15 @@ calopts = opts.cal;
 calopts.raA = opts.raA;
 calopts.raB = opts.raB;
 calopts.Instrument = opts.Instrument;
+calopts.normalize = opts.normalize;
 %Get Fs
 switch calopts.Instrument
-    case 'HiRes'
+    case {'HiRes' 'HiRes PSD'}
         calopts.Fsamp = 62500; %Hard code this, at least for now
+        cal = ACalibrateV2(fullfile(path, file{3}), calopts);
+        drawnow %Can inspect calibration while program continues
+    case 'HiRes bPD'
+        calopts.Fsamp = 70000; %Hard code this, at least for now
         cal = ACalibrateV2(fullfile(path, file{3}), calopts);
         drawnow %Can inspect calibration while program continues
     case {'Boltzmann' 'Meitner'}
@@ -102,7 +107,7 @@ switch opts.Protocol
         cal.(dy).k = 1e-5;
     otherwise
         switch inOpts.Instrument
-            case 'HiRes'
+            case {'HiRes' 'HiRes PSD'}
                 %HiRes offset is pre-processed:
                 %rawoff V3 is a 8x[] matrix, with each row being a detector in order [AY BY AX BX MX MY SA SB]
                 % rawoff = readDat(sprintf('%s\\%sN%02d.dat', path, mmddyy, inNums(2)));
@@ -131,6 +136,23 @@ switch opts.Protocol
                 %Ghe's offset is this
                 %  rawoff = offset_legacy(sprintf('%s\\%sN%02d.dat', path, mmddyy, inNums(2)));
                 %  fprintf('Using Ghe''s offset.\n');
+            case 'HiRes bPD'
+                %HiRes offset is pre-processed:
+                %rawoff V3 is a 8x[] matrix, with each row being a detector in order [AY BY AX BX MX MY SA SB]
+                % rawoff = readDat(sprintf('%s\\%sN%02d.dat', path, mmddyy, inNums(2)));
+                %OffsetV2 is a 8x[]x2 matrix, with (:,:,2) being the local std at each point. We read it as 8x[], so the second half of dimension 2 is std data
+                rawoff = readDat(fullfile(path, file{2}), 1, 8, 'double', 1);
+                rawoff = rawoff(:,1:(end/2)); %drop the std data
+                %Assign to fields
+                %bPD has no Y values, sum = 1+7/2+8
+                off.AY = zeros(size(rawoff(1,:)));
+                off.BY = zeros(size(rawoff(2,:)));
+                off.AX = rawoff(3,:);
+                off.BX = rawoff(4,:);
+                off.TX = (rawoff(5,:) - opts.offTrapX) * opts.convTrapX;
+                off.TY = (rawoff(6,:) - opts.offTrapY) * opts.convTrapY;
+                off.AS = rawoff(1,:)+rawoff(7,:);
+                off.BS = rawoff(2,:)+rawoff(8,:);
             otherwise
                 %These should just be a single f-d curve. Average down and use
                 [rawoff, ~] = loadfile_wrapper(fullfile(path, file{2}), opts);
@@ -177,7 +199,11 @@ for i = 1:4
     detNam = detNames{i};
     detSum = detSums{i};
     %Normalize offset and subtract it from the normalized data
-    rawdat.(detNam) = rawdat.(detNam) ./ rawdat.(detSum) - interp1( off.TX, off.(detNam)./off.(detSum), rawdat.TX, 'linear', median( off.(detNam)./off.(detSum) ) ); % Was interp1(--, 'extrap'), but this handles out-of-range poorly
+    if opts.normalize
+        rawdat.(detNam) = rawdat.(detNam) ./ rawdat.(detSum) - interp1( off.TX, off.(detNam)./off.(detSum), rawdat.TX, 'linear', median( off.(detNam)./off.(detSum) ) ); % Was interp1(--, 'extrap'), but this handles out-of-range poorly
+    else
+        rawdat.(detNam) = rawdat.(detNam) - interp1( off.TX, off.(detNam), rawdat.TX, 'linear', median( off.(detNam)./off.(detSum) ) ); % Was interp1(--, 'extrap'), but this handles out-of-range poorly
+    end
     %Calculate force = AX * a * k
     out.(['force' detNam]) = rawdat.(detNam) * cal.(detNam).a * cal.(detNam).k;
 end

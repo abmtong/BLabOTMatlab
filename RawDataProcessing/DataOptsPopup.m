@@ -22,7 +22,7 @@ col = [0 100 300 400]; %Column positions, we're gonna do [Text Box   Text Box]
 %Add stuff to the figure
 
 %Row 1: Dropdown menus to choose presets
-optInstr = {'HiRes' 'Meitner' 'Boltzmann' 'Mini' 'Lumicks' 'HiRes-legacy'};
+optInstr = {'HiRes' 'Meitner' 'Boltzmann' 'Mini' 'Lumicks' 'HiRes PSD' 'HiRes bPD'};
 optProt  = {'Semipassive' 'Force feedback' 'Force-Extension' 'One Trap'};
 dropInstL= uicontrol(fg, 'Style', 'text'     , 'Position', [col(1) rx(1) 100 txty], 'String', 'Instrument: ', 'HorizontalAlignment', 'right', 'FontSize', 12); %#ok<*NASGU>
 dropInst = uicontrol(fg, 'Style', 'popupmenu', 'Position', [col(2) rx(1) 200 txty], 'String', optInstr, 'Callback', @dropInst_cb);
@@ -37,6 +37,7 @@ label3   = uicontrol(fg, 'Style', 'text'     , 'Position', [0 rx(3) 300 txty], '
 %Row 4: Booleans
 tfContour = uicontrol(fg, 'Style', 'checkbox', 'Position', [ 50 rx(4) 200 txty], 'String', 'Convert to Contour');
 tfSplitFC = uicontrol(fg, 'Style', 'checkbox', 'Position', [250 rx(4) 200 txty], 'String', 'Split Feedback Cycles');
+tfNormalize=uicontrol(fg, 'Style', 'checkbox', 'Position', [450 rx(4) 200 txty], 'String', 'Normalize by Sum?');
 
 %Row 5: Data Options - Fsamp, Radii
 txtFsampL= uicontrol(fg, 'Style', 'text', 'Position', [col(1) rx(5) 100 txty], 'String', 'FSamp: ', 'HorizontalAlignment', 'right');
@@ -81,9 +82,9 @@ txtCustom  = uicontrol(fg, 'Style', 'edit', 'Position', [col(2) rx(15) 400 txty]
 txtButOK  = uicontrol(fg, 'Style', 'pushbutton', 'Position', [col(4)+100 rx(17) 100 txty*2], 'String', 'Ok', 'Callback', @(~,~)uiresume(fg));
 
 %Set defaults
-dropInst.Value = 1; %Protocol
+dropInst.Value = 7; %Instrument - HiRes
 dropInst_cb(dropInst);
-dropProt.Value = 1; %Feedback
+dropProt.Value = 1; %Protocol - Semipassive
 dropProt_cb(dropProt);
 
 %Wait for person to press the OK button, which calls uiresume
@@ -126,6 +127,7 @@ opts.convTrapY = convXY(2);
   offXY = str2num(txtTOffV.String);
 opts.offTrapX = offXY(1);
 opts.offTrapY = offXY(2);
+opts.normalize = tfNormalize.Value;
 
 %Add Customs if passed: Passed as {fieldname , value; fieldname, value}
 if ~strcmp(txtCustom.String, '{''field'', ''value'';}')
@@ -161,6 +163,7 @@ delete(fg)
                 txtLorFlt.Enable = 'on';
                 txtWaterV.Enable = 'on';
                 txtCustom.String = '{''cal.Fmax'', ''1e4'';}';
+                tfNormalize.Value = 1;
             case 2 %Meitner
                 txtFsamp.Enable = 'off';
                 txtTConvXY.Enable = 'on';
@@ -171,6 +174,7 @@ delete(fg)
                 txtLorFlt.Enable = 'on';
                 txtWaterV.Enable = 'on';
                 txtCustom.String = '{''field'', ''value'';}';
+                tfNormalize.Value = 1;
             case 3 %Boltzmann
                 warning('Should check Boltzmann Instrument Calibration values')
                 txtFsamp.Enable = 'off';
@@ -182,6 +186,7 @@ delete(fg)
                 txtLorFlt.Enable = 'on';
                 txtWaterV.Enable = 'on';
                 txtCustom.String = '{''field'', ''value'';}';
+                tfNormalize.Value = 1;
             case 4 %Mini
                 txtFsamp.Enable = 'off';
                 txtTConvXY.Enable = 'off';
@@ -192,6 +197,7 @@ delete(fg)
                 txtLorFlt.Enable = 'on';
                 txtWaterV.Enable = 'on';
                 txtCustom.String = '{''field'', ''value'';}';
+                tfNormalize.Value = 1;
             case 5 %Lumicks
                 txtFsamp.Enable = 'on';
                 txtFsamp.String = '3125';
@@ -203,7 +209,8 @@ delete(fg)
                 txtLorFlt.Enable = 'off';
                 txtWaterV.Enable = 'off';
                 txtCustom.String = '{''field'', ''value'';}';
-            case 6 %HiRes-legacy
+                tfNormalize.Value = 1;
+            case 6 %HiRes PSD
                 txtFsamp.Enable = 'on';
                 txtFsamp.String = '2500';
                 txtTConvXY.Enable = 'on';
@@ -214,6 +221,19 @@ delete(fg)
                 txtLorFlt.Enable = 'on';
                 txtWaterV.Enable = 'on';
                 txtCustom.String = '{''field'', ''value'';}';
+                tfNormalize.Value = 1;
+            case 7 %HiRes bPD
+                txtFsamp.Enable = 'on';
+                txtFsamp.String = '2500';
+                txtTConvXY.Enable = 'on';
+                txtTOffV.Enable = 'on';
+                txtTConvXY.String = '[758.4 577.2]'; %Mirror calibrated 041719. Trap B offsets found by eye
+                txtTOffV.String = '[1.35 1.30]'; %Changed from 1.40,1.05 on 201022
+                txtLorFlt.Value = 1;
+                txtLorFlt.Enable = 'on';
+                txtWaterV.Enable = 'on';
+                txtCustom.String = '{''cal.Fmax'', ''1e4'';}';
+                tfNormalize.Value = 0;
             otherwise
                 error('Dropdown menu for Instruments can''t handle value %d', src.Value)
         end

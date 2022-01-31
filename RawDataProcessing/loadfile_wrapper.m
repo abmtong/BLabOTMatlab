@@ -18,7 +18,7 @@ opts.convTrapY = 1;
 % opts = [];
 
 switch inOpts.Instrument
-    case 'HiRes'
+    case {'HiRes' 'HiRes PSD' 'HiRes bPD'}
         %Defaults for readDat
         opts.numLanes = 8;
         opts.numSamples = 1;
@@ -103,13 +103,21 @@ switch inOpts.Instrument
         
         %If the date is Dec 22 2021 or later, negate the four forces (PSD > QPD swap)
 %         dt = daysdif( '12/22/2021', datetime(f(1:6), 'InputFormat', 'MMddyy') ); %Assumes file starts MMDDYY
-        dt = dateislater('122221',  f(1:6), 'MMDDYY'); %Rewrite to remove financial toolbox dependency in @daysdif
-        if dt >= 0
+        dt  = dateislater('122221', f(1:6), 'MMDDYY'); %Rewrite to remove financial toolbox dependency in @daysdif
+        dt2 = dateislater('012821', f(1:6), 'MMDDYY');
+        if dt2 >= 0 %BPD era, 'Y' becomes
+            %Sum is split in two, stored in 1/2 and 7/8 channels (-Y and S)
+            % But also sum is bad, so don't use it
+            out.AS = -out.AY + out.AS;
+            out.AY = zeros(size(out.AY));
+            out.BS = -out.BY + out.BS;
+            out.BY = zeros(size(out.BY));
+        elseif dt >= 0 %QPD era, negate outputs
             out.AY = out.AY * -1;
             out.BY = out.BY * -1;
             out.AX = out.AX * -1;
             out.BX = out.BX * -1;
-        end
+        end %PSD era, do nothing
     case 'Meitner'
         opts.datType = 'int16';
         opts = handleOpts(opts, inOpts);

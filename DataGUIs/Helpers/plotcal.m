@@ -24,6 +24,9 @@ if isfield(cal.AX, 'Fall')
         for j = 1:2
             J = c2(j);
             tmp = cal.([I J]);
+            if isempty(tmp.F) %Skip empty cals
+                continue
+            end
             ax = axes(fg, 'Position',[-.45+0.5*i, 1.05-0.5*j+.1,  0.43, 0.33]);
             loglog(ax, tmp.Fall, tmp.Pall, 'Color', .8 * [1 1 1])
             hold on

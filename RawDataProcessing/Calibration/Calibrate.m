@@ -28,7 +28,7 @@ opts.dV = 1.25e-9; %D2O viscosity at 20C, pNs/nm^2
 opts.d2o = 0; %all H2O
 opts.kT = 4.10; %kB*T at 24C, pN*nm
 opts.name = []; %Name of this detector, e.g. 'AX'
-opts.color = [.8 .8 .8]; %Color to plot power spectrum
+opts.color = [0 0 1]; %Color to plot the power spectrum fit points
 opts.verbose = 1;
 opts.Sum = 0;
 opts.lortype = 3; %1 = pure lorentzian, 2 = 1 filter, 3 = filter+timedelay, 4 = 2 filters
