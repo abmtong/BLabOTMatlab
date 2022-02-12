@@ -25,21 +25,14 @@ opts.Fs = 62500; %sampling freq.
 opts.nAlias = 20; %Aliasing window size
 opts.wV = 9.1e-10; %Water viscosity at 24C, pNs/nm^2
 opts.dV = 1.25e-9; %D2O viscosity at 20C, pNs/nm^2
-opts.d2o = 0; %all H2O
+opts.d2o = 0; %Proportion D2O, =0 = all H2O, =1 = all D2O
 opts.kT = 4.10; %kB*T at 24C, pN*nm
 opts.name = []; %Name of this detector, e.g. 'AX'
 opts.color = [0 0 1]; %Color to plot the power spectrum fit points
 opts.verbose = 1;
 opts.Sum = 0;
 opts.lortype = 3; %1 = pure lorentzian, 2 = 1 filter, 3 = filter+timedelay, 4 = 2 filters
-%Assign any overridden values
-% if exist('inOpts','var') && isstruct(inOpts)
-%     fn = fieldnames(inOpts);
-%     for i = 1:length(fn)
-%         fname = fn{i};
-%         opts.(fname) = inOpts.(fname);
-%     end
-% end
+
 if nargin > 1
     opts = handleOpts(opts, inOpts);
 end
@@ -82,6 +75,9 @@ binF = (0:opts.nBin:len-1)+1;
     end
 Fb = binValues(F);
 Pb = binValues(P);
+
+% Fb = geofilter(F, 1.05);
+% Pb = geofilter(P, 1.05);
 
 %Keep indices within the fit frequency
 ind = Fb>opts.Fmin & Fb<opts.Fmax;

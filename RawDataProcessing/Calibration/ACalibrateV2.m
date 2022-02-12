@@ -9,6 +9,7 @@ function out = ACalibrateV2( filepath, inOpts )
 %Last commented 191210
 
 %Default options
+opts.Fs = 62500;
 opts.raA = 1000/2;
 opts.raB = 1000/2;
 opts.verbose = 1;

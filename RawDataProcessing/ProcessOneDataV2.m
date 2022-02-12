@@ -125,7 +125,8 @@ switch opts.Protocol
                 off.BS = rawoff(8,:);
                 
                 %If the date is Dec 22 2021 or later, negate the four forces (PSD > QPD swap)
-                dt = daysdif( '12/22/2021', datetime(file{2}(1:6), 'InputFormat', 'MMddyy') ); %Assumes file starts MMDDYY
+                dt = dateislater('122221', file{2}(1:6), 'MMDDYY'); %Assumes file starts MMDDYY
+%                 dt = daysdif( '12/22/2021', datetime(, 'InputFormat', 'MMddyy') );  Remove daysdif (Financial toolbox)
                 if dt >= 0
                     off.AY = off.AY * -1;
                     off.BY = off.BY * -1;
@@ -242,25 +243,16 @@ end
 %Define time vector, dt = 1/Fs
 out.time = single(0:length(out.extension)-1) / opts.Fsamp;
             
-%Need to declare fcns out here, outside of if statement (but it will only be used if isPhage)
-    function outXpL = XWLC(F, P, S, kT)
-        %Simplification var.s
-        C1 = F*P/kT;
-        C2 = exp(nthroot(900./C1,4));
-        outXpL = 4/3 ...
-            + -4./(3.*sqrt(C1+1)) ...
-            + -10*C2 ./sqrt(C1) ./(C2-1).^2 ...
-            + C1.^1.62 ./ (3.55+ 3.8* C1.^2.2) ...
-            + F./S;
-    end
-
-%     function outVT = velocityThresh(inY, dec)
-%         outVT = zeros(1, floor(length(inY)/dec));
-%         X = [(1:dec)' ones(dec,1)];
-%         for ii = 1:length(outVT)
-%             pf = X\inY(1+ (ii-1)*dec : ii*dec)';
-%             outVT(ii) = pf(1);
-%         end
+% %Need to declare fcns out here, outside of if statement (but it will only be used if isPhage)
+%     function outXpL = XWLC(F, P, S, kT)
+%         %Simplification var.s
+%         C1 = F*P/kT;
+%         C2 = exp(nthroot(900./C1,4));
+%         outXpL = 4/3 ...
+%             + -4./(3.*sqrt(C1+1)) ...
+%             + -10*C2 ./sqrt(C1) ./(C2-1).^2 ...
+%             + C1.^1.62 ./ (3.55+ 3.8* C1.^2.2) ...
+%             + F./S;
 %     end
 
 %% Convert to contour if requested

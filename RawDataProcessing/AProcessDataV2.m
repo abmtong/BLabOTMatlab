@@ -1,15 +1,5 @@
 function AProcessDataV2(infp, opts)
-%V2: Works for other 
-
-% Want to rewrite ProcessOneData to be more flexible / generalized
-% Flow would then be like 
-% 1. Geneal Text parser for [data off cal] txt + Options GUI
-% 2. Specialized file opener per instrument -- also pass the instrument-specific conversions here
-% 3. General calibration (QPDs)
-% 4. General offset: genOffset(QPDs, MIRRs)
-% 5. General Apply Off/Cal
-% 6. General Finisher (Ext, Frc, Mirror)
-
+%V2: Works for other instruments, not just HiRes
 
 %Load text file. This must be located where the other .dat files are
 if nargin < 1 || isempty(infp)
@@ -143,18 +133,18 @@ for i = 1:size(nndat,1)
     end
 end
 
-
-%Prompt for cleanup: Move raw data to a separate folder or to the recycle bin.
-%Ask the user what to do
-switch questdlg('Would you like to move the Raw Data files?','Cleanup?','To subfolder','Delete','No','No');
-    case 'To subfolder'
-        movefile([path datname], [path 'RawData' filesep])
-    case 'Delete'
-        %Recycle the files -- turn recycle on, delete, revert to previous recycle state
-        rec = recycle;
-        recycle on
-        delete([path mmddyy datname])
-        recycle(rec)
-end
+% %Actually, don't use this anymore?
+% %Prompt for cleanup: Move raw data to a separate folder or to the recycle bin.
+% %Ask the user what to do
+% switch questdlg('Would you like to move the Raw Data files?','Cleanup?','To subfolder','Delete','No','No');
+%     case 'To subfolder'
+%         movefile([path datname], [path 'RawData' filesep])
+%     case 'Delete'
+%         %Recycle the files -- turn recycle on, delete, revert to previous recycle state
+%         rec = recycle;
+%         recycle on
+%         delete([path mmddyy datname])
+%         recycle(rec)
+% end
 
 end

@@ -27,7 +27,7 @@ ycs = cell(1,len);
 for i = 1:len
     %Compute the residence time
     [~, x, ~, y] = nhistc(intr{i}, opts.binsz);
-    %Pad front and end with NaNs
+    %Pad front and end with NaNs, if necessary
     if x(1) > opts.roi(1)
         npad = ceil(x(1) - opts.roi(1) ) / opts.binsz;
         y = [nan(1,npad) y];

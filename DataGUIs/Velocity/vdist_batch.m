@@ -1,4 +1,4 @@
-function out = vdist_batch(datacell, inOpts)
+function [out, outraw] = vdist_batch(datacell, inOpts)
 
 %Opts are same as vdist's
 
@@ -30,8 +30,10 @@ ylims = .05 + .9 * (0:len)/len ;
 out = zeros(5,len);
 
 %Does vdist to datacell{i} and plots them stacked
+rawv = cell(1,len);
+rawx = cell(1,len);
 for i = 1:len
-    vdist(datacell{i}, setfield(opts, 'verbose', 1));%#ok<SFLD> %vdist needs == 1 for vd_batch
+    [rawv{len-i+1}, rawx{len-i+1}] = vdist(datacell{i}, setfield(opts, 'verbose', 1));%#ok<SFLD> %vdist needs == 1 for vd_batch
     drawnow
     tfg = gcf;
     ax = gca;
@@ -52,3 +54,6 @@ end
 %Reshape to fit graph order
 %Columns Velocity SD SEM %Tloc %Paused
 out = flipud(out');
+
+outraw.v = rawv;
+outraw.x = rawx;

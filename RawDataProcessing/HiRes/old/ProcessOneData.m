@@ -186,7 +186,7 @@ else %Phage-only processing
             dec = max(round(opts.Fsamp / 2500), 1);
             fil = round(12*sqrt(dec));
             mxfil = windowFilter(@mean, rawdat(5,:), fil, dec);
-            thr = 5 * 1.4 * median(abs(mxfil-mean(mxfil)));
+            thr = 1e-4; %5 * 1.4 * median(abs(mxfil-mean(mxfil)));
             pad = fil*2;
     end
     
@@ -195,7 +195,7 @@ else %Phage-only processing
     %Threshold = 5 * 1.4 * MAD (= 5*SD), assume mean ~ 0
 %     thr = 5 * 1.4 * median(abs(dmx - mean(dmx))); %should be ~equal to the thr in the switch above
     %is this necessary to recalc or just use one value?
-    ind = diff(abs(dmx) > thr);
+    ind = [0 diff(abs(dmx) > thr) 0];
 %     ind = diff(abs(smooth(velocityThresh(rawdat(5,:), dec))) > thr)';
     indSta = dec*find(ind<0)+pad; %=-1, end of mirror movement (start of segment)
     indEnd = dec*find(ind>0)-pad; %=+1, start of mirror movement (end of segment)

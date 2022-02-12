@@ -14,7 +14,12 @@ for i = 1:length(infilenames)
             mm = (str(st:st+1));
             dd = (str(st+2:st+3));
             yy = (str(st+4:st+5));
-            sortnum(j) = daysact('1/1/15',[mm '/' dd '/' yy]); %Financial toolbox only. Find a replacement, eg round(posixtime( datetime ( 'now' ) )/3600/24-45*365)
+            %             sortnum(j) = daysact('1/1/15',[mm '/' dd '/' yy]); %Financial toolbox only. Find a replacement, eg
+            try
+                sortnum(j) = round(posixtime( datetime ( [mm '/' dd '/' yy], 'InputFormat', 'MM/dd/yy' ) )/3600/24-45*365); %Days since 2015
+            catch %Actually yymmdd. ... This feels bad to do, but eh
+                sortnum(j) = round(posixtime( datetime ( [mm '/' dd '/' yy], 'InputFormat', 'yy/MM/dd' ) )/3600/24-45*365); %Days since 2015
+            end
         elseif en(j)-st(j) <5 %5 char or less, should be sortable
             sortnum(j) = str2double(str(st(j):en(j)))+127; %The last 'regular' character is tilde, 126, so put numbers after a-z
         else %number is larger than 6 char.

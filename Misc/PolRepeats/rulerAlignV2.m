@@ -30,7 +30,7 @@ opts.binsm = 1; %Residence time histogram filter half-width (bp)
 opts.rptsmsd = 1; %Smooth the histogram
 opts.persmsd = 0.1; %Smooth the period scores with a gaussian filter of this std (bp)
 opts.offsmsd = 1; %Smooth the offset scores with a gaussian filter of this std (bp)
-opts.Fs = 3125; %Fsamp, just for plotting
+opts.Fs = 3125; %Fsamp, just for plotting X-axis
 
 %Options: Repeat pause characteristics
 opts.start = tra(1); %Start position, bp

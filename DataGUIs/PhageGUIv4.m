@@ -302,10 +302,13 @@ fig.Visible = 'on';
             %Gather [filtered] contour together, apply crop to if it exists
             cons = [conF{:}];
             tims = [timF{:}];
+            frcs = [forF{:}];
             loadCrop_callback
             if ~isempty(cropT)
-                cons = cons(tims > cropT(1) & tims < cropT(2));
+                cons = cons(tims > cropT(1) & tims < cropT(2) );
             end
+            %Trim to plot limits
+            cons = cons( cons > str2double(conMin.String) & cons < str2double(conMax.String) );
             %Set the y bin size; this works well in all(?) cases
             hbinsz = 0.1;
             if radioKDF2.Value

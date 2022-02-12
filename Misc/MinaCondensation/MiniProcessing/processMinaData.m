@@ -1,7 +1,7 @@
 function out = processMinaData(inp, tffit)
 
 if nargin < 1
-    inp = uigetdir();
+    inp = uigetdir('D:\Data\');
     if isempty(inp)
         return
     end
@@ -10,6 +10,8 @@ end
 if nargin < 2
     tffit = 1;
 end
+%mini2con opts. Only used if tffit
+m2copts.frcfil = 10;
 
 %Takes a folder structure thats like this:
 % \Parent\Condition\abcd.mat
@@ -36,7 +38,7 @@ for i = 1:length(folnams)
     nams = {dd.name};
     %Run mini2con
     if tffit
-        m2c = cellfun(@(x) mini2con(fullfile( curdir, x)), nams, 'Un', 0);
+        m2c = cellfun(@(x) mini2con(fullfile( curdir, x), m2copts), nams, 'Un', 0);
         drawnow
     end
     

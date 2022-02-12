@@ -26,7 +26,7 @@ end
 
 %If first input is cell, batch process
 if iscell(incon)
-    [pkloc, ssz] = cellfun(@(x) kdfsfind(x, opts),incon,'Un',0);
+    [pkloc, ssz] = cellfun(@(x) kdfsfindV2(x, opts),incon,'Un',0);
     ssz = [ssz{:}];
     if isempty(ssz)
         return

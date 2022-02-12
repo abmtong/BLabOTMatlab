@@ -61,6 +61,8 @@ txtLorFltL= uicontrol(fg, 'Style', 'text',      'Position', [col(1) rx(9) 100 tx
 txtLorFlt = uicontrol(fg, 'Style', 'popupmenu', 'Position', [col(2) rx(9) 200 txty], 'String', lormodels);
 txtWaterVL= uicontrol(fg, 'Style', 'text',      'Position', [col(3) rx(9) 100 txty], 'String', 'Water Viscosity: ', 'HorizontalAlignment', 'right');
 txtWaterV = uicontrol(fg, 'Style', 'edit',      'Position', [col(4) rx(9) 200 txty], 'String', '0.97e-9');
+txtCFsampL=uicontrol(fg, 'Style', 'text', 'Position', [col(1) rx(10) 100 txty], 'String', 'Cal FSamp: ', 'HorizontalAlignment', 'right');
+txtCFsamp= uicontrol(fg, 'Style', 'edit', 'Position', [col(2) rx(10) 200 txty], 'String', '75000', 'Callback', []);
 
 %Row 10/11: Instrument Calibration options:
 label11    = uicontrol(fg, 'Style', 'text', 'Position', [0 rx(11) 300 txty], 'String', 'Instrument Calibration:', 'HorizontalAlignment', 'left', 'FontSize', 12);
@@ -121,6 +123,7 @@ end
 opts.extOffset = str2double(txtExtOff.String);
 opts.cal.lortype = txtLorFlt.Value;
 opts.cal.wV = str2double(txtWaterV.String);
+opts.cal.Fs = str2num(txtCFsamp.String);
   convXY = str2num(txtTConvXY.String);
 opts.convTrapX = convXY(1);
 opts.convTrapY = convXY(2);
@@ -164,6 +167,7 @@ delete(fg)
                 txtWaterV.Enable = 'on';
                 txtCustom.String = '{''cal.Fmax'', ''1e4'';}';
                 tfNormalize.Value = 1;
+                txtCFsamp.String = '62500';
             case 2 %Meitner
                 txtFsamp.Enable = 'off';
                 txtTConvXY.Enable = 'on';
@@ -175,6 +179,7 @@ delete(fg)
                 txtWaterV.Enable = 'on';
                 txtCustom.String = '{''field'', ''value'';}';
                 tfNormalize.Value = 1;
+                txtCFsamp.String = '200000/3';
             case 3 %Boltzmann
                 warning('Should check Boltzmann Instrument Calibration values')
                 txtFsamp.Enable = 'off';
@@ -187,6 +192,7 @@ delete(fg)
                 txtWaterV.Enable = 'on';
                 txtCustom.String = '{''field'', ''value'';}';
                 tfNormalize.Value = 1;
+                txtCFsamp.String = '100000';
             case 4 %Mini
                 txtFsamp.Enable = 'off';
                 txtTConvXY.Enable = 'off';
@@ -198,6 +204,7 @@ delete(fg)
                 txtWaterV.Enable = 'on';
                 txtCustom.String = '{''field'', ''value'';}';
                 tfNormalize.Value = 1;
+                txtCFsamp.String = '100000';
             case 5 %Lumicks
                 txtFsamp.Enable = 'on';
                 txtFsamp.String = '3125';
@@ -210,6 +217,7 @@ delete(fg)
                 txtWaterV.Enable = 'off';
                 txtCustom.String = '{''field'', ''value'';}';
                 tfNormalize.Value = 1;
+                txtCFsamp.String = '78125';
             case 6 %HiRes PSD
                 txtFsamp.Enable = 'on';
                 txtFsamp.String = '2500';
@@ -222,6 +230,7 @@ delete(fg)
                 txtWaterV.Enable = 'on';
                 txtCustom.String = '{''field'', ''value'';}';
                 tfNormalize.Value = 1;
+                txtCFsamp.String = '62500';
             case 7 %HiRes bPD
                 txtFsamp.Enable = 'on';
                 txtFsamp.String = '2500';
@@ -234,6 +243,7 @@ delete(fg)
                 txtWaterV.Enable = 'on';
                 txtCustom.String = '{''cal.Fmax'', ''1e4'';}';
                 tfNormalize.Value = 0;
+                txtCFsamp.String = '70000';
             otherwise
                 error('Dropdown menu for Instruments can''t handle value %d', src.Value)
         end

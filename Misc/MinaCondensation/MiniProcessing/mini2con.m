@@ -12,6 +12,8 @@ dnalen = 6256; %DNA length, for XWLC fitting
 
 opts.fil=50; %XWLC fit filter (dsamp)
 
+opts.frcfil = 0; %Filter force for con conversion? 0=no , positive = windowFilter width
+
 %fitForceExt opts
 %Cutoff forces, for fitting
 opts.loF = 1; %Not all pulling curves go this low, unfortunately. Will make do?
@@ -51,9 +53,9 @@ if isempty(cropT)
 end
 
 %Extract values
-tim = sd.time{1};
-frc = sd.force{1};
-ext = sd.contour{1};
+tim = sd.time{1}(:)';
+frc = sd.force{1}(:)';
+ext = sd.contour{1}(:)';
 
 ki = sd.time{1} > cropT(1) & sd.time{1} < cropT(2);
 ffrc = windowFilter(@mean, frc(ki), [], opts.fil);
@@ -73,10 +75,11 @@ fig.Name = f;
 %Convert extension data to contour data
 frc = frc - fit(5); %Apply force offset
 ext = ext - fit(4); %Apply ext offset
-con = ext ./ XWLC(frc, fit(1), fit(2)) / 0.34; %Convert to contour
+frcf = windowFilter(@mean, frc, opts.frcfil, 1);
+con = ext ./ XWLC(frcf, fit(1), fit(2)) / 0.34; %Convert to contour
 
 %Create output struct
-stepdata = struct('time', {{tim(:)'-tim(1)}}, 'extension', {{ext(:)'}}, 'contour',{{con(:)'}}, 'force', {{frc(:)'}}); 
+stepdata = struct('time', {{tim-tim(1)}}, 'extension', {{ext}}, 'contour',{{con}}, 'force', {{frc}}); 
 
 %Store the f-x fit in the offset field?
 off.MX = ffrc; %Frc data
