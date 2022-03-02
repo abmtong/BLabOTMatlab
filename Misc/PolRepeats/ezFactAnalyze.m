@@ -66,3 +66,4 @@ out.hstx = hstx;
 out.hsty = hsty;
 out.hstxcr = hstxcr;
 out.hstycr = hstycr;
+out.tcr = calcXingTime(traR);

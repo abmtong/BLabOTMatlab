@@ -6,10 +6,11 @@ opts.binsz = 0.5; %RTH binsize, best if this divides 1
 opts.roi = [-200 800]; %Region of interest
 opts.normmeth = 2; %1= 1/median, 2= s/bp; seems no real difference? (median is used to average across traces either way)
 opts.Fs = 3125;
+opts.fil = 10; %Filter
 
 %Display options
 opts.disp = [558 631 704]-16; %Location of lines
-
+opts.shift = 558-16+1; %Shift x-vals by this much
 
 %Pause info
 opts.pauloc = 59;
@@ -26,7 +27,8 @@ ycs = cell(1,len);
 %For each trace
 for i = 1:len
     %Compute the residence time
-    [~, x, ~, y] = nhistc(intr{i}, opts.binsz);
+    trF = windowFilter(@mean, intr{i}, opts.fil, 1);
+    [~, x, ~, y] = nhistc(trF, opts.binsz);
     %Pad front and end with NaNs, if necessary
     if x(1) > opts.roi(1)
         npad = ceil(x(1) - opts.roi(1) ) / opts.binsz;
@@ -61,7 +63,9 @@ end
 
 %Take the median, omitnan to ignore cropped regions
 ycm = [ycs{:}]; %ycs is column arrays, so this makes a matrix
+% sds = std(ycm, [], 2, 'omitnan');
 ycm = median(ycm, 2, 'omitnan');
+
 out = ycm';
 
 %Eh this dont quite work

@@ -1,7 +1,7 @@
 function addbutton(fg, type)
 %adds a button that will do something to a graph, like measure, stepfind, etc.
 
-if nargin < 1
+if nargin < 1 || isempty(fg)
     fg = gcf;
 end
 
@@ -11,6 +11,12 @@ end
 
 if strcmpi(type, 'measure');
     uicontrol('Parent', fg, 'Units', 'normalized', 'Position', [ 0, 0, .1, .1], 'String', 'Measure', 'Callback',@(x,y)drawline);
+    return
+end
+
+if strcmpi(type, 'shift')
+    fg = gcf;
+    fg.KeyPressFcn = @shift;
     return
 end
 
@@ -46,6 +52,7 @@ if ~isempty(towrite)
     str = sprintf(str, arr);
     ob(2) = text(mean(x),mean(y), str);
 end
+end
 
 function out = stepfind()
 %Call ginput to set gca
@@ -57,3 +64,24 @@ ch = ax.Children;
 
 %Run BatchKV, default params
 BatchKV(data, single(5));
+end
+
+function shift(evt, fh)
+    switch evt.Character
+        case 'a'
+            ob = gco;
+            xwid = diff(xlim);
+            if isfield(ob, 'XData')
+                ob.XData = ob.XData - xwid/20 ;
+            end
+        case 'd'
+            ob = gco;
+            xwid = diff(xlim);
+            if isfield(ob, 'XData')
+                ob.XData = ob.XData + xwid/20 ;
+            end
+        otherwise
+    end
+end
+
+end

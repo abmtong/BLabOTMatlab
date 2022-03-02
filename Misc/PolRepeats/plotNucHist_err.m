@@ -1,4 +1,4 @@
-function plotNucHist(xs, ys, inOpts)
+function plotNucHist_err(xs, ys, es, inOpts)
 
 %Display options
 opts.disp = [558 631 704]-16; %Location of lines
@@ -10,16 +10,16 @@ opts.pauloc = 59;
 opts.per = 64;
 opts.nrep = 8;
 
-if nargin > 2
+if nargin > 3
     opts = handleOpts(opts, inOpts);
 end
 
 figure('Name', sprintf('PlotNucHist %s', inputname(1)))
 hold on
 if iscell(ys)
-    cellfun(@plot, xs, ys)
+    cellfun(@errorbar, xs, ys, es)
 else
-    plot(xs, ys)
+    plot(xs, ys, es)
 end
 %Add lines for pauses
 xs = bsxfun(@plus, (0:opts.nrep-1)*opts.per, opts.pauloc');

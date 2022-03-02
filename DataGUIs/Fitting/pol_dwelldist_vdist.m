@@ -6,6 +6,7 @@ opts.Fs = 1e3; %Hz
 opts.maxdw = 0.5; %Seconds
 
 opts.verbose = 0; %Show trace cropping or not
+opts.verbosefil = 10; %Filter amt for trace cropping
 
 %@vdist options
 opts.vdist.sgp = {1 101}; %S-G params
@@ -20,14 +21,16 @@ end
 opts.vdist.Fs = opts.Fs;
  
 if isstruct(dat)
-    [~, outraw] = structfun(@(x,y)pol_dwelldist_vdist(x,y,opts), dat, inp1tr);
-%     datc = struct2cell(dat);
-%     fns = fieldnames(dat);
-%     inp1trc = struct2cell(inp1tr);
-%     [~, outraw] = cellfun(@(x,y)pol_dwelldist_vdist(x,y,opts), datc, inp1trc, 'Un', 0);
-%     prestr = [fns ; outraw];
-%     outraw = struct(prestr{:});
+%     [~, outraw] = structfun(@(x,y)pol_dwelldist_vdist(x,y,opts), dat, inp1tr);
+    datc = struct2cell(dat);
+    fns = fieldnames(dat);
+    inp1trc = struct2cell(inp1tr);
+    [~, outraw] = cellfun(@(x,y)pol_dwelldist_vdist(x,y,opts), datc, inp1trc, 'Un', 0);
+    prestr = [fns ; outraw];
+    outraw = struct(prestr{:});
     out = vdist_batch({outraw.tloc}, opts.vdist);
+    %ABOVE MIGHT NOT WORK
+    
     figure('Name', 'Pause Dists')
     hold on
     pcc = @(x) plot( sort(x), (1:length(x))/length(x));
@@ -60,8 +63,12 @@ for i = 1:len
     trpaus{i} = arrayfun(@(x,y) dt(x:y), st, en, 'Un', 0);
     
     if opts.verbose
-        dtsm = windowFilter(@mean, dt, opts.vdist.sgp{2}, 1);
-        figure, surface( repmat( (1:length(dt))/opts.Fs, [2 1]), [dtsm; dtsm], zeros(2, length(dt)), [tf; tf], 'EdgeColor', 'interp')
+        dtsm = windowFilter(@mean, dt, opts.verbosefil, 1);
+        figure
+        plot( (1:length(dt))/opts.Fs, dtsm, 'Color', [.7 .7 .7])
+        hold on
+        surface( repmat((1:length(dt))/opts.Fs, [2 1]) , repmat( inp1tr{i} , [2 1]), zeros(2, length(dt)), [tf; tf], 'EdgeColor', 'interp', 'LineWidth', 2)
+        colormap ([1 0 0; 0 1 0]) %Red = no, Grn = yes
     end
     
 end

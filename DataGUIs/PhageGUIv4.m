@@ -345,7 +345,7 @@ fig.Visible = 'on';
                 %Calculate step size histogram. Hard code for Phage numbers
                 binsz = .1;
                 %Bin from 0 to 20
-                xs = -10*binsz:binsz:21+binsz;
+                xs = -100*binsz:binsz:101+binsz;
                 xs = xs - binsz/2; %shift by binsz/2 bc step sizes will be even multiples of binsz, and thus may differ by eps
                 cts = histcounts(pkdsts, xs);
                 %Plot on subR axes

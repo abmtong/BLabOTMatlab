@@ -6,7 +6,7 @@ function out = anUnravel(trs, inOpts)
 opts.fpre = {10,1}; %pre filter
 opts.binsz = 0.2; %bin size, for kdf and hist
 opts.kdfsd = 5; %kdf gaussian sd
-opts.histdec = 5; %Step histogram decimation factor
+opts.histdec = 15; %Step histogram decimation factor
 opts.histfil = 10; %Filter width for step histogram
 opts.kdfmpp = .5; %Multiplier to kdf MinPeakProminence
 opts.histfitx = [0 100]; %X range to fit histfit to
@@ -24,9 +24,15 @@ end
 [pkloc, ssz] = cellfun(@(x) kdfsfindV2(x, opts), trs, 'Un', 0);
 
 [hp, hx, hsd, hn] = cellfun(@(x) nhistc(x, opts.histdec), ssz, 'Un', 0);
+hp = cellfun(@(x) windowFilter(@mean, x, opts.histfil, 1), hp, 'Un', 0);
+hx = cellfun(@(x) windowFilter(@mean, x, opts.histfil, 1), hx, 'Un', 0);
+
+cols = arrayfun(@(x) squeeze( hsv2rgb(x, 1, .7) ), (0:length(trs)-1)/length(trs), 'Un', 0);
+cols = reshape([cols{:}], 3, [])';
 
 figure('Name', 'anUnravel', 'Color', [1 1 1])
 hold on
+set(gca, 'ColorOrder', cols)
 cellfun(@(x,y,z) plot(x,y,'Color', z), hx, hp, arrayfun(@(x) hsv2rgb(x, 1, .7), (0:length(hx)-1)/length(hx), 'Un', 0)  )
 
 %Find extension times, fit 1exp?
@@ -40,10 +46,26 @@ for i = 1:len
 end
 %Plot ccdf
 plccdf = @(x) plot( sort(x)/opts.Fs, (length(x):-1:1)/length(x) );
-figure, hold on, cellfun(plccdf, tcr)
+figure, hold on, set(gca, 'ColorOrder', cols), cellfun(plccdf, tcr)
 set(gca, 'YScale', 'log')
 
-out.tcr = tcr;
+xl = xlim;
+yl = ylim;
 
+%Fit to 1exp (curvefit)
+expcc = @(x0,x) exp(-x0*x);
+expfts = cell(1,len);
+for i = 1:len
+    tmp = sort(tcr{i});
+    expfts{i} = lsqcurvefit( expcc, 10, tmp/opts.Fs, (length(tmp):-1:1)/length(tmp) );
+    xpl = linspace(0, max(tmp)/opts.Fs, 11);
+    plot( xpl, expcc( expfts{i}, xpl ), ':')
+end
+%Retain original lims
+xlim(xl)
+ylim(yl)
+
+out.tcr = tcr;
+out.tfit = expfts;
 
 
