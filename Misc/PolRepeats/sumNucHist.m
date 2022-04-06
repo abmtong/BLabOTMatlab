@@ -1,5 +1,4 @@
 function [out, xc, ycs] = sumNucHist(intr, inOpts)
-%ZJ's version is a bit more developed [+filtering]
 
 %RTH options
 opts.binsz = 0.5; %RTH binsize, best if this divides 1
@@ -9,6 +8,7 @@ opts.Fs = 3125;
 opts.fil = 10; %Filter
 
 %Display options
+opts.verbose = 1;
 opts.disp = [558 631 704]-16; %Location of lines
 opts.shift = 558-16+1; %Shift x-vals by this much
 
@@ -20,6 +20,20 @@ opts.nrep = 8;
 if nargin > 1
     opts = handleOpts(opts, inOpts);
 end
+
+if ~iscell(intr)
+    intr = {intr};
+end
+
+%Handle ROI inf
+if isinf(opts.roi(1))
+    opts.roi(1) = min( cellfun(@min, intr) );
+end
+if isinf(opts.roi(2))
+    opts.roi(2) = max( cellfun(@max, intr) );
+end
+
+    
 
 len = length(intr);
 ycs = cell(1,len);
@@ -106,5 +120,6 @@ out = ycm';
 
 %Document 
 
-
-plotNucHist(xc, out, opts)
+if opts.verbose
+    plotNucHist(xc, out, opts)
+end

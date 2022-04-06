@@ -206,7 +206,7 @@ rptpau = zeros(1, persn(maxi));
 for i = 1:length(pauind);
     rptpau = rptpau + circshift(rpt, [0, -pauind(i)]) * opts.paustr(i);
 end
-%Gaussian smooth this : if per is off by a bit, peaks are flat; gaussian smoothing helps find the center
+%Gaussian smooth this : if per is off by a bit, peaks are flat; smoothing helps find the center
 rptpau = gausmooth(rptpau, opts.per/length(rptpau), opts.offsmsd, 1);
 
 %Judge 'goodness' by findpeaks

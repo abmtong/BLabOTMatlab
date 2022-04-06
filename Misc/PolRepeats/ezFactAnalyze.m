@@ -2,6 +2,7 @@ function out = ezFactAnalyze(inp, rAopts)
 %Input: Path, rAopts
 
 %getFCs, rulerAlign, then sumNucHist [on all vs. only crossers]
+narginchk(2,2)
 
 if nargin < 1 || isempty(inp)
     inp = uigetdir();

@@ -1,12 +1,14 @@
 function setCondColors(ax)
+%Set colors for a 5-line graph
+
 
 if nargin < 1
     ax = gca;
 end
 
-if nargin < 2
-    rep = 1;
-end
+% if nargin < 2
+%     rep = 1;
+% end
 
 %Five colors 
 ncol = 5;

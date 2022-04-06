@@ -22,7 +22,7 @@ if nargin < 2 || isempty(inNums)
     [file{1}, path] = uigetfile([path filesep '*.dat'], 'Pick your data file');
 else
     switch inOpts.Instrument
-        case {'HiRes' 'HiRes-legacy' 'HiRes bPD'}
+        case {'HiRes' 'HiRes PSD' 'HiRes-legacy' 'HiRes bPD'}
             spfn = '%sN%02d.dat';
         case 'Boltzmann'
             spfn = '%s_%03d.dat';
@@ -60,11 +60,11 @@ calopts.normalize = opts.normalize;
 %Get Fs
 switch calopts.Instrument
     case {'HiRes' 'HiRes PSD'}
-        calopts.Fsamp = 62500; %Hard code this, at least for now
+%         calopts.Fsamp = 62500; %Hard code this, at least for now
         cal = ACalibrateV2(fullfile(path, file{3}), calopts);
         drawnow %Can inspect calibration while program continues
     case 'HiRes bPD'
-        calopts.Fsamp = 70000; %Hard code this, at least for now
+%         calopts.Fsamp = 70000; %Hard code this, at least for now
         cal = ACalibrateV2(fullfile(path, file{3}), calopts);
         drawnow %Can inspect calibration while program continues
     case {'Boltzmann' 'Meitner'}

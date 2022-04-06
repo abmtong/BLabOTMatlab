@@ -2,7 +2,7 @@ function [out, kn] = pol_dwelldist_p3b(rawdat, p1tra, p2exps, inOpts)
 %Plots traces, coloring steps by dwelltime
 %dat is the raw data, p1tra is the fit staircase, exps is the fit exponentials
 %  p1tra is the third output of p1
-%  p2exps is list of the fit exponentials [a1, k2, a2, k2, ...], taken from the output of p2
+%  p2exps is list of the fit exponentials [a1, k1, a2, k2, ...], taken from the output of p2
 
 %Fsamp (Hz)
 opts.Fs = 1000;
