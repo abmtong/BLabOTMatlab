@@ -22,7 +22,7 @@ col = [0 100 300 400]; %Column positions, we're gonna do [Text Box   Text Box]
 %Add stuff to the figure
 
 %Row 1: Dropdown menus to choose presets
-optInstr = {'HiRes' 'Meitner' 'Boltzmann' 'Mini' 'Lumicks' 'HiRes PSD' 'HiRes bPD'};
+optInstr = {'HiRes QPD' 'Meitner' 'Boltzmann' 'Mini' 'Lumicks' 'HiRes PSD' 'HiRes bPD'};
 optProt  = {'Semipassive' 'Force feedback' 'Force-Extension' 'One Trap'};
 dropInstL= uicontrol(fg, 'Style', 'text'     , 'Position', [col(1) rx(1) 100 txty], 'String', 'Instrument: ', 'HorizontalAlignment', 'right', 'FontSize', 12); %#ok<*NASGU>
 dropInst = uicontrol(fg, 'Style', 'popupmenu', 'Position', [col(2) rx(1) 200 txty], 'String', optInstr, 'Callback', @dropInst_cb);
@@ -84,7 +84,7 @@ txtCustom  = uicontrol(fg, 'Style', 'edit', 'Position', [col(2) rx(15) 400 txty]
 txtButOK  = uicontrol(fg, 'Style', 'pushbutton', 'Position', [col(4)+100 rx(17) 100 txty*2], 'String', 'Ok', 'Callback', @(~,~)uiresume(fg));
 
 %Set defaults
-dropInst.Value = 7; %Instrument - HiRes
+dropInst.Value = 6; %Instrument - HiRes PSD
 dropInst_cb(dropInst);
 dropProt.Value = 1; %Protocol - Semipassive
 dropProt_cb(dropProt);
@@ -155,7 +155,7 @@ delete(fg)
 %By instrument
     function dropInst_cb(src,~)
         switch src.Value
-            case 1 %HiRes 12 22 21 and on
+            case 1 %HiRes QPD
                 txtFsamp.Enable = 'on';
                 txtFsamp.String = '2500';
                 txtTConvXY.Enable = 'on';
@@ -167,7 +167,7 @@ delete(fg)
                 txtWaterV.Enable = 'on';
                 txtCustom.String = '{''cal.Fmax'', ''1e4'';}';
                 tfNormalize.Value = 1;
-                txtCFsamp.String = '62500';
+                txtCFsamp.String = '70000';
             case 2 %Meitner
                 txtFsamp.Enable = 'off';
                 txtTConvXY.Enable = 'on';
@@ -230,7 +230,7 @@ delete(fg)
                 txtWaterV.Enable = 'on';
                 txtCustom.String = '{''field'', ''value'';}';
                 tfNormalize.Value = 1;
-                txtCFsamp.String = '62500';
+                txtCFsamp.String = '70000';
             case 7 %HiRes bPD
                 txtFsamp.Enable = 'on';
                 txtFsamp.String = '2500';
