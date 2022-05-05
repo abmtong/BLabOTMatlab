@@ -126,8 +126,14 @@ switch opts.Protocol
                 
                 %If the date is Dec 22 2021 or later, negate the four forces (PSD > QPD swap)
                 dt = dateislater('122221', file{2}(1:6), 'MMDDYY'); %Assumes file starts MMDDYY
+                dt2 = dateislater('012822', file{2}(1:6), 'MMDDYY');
+                dt3 = dateislater('040822', file{2}(1:6), 'MMDDYY');
 %                 dt = daysdif( '12/22/2021', datetime(, 'InputFormat', 'MMddyy') );  Remove daysdif (Financial toolbox)
-                if dt >= 0
+                if dt3 >= 0 %Revert to PSD
+                    %Do nothing
+                elseif dt2 >= 0
+                    %Do nothing? No sum.
+                elseif dt >= 0
                     off.AY = off.AY * -1;
                     off.BY = off.BY * -1;
                     off.AX = off.AX * -1;

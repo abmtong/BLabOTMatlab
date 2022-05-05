@@ -50,6 +50,10 @@ end
 
 tF = cellfun(@(x) windowFilter(@mean, x, opts.fwid, opts.fdec), ts, 'Un', 0);
 
+%Get color, to plot traces the same color (key off of trN field)
+cols = mat2cell( lines(7), ones(1,7) );
+nc = length(cols);
+
 %And con offsets
 if opts.normCon
     y0s = cellfun(@(x) x(1), datF);
@@ -61,11 +65,12 @@ else
     yoff = zeros(1,length(dat));
 end
 
-%Plot unfiltered plus filtered
+%Plot unfiltered
 if opts.plotUnfilt
     cellfun(@(x,y,z)plot(ax, x,y+z,'Color', .7 * ones(1,3)), ts, dat, num2cell(yoff));
 end
-cellfun(@(x,y,z)plot(ax, x,y+z, 'LineWidth', 1), tF, datF, num2cell(yoff));
+%Plot filtered
+cellfun(@(x,y,z,ci)plot(ax, x,y+z, 'Color', cols{ mod(ci-1,nc)+1 }, 'LineWidth', 1), tF, datF, num2cell(yoff), num2cell(datn) );
 
 %Add names to the end of each 
 if opts.nameTraces

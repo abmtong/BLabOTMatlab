@@ -213,6 +213,11 @@ rptpau = gausmooth(rptpau, opts.per/length(rptpau), opts.offsmsd, 1);
 fp = sort(findpeaks(rptpau), 'descend');
 if length(fp) == 1
     offscr = 1;
+elseif isempty(fp)
+    warning('No peaks found in rulerAlign')
+    out = [];
+    outraw = [];
+    return
 else
     %Judge score by relative height of second peak
     offscr = 1-(fp(2) - fp(end)) / range(fp);
