@@ -1,10 +1,12 @@
 %{
-Readme for [requirement] for [Title]
+Readme for submission to Cell for manuscript:
+    A trailing ribosome speeds up RNA polymerase at the expense of transcript fidelity via force and allostery
 
-Section: Determine pause free velocity (PFV) and pause density
+Section: Determining pause free velocity (PFV) and pause density
 Fitting the raw data to a monotonic staircase was done by hidden markov model fitting.
-See fcn
+    The model states are a grid 1bp wide, and the chain can only move to the next state.
+    Dwells that were >0.5s are considered a pause, so contribute to pause density and the corresponding data removed from PFV calculation
 
-
+    Code in /DataGUIs/StepFind_HMM/fitVitterbiV3.m
 
 %}
