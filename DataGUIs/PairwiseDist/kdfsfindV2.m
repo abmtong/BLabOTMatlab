@@ -41,7 +41,7 @@ if iscell(incon)
     % May chop the last few values, w/e
     np = floor(length(xx)/opts.histdec)*opts.histdec;
     xx = mean(reshape(xx(1:np), opts.histdec, [] ), 1);
-    yy =  sum(reshape(yy(1:np), opts.histdec, [] ), 1);
+    yy = mean(reshape(yy(1:np), opts.histdec, [] ), 1);
     %Fit the resulting histogram to a gaussian
     xki = xx>opts.histfitx(1) & xx<opts.histfitx(2);
     yy = smooth(yy, opts.histfil)';
@@ -63,7 +63,7 @@ if iscell(incon)
         xlim([0 opts.histfitx(2)*2])
         [ymx, ymxi] = max(yy);
         %N is fit(1)/binsz, print mean +- sem
-        text(xx(ymxi), ymx*1.1,sprintf('%0.2f +- %0.2f, est. %0.2f%% good steps\n', gfit(2), gfit(3)/sqrt(gfit(1)/opts.binsz/opts.histdec), gfit(1)/opts.binsz/opts.histdec/length(ssz)*100))
+        text(xx(ymxi), ymx*1.1,sprintf('%0.2f +- %0.2f, est. %0.2f%% good steps', gfit(2), gfit(3)/sqrt(gfit(1)/opts.binsz/opts.histdec), gfit(1)*100))
         xlabel('Step Size (bp)')
         ylabel('Probability')
     end

@@ -1,11 +1,21 @@
 function out = kingCircles(infp, inOpts)
 
-%Options:
+%Options: which image to take
+opts.circind = 1; %Image to detect circles on
+opts.sumind = 2; %Image to sum intensity over
+
+opts.circinv = 0; %Invert circles image? (Only detects bright circles, so invert for dark circles)
+
+%imfindcircles parameters
 opts.rrng = [10 40]; %Radius range, pixels
-opts.debug = 1; %Plot image stuff
+opts.fcsens = 0.85; %Sensitivity, default 0.85, increase = more circles. See >>doc imfindcircles
+
+opts.debug = 1; %Plot image with detected circles
+
+%For postprocessing
 % opts.rwid = 5; %Circle diameter width
-opts.rtol = 3; %Tolerance for concentric circles (center distance)
-opts.verbose = 1; %Plot stats, just for cell version
+opts.rtol = 3; %Tolerance for concentric circles (distance between centers)
+opts.verbose = 1; %Plot stats, just for batch version
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
@@ -33,23 +43,29 @@ if iscell(infp)
 end
 
 %Read the (up to) 4 channels of the .nd2
-%Images are be [membrane, protein, ...]
-[img1, img2, img3, img4] = nd2read(infp);
+[img{1}, img{2}, img{3}, img{4}] = nd2read(infp);
 
-%First pixel seems to be wrong? First edge, even?
-% img1(1) = median(img1(:));
+%Extract the two channels we care about (one to find circles on, then another to sum over)
+img1 = img{opts.circind};
+img2 = img{opts.sumind};
 
-% %Find circles
-% [cen rad met] = imfindcircles(img1, opts.rrng);
-
-%Choose centers that are close enough to each other
-
+%Process before circle detection
+%Invert if asked
+if opts.circinv
+    img1 = max(max(img1)) - img1;
+end
+%Background subtract
+img1bg = img1 - median(img1(:));
 
 %Method one: Find inner + outer circle via ObjectPolarity
 %Outer edge is 'bright' polarity
-[bc br bm] = imfindcircles(img1, opts.rrng, 'ObjectPolarity', 'bright');
+[bc, br , ~] = imfindcircles(img1bg, opts.rrng, 'ObjectPolarity', 'bright', 'Sensitivity', opts.fcsens);
 %Inner edge is 'dark' polarity
-[dc dr dm] = imfindcircles(img1, opts.rrng, 'ObjectPolarity', 'dark');
+[dc, dr , ~] = imfindcircles(img1bg, opts.rrng, 'ObjectPolarity', 'dark', 'Sensitivity', opts.fcsens);
+
+if isempty(bc) || isempty(dc)
+    error('No circles found, check radius range (rrng) or increase sensitivity (fcsens)')
+end
 
 %Select centers that are shared between the two
 nc = length(br);
@@ -79,7 +95,7 @@ kbr = br(ibc);
 kdc = dc(idc,:);
 kdr = dr(idc);
 
-%Maybe exclude circles that overlap each other: pairwise distances, make sure they are less than r1+r2
+%Maybe exclude circles that overlap each other: pairwise distances, make sure they are less than r1+r2? Shouldnt be possible for vesicles...
 
 nk = length(kbr); %Number of accepted circles
 %For each pair, extract the circle (as bdy)

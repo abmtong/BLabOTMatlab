@@ -17,7 +17,7 @@ end
 %Default Params
 %Cutoff forces, for fitting
 opts.loF = 1;
-opts.hiF = inf;
+opts.hiF = 40;
 %Guess for fitting: [ PL(nm) SM(pN) CL(bp) Off(nm) Off(F) ]
 opts.x0 = [50 1200 4000 0 0];
 %Fitting bounds: Override to allow for e.g. force/ext offsets to be set

@@ -115,13 +115,13 @@ switch opts.lortype
         lb = [0 0 0 0];
         ub = [10*Fcg 10*Dg 1 opts.Fs*10];
 %         Guess = [Fcg, Dg, .3, opts.Fnyq/2];
-        Guess = [Fcg, Dg, .3, 1e4];
+        Guess = [Fcg, Dg, 0.3, 1.5e4];
     case 5 %Fc D al f0 g0 f1 g1
         lb = [0 0 0 0 0 0 0];
         ub = [10*Fcg, 10*Dg, 1 inf inf inf inf];
         Guess = [Fcg, Dg, .3, opts.Fnyq/2, .5, opts.Fnyq/3, .5 ];
     otherwise %just first order filters
-        lb = [0 0 0 25000];
+        lb = [0 0 0 15000];
         ub = [10*Fcg 10*Dg opts.Fs*10 opts.Fs*10];
         Guess = [Fcg, Dg, .3, opts.Fnyq/2];
 end
@@ -132,6 +132,7 @@ fitfcn = @(x)(log(Lorentzian(x,Fbf,opts)) - lPbf);
 options = optimoptions(@lsqnonlin);
 options.Display = 'none';
 fit = lsqnonlin(fitfcn, Guess,lb,ub,options);
+% fit = lsqcurvefit(@(x,f)Pbf./Lorentzian(x,f,opts),Guess,Fbf,ones(1,length(Fbf)),[],[],options);
 %tweezercalib essentially does >>fit = lsqcurvefit(@(x,f)Pbf./Lorentzian(x,f,opts),Guess,Fbf,ones(1,length(Fbf)),[],[],options);
 % There is no real difference between the two, +-1% difference. I like normalizing in log-space over normalizing all values to 1.
 % @lsqcurvefit(@(x,xdata)fcn(x,xdata), xdata, ydata,...) is essentially @lsqnonlin(@(x)fcn(x,xdata)-ydata,...), doesn't matter which to use

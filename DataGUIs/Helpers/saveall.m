@@ -10,6 +10,11 @@ if nargin < 1
     name = '';
 end
 
+%If called in command form, change e.g. '2' -> 2
+if isa(whattosave, 'char')
+    whattosave = str2double(whattosave);
+end
+
 fprintf('Saving...')
 
 folnam = [name '_' datestr(now, 'yymmdd_HHMMSS')];

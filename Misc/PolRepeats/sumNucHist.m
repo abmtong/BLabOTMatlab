@@ -2,10 +2,12 @@ function [out, xc, ycs] = sumNucHist(intr, inOpts)
 
 %RTH options
 opts.binsz = 0.5; %RTH binsize, best if this divides 1
-opts.roi = [-200 800]; %Region of interest
+opts.roi = [-inf inf]; %Region of interest
 opts.normmeth = 2; %1= 1/median, 2= s/bp; seems no real difference? (median is used to average across traces either way)
 opts.Fs = 3125;
 opts.fil = 10; %Filter
+opts.binmeth = 1; %=1, pt in bin = count ; =2, 'Antony method' : Draw a line between adjacent points, relative length in bin = count
+opts.prc = 50; %Percentile(s) ; 50 default is median
 
 %Display options
 opts.verbose = 1;
@@ -33,8 +35,6 @@ if isinf(opts.roi(2))
     opts.roi(2) = max( cellfun(@max, intr) );
 end
 
-    
-
 len = length(intr);
 ycs = cell(1,len);
 
@@ -42,12 +42,17 @@ ycs = cell(1,len);
 for i = 1:len
     %Compute the residence time
     trF = windowFilter(@mean, intr{i}, opts.fil, 1);
-    [~, x, ~, y] = nhistc(trF, opts.binsz);
+    switch opts.binmeth
+        case 1 %Normal binning: @nhistc
+            [~, x, ~, y] = nhistc(trF, opts.binsz);
+        case 2 %Antony method
+            [y, x] = antonyBin(trF, opts.binsz);
+    end
     %Pad front and end with NaNs, if necessary
     if x(1) > opts.roi(1)
         npad = ceil(x(1) - opts.roi(1) ) / opts.binsz;
         y = [nan(1,npad) y];
-        x = [x(1) - (1:npad) * opts.binsz x];
+        x = [x(1) - fliplr(1:npad) * opts.binsz x];
     end
     if x(end) < opts.roi(2)
         npad = ceil(opts.roi(2) - x(end)) / opts.binsz;
@@ -67,9 +72,11 @@ for i = 1:len
     switch opts.normmeth
         case 1 %Norm to median
             yc = yc / median(yc, 'omitnan');
-        case 2 %Convert to bp/s
+        case 2 %Convert from counts to bp/s
             yc = yc / opts.Fs / opts.binsz;
     end
+    
+    
     
     %Save the yc
     ycs{i} = yc(:);
@@ -78,7 +85,8 @@ end
 %Take the median, omitnan to ignore cropped regions
 ycm = [ycs{:}]; %ycs is column arrays, so this makes a matrix
 % sds = std(ycm, [], 2, 'omitnan');
-ycm = median(ycm, 2, 'omitnan');
+% ycm = median(ycm, 2, 'omitnan');
+ycm = prctile(ycm, opts.prc, 2); %Seems that @prctile automatically omits nans?
 
 out = ycm';
 

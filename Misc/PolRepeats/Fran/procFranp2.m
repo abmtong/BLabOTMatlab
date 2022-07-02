@@ -17,6 +17,15 @@ fol = {d([d.isdir]).name};
 fols = fol(3:end); %Remove '.' and '..'
 %Folders are named "prefix Name", e.g. 'c Nuc F', Name = comment, prefix is just sorting
 
+%Do two rounds of rulerAlign, second round is more 'precise'
+inrAop2 = inrAop;
+%New start will be at zero
+inrAop2.start = 0;
+%Change filtering and search params
+inrAop2.perschd = inrAop2.perschd/2;
+inrAop2.filwid = inrAop2.filwid*2;
+inrAop2.binsm = inrAop2.binsm/2;
+
 %Storage
 len = length(fols);
 nams = cell(1,len);
@@ -40,6 +49,9 @@ for i = 1:length(fols)
     d0 = cellfun(@(x) x - mean(x(1:10)), d, 'Un', 0);
     %RulerAlign
     dR = rulerAlignV2(d0, inrAop);
+    %RulerAlign again, twice
+    dR = rulerAlignV2(dR, inrAop2);
+    dR = rulerAlignV2(dR, inrAop2);
     %SumNucHist
     [hy, hx] = sumNucHist(dR, inrAop);
     %Process filename

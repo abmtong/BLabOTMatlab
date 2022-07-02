@@ -1,4 +1,9 @@
 function [im_ch1, im_ch2, im_ch3, im_ch4] = nd2read(filename, varargin)
+if nargin < 1 || isempty(filename)
+    [f p]= uigetfile('*.nd2');
+    filename = fullfile(p,f);
+end
+
 tic
 finfo = nd2finfo(filename);
 disp(['analyzing file structure used ', sprintf('%0.2f', toc), ' seconds'])

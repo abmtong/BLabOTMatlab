@@ -34,15 +34,14 @@ opts.Fs = 3125; %Fsamp, just for plotting X-axis
 
 %Options: Repeat pause characteristics
 opts.start = tra(1); %Start position, bp
-opts.pauloc = [83 108 141 168 236]; %Known pause location
-opts.paustr = [.15 .25 .15 .25 .25]; %Known pause strength (taken from doi:10.1038/s41467-018-05344-9)
+opts.pauloc = [83 108 141 168 236]; %Known pause location, shown for the His molecular ruler
+opts.paustr = [.15 .25 .15 .25 .25]; %Known pause strength (taken from doi:10.1038/s41467-018-05344-9), 'combined conditions'
 opts.per = 239; %Repeat length, bp
 opts.persch = [.9 1.1]; %Search range, proportion of period
 opts.perschd = .05; %Granularity of search, bp; also doubles as the bin size [was .025nm in Antony code, which is .07bp]
 opts.permeth = 2; %Method to generate average RTH, see code
 opts.scrmeth = 1; %Method to score a RTH, see code
 opts.nrep = 8; %Number of repeats
-
 
 %To improve:
 %Hm seems to be sensitive to filtering (i.e. binsm) - fixed, binsm now is in bp, not pts (now only pts field is filwid)
@@ -93,13 +92,12 @@ if iscell(tra)
     arrayfun(@(x) plot(xl, x * [1 1]), bsxfun(@plus, opts.pauloc, (0:opts.nrep-1)'*opts.per))
     cellfun(@(x, y) text( length(x)/opts.Fs, x(end), sprintf('%d', y) ), out, num2cell(nums))
     %Plot aligned histogram
-    [sumy, sumx] = sumNucHist(out, setfield(opts, 'disp', [])); %#ok<SFLD>
+    [sumy, sumx] = sumNucHist(out, setfield(setfield(opts, 'verbose', 1), 'disp', [])); %#ok<SFLD>
     %Plot sum histogram
     inds = arrayfun(@(x) find(sumx >= x, 1, 'first'), (0:opts.nrep)*opts.per);
     yy = median( reshape( sumy(inds(1):inds(end)-1), [], opts.nrep ), 2 )';
     xx = sumx(inds(1):inds(2)-1);
     figure, plot(xx,yy);
-    
     return
 end
 
