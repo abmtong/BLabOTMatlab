@@ -4,7 +4,10 @@ if nargin < 2
 end
 
 Fs=800;
+% Fs = 4000/3;
 align = 0;
+dsamp = 100;
+dt = 0;
 %Align by crossing a pt
 st = cellfun(@(x) find(x > align, 1, 'first'), dat, 'Un', 0);
 dat = cellfun(@(x,y) x(y:end), dat, st, 'Un', 0);
@@ -14,7 +17,7 @@ fprintf('Picking %d traces by eye\n', len)
 fg = figure;
 hold on
 uicontrol(fg, 'Units', 'normalized', 'Position', [0, 0, .05, .05], 'String', '[Output bool]', 'Callback', @outputtf);
-trs = cellfun(@(x)plot((1:floor(length(x)/50))/Fs*50, windowFilter(@mean, x, [], 50)),dat, 'Un', 0);
+trs = cellfun(@(x,y)plot((1:floor(length(x)/dsamp))/Fs*dsamp + y, windowFilter(@mean, x, [], dsamp)),dat,num2cell(dt * (0:length(dat)-1)  ), 'Un', 0);
 function outputtf(~,~)
     %Assignin
     assignin('base', 'tfpbetmp', cellfun(@isvalid, trs))

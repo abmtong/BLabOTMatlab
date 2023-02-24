@@ -16,7 +16,7 @@ if nargin
 end
 
 %use lsqnonlin to find equilibrium xwlc param
-%want tehter length = trapsep-beaddiam-2*x = XWLC(kx, XWLCparmas{:}) * contour length
+%want tether length = trapsep-beaddiam-2*x = XWLC(kx, XWLCparams{:}) * contour length
 fitfcn = @(x) opts.trapsep - 2 * x - XWLC(opts.trapk * x, opts.xwlcparams{:}) * opts.tcontour;
 lsqopts = optimoptions('lsqnonlin');
 lsqopts.Display = 'none';

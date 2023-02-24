@@ -45,6 +45,9 @@ fbinx = fbins(1:end-1) + opts.fbinsz/2;
 [fn, ~, cind] = histcounts(frcf, fbins);
 %bin vel by frc
 vbin = arrayfun(@(x) vels(cind == x), 1:max(cind), 'uni', 0);
+%Take basic stats (no filtering out pauses)
+mvbin = cellfun(@mean, vbin); %Raw mean velocity
+mvbinsd = cellfun(@std, vbin); %Raw mean velocity
 
 %do essentially what @vdist does to every trace but then bin by progress
 % I do this all in cellfun, probably easier to read as for loop, but vOv
@@ -57,6 +60,10 @@ vxbinx = vxbins(1:end-1) + opts.vbinsz/2;
 vybin = cellfun(@(x)histcounts(x, vxbins), vbin, 'un', 0);
 %normalize
 vybin = cellfun(@(x) x/sum(x)/opts.vbinsz, vybin, 'un', 0);
+
+%If a fbin has no points, this will NaN and error lsqcurvefit. Just set to zero
+tfnan = cellfun(@(x) all(isnan(x)), vybin);
+vybin(tfnan) = {zeros(size(vybin{1})) };
 
 %setup fitting
 %pdf to two gaussians centered at 0 and [positive]
@@ -127,8 +134,8 @@ if opts.verbose
     xlabel('Force')
     ylabel('N')
 end
-%Vel, sd, n, fbin, pct paused, fit [0mean 0sd 0pct , vmean vsd vpct]
-out = [vs' vsd' fn' fbinx' pau' fitmat];
+%Vel, sd, n, fbin, pct paused, fit [0mean 0sd 0pct , vmean vsd vpct vnet]
+out = [vs' vsd' fn' fbinx' pau' fitmat mvbin(:) mvbinsd(:)];
 
 
 

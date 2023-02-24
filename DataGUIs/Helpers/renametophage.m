@@ -10,6 +10,7 @@ switch sn
     case 'ContourData'
         %Phage F-X data, should probably be shown in ForExtGUI but eh let it be openable here
         out.time = {in.time};
+        out.extension = {in.extension};
         out.contour = {in.extension};
         out.force = {in.force};
         out.forceAX = {out.forceAX};
@@ -20,6 +21,7 @@ switch sn
         %Antony's analysis code
         out.time = {in.time};
         out.contour = {in.dist};
+        out.extension = {in.dist};
         out.force = {in.force};
     case 'tsdata'
         %My code for analysis of timeshared data
@@ -33,6 +35,7 @@ switch sn
     case 'output'
         %Some of Ronen/Antony's Tx data is in this format
         out.time = {in.time};
+        out.extension = {in.signal};
         out.contour = {in.signal};
         out.force = {in.force};
     otherwise

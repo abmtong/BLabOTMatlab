@@ -21,6 +21,8 @@ if nargin > 1
     opts = handleOpts(opts, inOpts);
 end
 
+opts.fvopts.Fs = opts.Fs;
+
 %If data is struct, this is a struct of cells (eg for separate conditions) - batch
 if isstruct(data)
     if nargout < 2
@@ -38,7 +40,7 @@ end
 %Do fitVitterbi, take staircases. Dwell dist will be wrong if dir = -1
 [~, trs] = fitVitterbi_batch(data, opts.fvopts);
 %Remove empty (failed traces)
-trs = trs(~cellfun(@isempty, trs));
+% trs = trs(~cellfun(@isempty, trs));
 %Join backtracks
 [trs, isbt] = cellfun(@(x)removeTrBts(x, opts.dir), trs, 'Un', 0);
 %Convert staircases to ind, mea

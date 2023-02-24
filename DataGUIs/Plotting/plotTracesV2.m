@@ -4,6 +4,8 @@ function plotTracesV2(inOpts)
 opts.path = [];
 opts.nameTraces = 1;
 opts.normCon = 0;
+opts.normConStart = 5000; %Starting bp for normCon
+opts.normConOffset = 30; %Offset per trace for normCon
 opts.dT = 3;
 opts.fwid = [];
 opts.fdec = 10;
@@ -13,6 +15,7 @@ opts.cropstr = '';
 opts.ymult = 1;
 opts.Fs = 2500;
 opts.plotUnfilt = 0;
+opts.color = []; %Use lines(7) as colors
 
 if nargin
     opts = handleOpts(opts, inOpts);
@@ -51,26 +54,49 @@ end
 tF = cellfun(@(x) windowFilter(@mean, x, opts.fwid, opts.fdec), ts, 'Un', 0);
 
 %Get color, to plot traces the same color (key off of trN field)
-cols = mat2cell( lines(7), ones(1,7) );
+if isempty(opts.color)
+    cols = mat2cell( lines(7), ones(1,7) );
+else
+    if iscell(opts.color)
+        cols = opts.color;
+    else
+        cols = {opts.color};
+    end
+end
 nc = length(cols);
 
 %And con offsets
 if opts.normCon
-    y0s = cellfun(@(x) x(1), datF);
+    y0s = zeros(1,length(datF));
+    for i = 1:length(datF)
+        if isempty(datF{i})
+            y0s(i) = nan;
+        else
+            y0s(i) = datF{i}(1);
+        end
+    end
+%     ki = ~cellfun(@isempty, datF);
+%     tmp = cellfun(@(x) x(1), datF(ki));
+%     y0s = zeros(1,length(datF));
+%     y0s(ki) = tmp;
+    
     [~, ic, ia] = unique(datn);
     y0s = y0s(ic(ia));
-    dys = 30 * datn; %Technically a bit wrong, should be 30 * trace num which isnt trN
-    yoff= arrayfun(@(x,y) 9000 - x - y  , y0s, dys);
+    dys = opts.normConOffset * datn; %Technically a bit wrong, should be 30 * trace num which isnt trN
+    yoff= arrayfun(@(x,y) opts.normConStart - x - y  , y0s, dys);
 else
     yoff = zeros(1,length(dat));
 end
 
+%Time offsets
+
+
 %Plot unfiltered
 if opts.plotUnfilt
-    cellfun(@(x,y,z)plot(ax, x,y+z,'Color', .7 * ones(1,3)), ts, dat, num2cell(yoff));
+    cellfun(@(x,y,dt,z)plot(ax, x+opts.dT*dt,y+z,'Color', .7 * ones(1,3)), ts, dat, num2cell(datn), num2cell(yoff));
 end
 %Plot filtered
-cellfun(@(x,y,z,ci)plot(ax, x,y+z, 'Color', cols{ mod(ci-1,nc)+1 }, 'LineWidth', 1), tF, datF, num2cell(yoff), num2cell(datn) );
+cellfun(@(x,y,z,dt,ci)plot(ax, x+opts.dT*dt,y+z, 'Color', cols{ mod(ci-1,nc)+1 }, 'LineWidth', 1), tF, datF, num2cell(yoff), num2cell(datn), num2cell(datn) );
 
 %Add names to the end of each 
 if opts.nameTraces
@@ -82,12 +108,16 @@ if opts.nameTraces
     ci = length(datn) + 1 - ci;
     yn = cellfun(@(x) x(end), datF(ci));
     tn = cellfun(@(x) x(end), tF(ci));
-    cellfun(@(x,y,z)text(ax,x,y,z, 'Interpreter', 'none'), num2cell(tn), num2cell(double(yn+yoff(ci))), datnam(ci))
+    cellfun(@(x,y,z,dt)text(ax,x+opts.dT*dt,y,z, 'Interpreter', 'none'), num2cell(tn), num2cell(double(yn+yoff(ci))), datnam(ci), num2cell(datn(ci)))
 end
 
 %Set up axis
 xlabel(ax, 'Time (s)')
-ylabel(ax, 'Position (bp)')
+if opts.normCon
+    ylabel(ax, 'Position (bp, relative)')
+else
+    ylabel(ax, 'Position (bp)')
+end
 ax.FontSize = 16;
 
 

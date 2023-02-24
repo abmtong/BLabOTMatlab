@@ -118,7 +118,7 @@ if opts.verbose
         ax(j,1) = subplot2(fg, [i 2], j);
         hold(ax(j,1), 'on')
         plot(ax(j,1), ccx, ccy, 'o', 'Color', [.7 .7 .7])
-        plot(ax(j,1), ccx, cfh{j}.ccdf(cfits{j}, ccx), 'Color', 'b')
+        plot(ax(j,1), [0 ccx], cfh{j}.ccdf(cfits{j}, [0 ccx]), 'Color', 'b')
         set(ax(j,1), 'YScale', 'log')
         etxt = sprintf('[%0.3g, %0.3g]\n', cfits{j});
         text(ax(j,1), 0, 1, sprintf('AIC: %0.2f\n %s', aicscf(j) - min(aicscf), etxt), 'VerticalAlignment', 'top')
@@ -128,8 +128,8 @@ if opts.verbose
         hold(ax(j,2), 'on')
         plot(ax(j,2), ccx, ccy, 'o', 'Color', [.7 .7 .7])
         mcfcell = num2cell(mfits{j});
-        mley = mfh{j}.cdf(ccx, mcfcell{:});
-        plot(ax(j,2), ccx, mley, 'Color', 'g')
+        mley = mfh{j}.cdf([0 ccx], mcfcell{:});
+        plot(ax(j,2), [0 ccx], mley, 'Color', 'g')
         set(ax(j,2), 'YScale', 'log')
         etxt = sprintf('[%0.3g, %0.3g]\n', mfits{j});
         text(ax(j,2), 0, 1, sprintf('AIC: %0.2f\n %s', aics(j)- min(aics), etxt), 'VerticalAlignment', 'top')

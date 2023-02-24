@@ -1,5 +1,5 @@
 function out = RP(infp, inOpts)
-%Runs RPp1 > RPp2 > RPp3 in a row
+%Runs RPp1 > RPp2 > RPp3 > RPp4 in a row
 
 if nargin < 1 || isempty(infp)
     [f, p] = uigetfile('*.mat', 'Mu', 'on');
@@ -40,12 +40,26 @@ if ~isfield(cd, 'ContourData')
 end
 
 %Run RP
+%P1: Extract pulling cycles
 p1out = RPp1(cd.ContourData, opts);
+%P2: Separate pull and relax ; find rip
 p2out = RPp2(p1out, opts);
+%P3: Fit pull to XWLC, calculate protein contour
 p3out = RPp3(p2out, opts);
+%P4: Find relax refold. Takes some time; could be better
+p4out = RPp4(p3out, opts);
 
-out = p3out;
+%Save this struct
+out = p4out;
 
 %Check a random three traces
 rr = randperm(length(out), 3);
 RPcheck(out(rr))
+
+%Run histograms
+%P3b: Unfolding histogram
+RPp3b(out);
+%P3b_kv: Unfolding histogram (stepfinding)
+RPp3b_kv(out);
+%P4b: Refolding histogram
+RPp4b(out);

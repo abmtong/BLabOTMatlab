@@ -1,7 +1,7 @@
 function out = calcXingTime(trs, inOpts)
 
 opts.rng = [558 704]-16; %Start to end position
-opts.Fs = 1e3;
+opts.Fs = 800;
 opts.fil = 50;
 
 if nargin > 1

@@ -7,6 +7,12 @@ if nargin<2
     binsz = 0.1;
 end
 
+if isempty(inData)
+    outY = [];
+    outX = [];
+    return
+end
+
 miny = floor(min(inData/binsz))*binsz;
 maxy = ceil(max(inData/binsz))*binsz;
 outX = miny:binsz:maxy;

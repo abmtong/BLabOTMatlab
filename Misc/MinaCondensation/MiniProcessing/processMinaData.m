@@ -1,6 +1,12 @@
-function out = processMinaData(inp, tffit)
+function out = processMinaData(inp, tffit, tfsplit)
+%Takes a folder structure thats like this:
+% \Parent\Condition\abcd.mat
+%And for each mat file, runs mini2con on it, then splitcondfiles
 
-if nargin < 1
+%Run-one-and-done, for testing eg XWLC fitting options
+
+
+if nargin < 1 || isempty(inp)
     inp = uigetdir('D:\Data\');
     if isempty(inp)
         return
@@ -10,14 +16,15 @@ end
 if nargin < 2
     tffit = 1;
 end
+
+if nargin < 3
+    tfsplit = 1;
+end
+
 %mini2con opts. Only used if tffit
 m2copts.frcfil = 10;
 
-%Takes a folder structure thats like this:
-% \Parent\Condition\abcd.mat
-%And for each mat file, runs mini2con on it, then splitcondfiles
 
-%Run-one-and-done, for testing eg XWLC fitting options
 
 
 %Input: Parent folder, that contains folders for each separate trace
@@ -44,10 +51,11 @@ for i = 1:length(folnams)
     
     %Run splitcondfiles on the output
     curdir = fullfile(curdir, 'mini2con');
-    dd = dir(fullfile( curdir, '*.mat'));
-    nams = {dd.name};
-    cellfun(@(x) splitcondfiles( fullfile( curdir, x) ), nams)
-    
+    if tfsplit
+        dd = dir(fullfile( curdir, '*.mat'));
+        nams = {dd.name};
+        cellfun(@(x) splitcondfilesV2( fullfile( curdir, x) ), nams)
+    end
     %Gather lo and hi crops
     [lo, ~, ~, ~, loN] = getFCs(-1, fullfile(curdir, 'Split_low'));
     [hi, ~, ~, ~, hiN] = getFCs(-1, fullfile(curdir, 'Split_hi'));

@@ -147,14 +147,24 @@ end
 %ln(t_restart) = -Fdx + ln(C)
 medrsts = zeros(1,nf);
 medfrcc = cell(1,nf);
+medrstsraw = cell(1,nf);
+medrstslsd = zeros(1,nf);
+q1 = zeros(1,nf);
+q3 = zeros(1,nf);
 for i = 1:nf
      tmp = out(i).dws;
      tmp(isinf(tmp)) = [];
      medrsts(i) = median(tmp);
+     medrstsraw{i} = tmp;
+     medrstslsd(i) = std(log(tmp));
+     q1(i) = prctile(tmp, 25);
+     q3(i) = prctile(tmp, 75);
 end
 
 figure('Name', 'Arrhenius fitting')
-plot(fs, log(medrsts), 'ok')
+% plot(fs, log(medrsts), 'ok')
+errorbar(fs, log(medrsts), medrstslsd, 'LineStyle', 'none'); %SD
+% errorbar(fs, log(medrsts), log(q1), log(q3), 'Marker', 'o', 'LineStyle', 'none'); %Quartile
 ylabel('log(t_{restart})')
 xlabel('Force (pN)')
 hold on
@@ -175,10 +185,21 @@ text(1, log(median(medrsts)), sprintf('[m,b] = [%0.2f,%0.2f]', -pf(1)*4.14, exp(
 
 %Linear + flat fit
 fitfcn = @(x0,x) (x0(1)*x + x0(2)) .* (x<x0(3)) + (x>=x0(3)) .* ( x0(3) * x0(1) + x0(2));
-ft = lsqcurvefit(fitfcn, [pf 10], fs, log(medrsts) );
+[ft, ~, rsd, ~, ~, ~, jcb] = lsqcurvefit(fitfcn, [pf 10], fs, log(medrsts) );
+%95% CI interval of fits
+ci = nlparci( nlinfit( fs, log(medrsts) , fitfcn, ft) , rsd,'Jacobian',jcb);
+
+
+%Join fit vals + CIs
+ci = [ft(:) ci];
+%Scale CI: slope to pNnm, log(time) to time
+ci(1,:) = ci(1,:) * -4.14;
+ci(2,:) = exp(ci(2,:));
+out = ci;
 
 plot(xx, fitfcn(ft, xx))
 text(1, log(median(medrsts))-0.5, sprintf('[dx,t0,xmax] = [%0.2f,%0.2f,%0.2f]', -ft(1)*4.14, exp(ft(2)), ft(3)))
+
 
 %% Maybe switch to fitting individual points instead of medians ?
 

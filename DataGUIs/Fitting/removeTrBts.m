@@ -7,6 +7,12 @@ if nargin < 2
     stepdir = 1;
 end
 
+if isempty(tr)
+    outtr = [];
+    isbt = [];
+    return
+end
+
 tr0 = tr;
 
 while true

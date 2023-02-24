@@ -1,4 +1,4 @@
-function out = RPcheck(inst)
+function RPcheck(inst)
 %Check RP results. Can be used at any point in the RP process : checks fieldnames for progress
 
 fil = 10;

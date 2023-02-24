@@ -3,7 +3,11 @@ Readme last edited 07/23/2020
 @author Alexander Tong (tonga@berkeley.edu)
 
 This is the Matlab code written by me to be used for 
-processing and analysis of optical tweezers data. 
+processing and analysis of optical tweezers data.
+
+Version is R2016a with all/most toolboxes, issues may arise from different
+ Matlab versions and toolbox installs. Hopefully, those errors should be
+ easy to debug should you need to use a different Matlab version
 
 Highlights include processing data from raw optical tweezers instrument output to usable distances,
  and their analysis for stepfinding, velocity profiling, and pause detection.

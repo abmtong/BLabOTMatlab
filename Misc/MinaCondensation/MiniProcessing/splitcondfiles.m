@@ -23,6 +23,8 @@ if nargin < 1
     return
 end
 
+error('Use V2 instead!')
+
 %Convert filepath
 [p, f, e] = fileparts(infp);
 f = [f e];

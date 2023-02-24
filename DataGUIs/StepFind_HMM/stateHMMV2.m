@@ -293,6 +293,7 @@ out.fitnoopt = st2(:)';
 out.start = inModel;
 %Changed output to not be out.start and out.finish, so old code may error.
 
+%Plot: Trace and fit, r/g/b = MLE fit, Vit fit (input model), and Vit fit
 if verbose == 1
     figure, plot(tr, 'Color', [.7 .7 .7]), hold on, plot( newmu(st), 'b' )
     plot( newmu(st2)+range(tr)/5, 'g' )

@@ -13,9 +13,9 @@ end
 %Fade first half red > white, then second half white > blue?
 
 %Do fade by decreasing saturation
-h = round(n/2);
-s = (1:h)'/h;
-o = ones(h,1);
+nc = round(n/2);
+s = (1:nc)'/nc;
+o = ones(nc,1);
 
 outhsv = [ o flipud(s) o ; o*2/3 s o]; %[ Red Sat-fade MaxValue ; Blue Sat-increase MaxValue]
 

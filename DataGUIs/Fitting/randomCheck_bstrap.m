@@ -5,7 +5,7 @@ function [outp, outraw] = randomCheck_bstrap(seq)
 % Computes empirical [mean, sd] of the number of runs of the resampled sequences, returns P-value
 
 
-method = 2; %Generating new samples via permutation or resampling with replacement (bootstrapping)
+method = 2; %Generating new samples via (1) permutation or (2) resampling with replacement (traditional bootstrapping)
 
 nstrap = 1e4; %Simulate 1e4 bootstraps
 % nstrap = min(max(1e4, length(seq)*10), 1e5); %Simulate 1e4 to 1e5 boostraps

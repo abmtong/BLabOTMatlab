@@ -12,11 +12,11 @@ dnalen = 6256; %DNA length, for XWLC fitting
 
 opts.fil=50; %XWLC fit filter (dsamp)
 
-opts.frcfil = 0; %Filter force for con conversion? 0=no , positive = windowFilter width
+opts.frcfil = 20; %Filter force for con conversion? 0=no , positive = windowFilter width
 
 %fitForceExt opts
 %Cutoff forces, for fitting
-opts.loF = 1; %Not all pulling curves go this low, unfortunately. Will make do?
+opts.loF = .5; %Not all pulling curves go this low, unfortunately. Will make do?
 opts.hiF = 20; %Some fit funny ? like they get stiffer at high F? Maybe Mini rolloff is different. Just need to cover ~1=15pN
 %Guess for fitting: [ PL(nm) SM(pN) CL(bp) Off(nm) Off(F) ]
 opts.x0 = [20 200 dnalen -1500 0]; %Empirical offset guess
@@ -28,7 +28,7 @@ if nargin > 1
     opts = handleOpts(opts, inOpts);
 end
 
-if nargin < 1
+if nargin < 1 || isempty(infp)
     [f, p] = uigetfile('*.mat', 'Mu', 'on');
     if ~iscell(f)
         f = {f};
@@ -75,8 +75,8 @@ fig.Name = f;
 %Convert extension data to contour data
 frc = frc - fit(5); %Apply force offset
 ext = ext - fit(4); %Apply ext offset
-frcf = windowFilter(@mean, frc, opts.frcfil, 1);
-con = ext ./ XWLC(frcf, fit(1), fit(2)) / 0.34; %Convert to contour
+frcf = windowFilter(@median, frc, opts.frcfil, 1);
+con = ext ./ XWLC(frcf, fit(1), fit(2)) / 0.34; %Convert to contour. Use filtered force vals
 
 %Create output struct
 stepdata = struct('time', {{tim-tim(1)}}, 'extension', {{ext}}, 'contour',{{con}}, 'force', {{frc}}); 

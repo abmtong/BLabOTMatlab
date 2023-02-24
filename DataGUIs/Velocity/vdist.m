@@ -1,4 +1,4 @@
-function [ccts, xbins, cvel, cfilt, ccrop] = vdist(c, inOpts)
+function [ccts, xbins, cvel, cfilt, ccrop, fit] = vdist(c, inOpts)
 %Calculates the velocity pdf of c by using sgolay filtering
 %outputs: velocity pdf (normalized), velocity bins, trace -> velocity, ...
 %  trace position filtered, trace position cropped (no filter)
@@ -38,17 +38,26 @@ cf2 = cf2 * opts.velmult;
 %Bin values
 [ccts, xbins] = nhistc(cf2, opts.vbinsz);
 
-if opts.verbose
+if opts.verbose || nargout > 5
 %     %Transform velocity to positive, nm
 %     xbins = xbins*opts.velmult;
 %     ccts = ccts / abs(opts.velmult);
     %Velocity cutoff for fitting
-    vmin = opts.vfitlim(1);
-    vmax = opts.vfitlim(2);
-    xf = xbins(xbins>vmin & xbins < vmax);
-    vf = ccts(xbins>vmin & xbins < vmax);
+    ki = false(size(xbins));
+    for i = 1:length(opts.vfitlim)/2
+        ki = ki | (xbins >= opts.vfitlim( (i-1)*2+1 ) & xbins <= opts.vfitlim( (i-1)*2+2 ));
+    end
+%     vmin = opts.vfitlim(1);
+%     vmax = opts.vfitlim(2);
+%     xf = xbins(xbins>vmin & xbins < vmax);
+%     vf = ccts(xbins>vmin & xbins < vmax);
+%     cfft = cf2(1:opts.sgp{1}:end);
+%     cfft = cfft(cfft > vmin & cfft < vmax);
+    
+    xf = xbins(ki);
+    vf = ccts(ki);
     cfft = cf2(1:opts.sgp{1}:end);
-    cfft = cfft(cfft > vmin & cfft < vmax);
+    cfft = cfft(ki);
     
     %Gaussians
     npdf = @(x0, y) normpdf(y, x0(1), x0(2))*x0(3);
@@ -82,8 +91,8 @@ if opts.verbose
             fit([3 6]) = fit([3 6])/sum(fit([3 6]));
         case 1 %For Phage
             %Fit two gaussians, one at zero, other positive
-            sdg = std(cf2)/2;
-            ampg = max(vf)*2.5/sdg/2;
+            sdg = std(cf2, 'omitnan')/2;
+            ampg = max(vf, [], 'omitnan')*2.5/sdg/2;
             xg = [0 sdg ampg prctile(cf2, 60) sdg ampg];
             lb = [0 0 0 0 0 0];
             ub = [0 inf 1 inf inf 1];
@@ -117,15 +126,17 @@ if opts.verbose
     fp = bigauss(fit, xbins);
     
     %plot
-    figure('Name', sprintf('vdist %s: Speed %0.2f +- %0.2f (%0.2f SEM) nm/s, (%0.2f,%0.2f) pct (tloc,paused)\n', inputname(1), fit(4:5), fit(5)/ sqrt(fit(6)*sum(cellfun(@length, cvel))/opts.sgp{2}), 100*fit(6), 100*fit(3)))
-    bar(xbins, ccts, 'FaceColor', [0 1 1], 'EdgeColor', 'none'), hold on
-    plot(xbins, fp, 'LineWidth', 2, 'Color', 'k')
-    plot(xbins, npdf(fit(1:3),xbins), ':', 'LineWidth', 1.5, 'Color', 'k')
-    plot(xbins, npdf(fit(4:6),xbins), '--', 'LineWidth', 1, 'Color', 'k')
-    line(fit(4) * [1 1], [0 max(fp)*2], 'LineStyle', '--', 'LineWidth', 1, 'Color', 'k')
-    %N for SEM purposes here is Ntot * pct / framelen, i.e. framelen pts become one [works for order 0 or 1, higher order = 'less N']
-    %  we plot all the data to make the histogram smoother, but for stats use the decimated data
-    xlim(opts.xlim)
+    if opts.verbose
+        figure('Name', sprintf('vdist %s: Speed %0.2f +- %0.2f (%0.2f SEM) nm/s, (%0.2f,%0.2f) pct (tloc,paused)\n', inputname(1), fit(4:5), fit(5)/ sqrt(fit(6)*sum(cellfun(@length, cvel))/opts.sgp{2}), 100*fit(6), 100*fit(3)))
+        bar(xbins, ccts, 'FaceColor', [0 1 1], 'EdgeColor', 'none'), hold on
+        plot(xbins, fp, 'LineWidth', 2, 'Color', 'k')
+        plot(xbins, npdf(fit(1:3),xbins), ':', 'LineWidth', 1.5, 'Color', 'k')
+        plot(xbins, npdf(fit(4:6),xbins), '--', 'LineWidth', 1, 'Color', 'k')
+        line(fit(4) * [1 1], [0 max(fp)*2], 'LineStyle', '--', 'LineWidth', 1, 'Color', 'k')
+        %N for SEM purposes here is Ntot * pct / framelen, i.e. framelen pts become one [works for order 0 or 1, higher order = 'less N']
+        %  we plot all the data to make the histogram smoother, but for stats use the decimated data
+        xlim(opts.xlim)
+    end
     
     if opts.verboseplot
         vthr = fit(2)*opts.verboseplotsd;

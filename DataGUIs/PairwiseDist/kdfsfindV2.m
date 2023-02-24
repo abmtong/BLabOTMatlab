@@ -14,6 +14,7 @@ opts.rmburst = 0; %Remove bursts in kdfdwellfind
 opts.verbose = 1; %Plot
 
 opts.Fs = 2500; %Fs, only required for dwell times (nargout > 3)
+opts.dir = -1; %Direction, for tra output only
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
@@ -86,8 +87,16 @@ if iscell(incon)
             pklocd = pkloc;
         end
         %To find steps, do HMM with found step positions, arbitrarily low noise [-> whatever is 'best']
-        nois = 3.0; %Cant be too low, else hmm errors (probability -> 0)
-        dwf = cellfun(@(x,y)kdfdwfindHMM(x,struct('mu',y,'sig',nois),0), cellfun(@(x)windowFilter(@mean, x, 3,1), incon(ki), 'un',0), pklocd(ki));
+%         nois = 3.0; %Cant be too low, else hmm errors (probability -> 0)
+        
+        nois = max( 3, mean(ssz)/2 );
+        if opts.dir == 1 %Positive velocity. Reverse pkloc 
+            dwf = cellfun(@(x,y)kdfdwfindHMM(x,struct('mu',y(end:-1:1),'sig',nois),0), incon(ki), pklocd(ki));
+        else %opts.dir = -1
+            dwf = cellfun(@(x,y)kdfdwfindHMM(x,struct('mu',y,'sig',nois),0), incon(ki), pklocd(ki));
+%             dwf = cellfun(@(x,y)kdfdwfindHMM(x,struct('mu',y,'sig',nois),0), cellfun(@(x)windowFilter(@mean, x, 3,1), incon(ki), 'un',0), pklocd(ki));
+        end
+%         dwf = cellfun(@(x,y)kdfdwfindHMM(x,struct('mu',y,'sig',nois),0), cellfun(@(x)windowFilter(@mean, x, 3,1), incon(ki), 'un',0), pklocd(ki));
         %Extract fit staircases
         tra = {dwf.fit};
         

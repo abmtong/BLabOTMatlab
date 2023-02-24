@@ -144,7 +144,11 @@ fig.Visible = 'on';
             d = {d.name};
             len = length(d);
             %Sort, so it's by day then by N##
-            d = sort_phage(d);
+            try
+                d_sort = sort_phage(d); %If this errors, just keep the original order
+                d = d_sort;
+            catch
+            end
             fileSlider.Min = 1;
             fileSlider.Max = len;
             fileSlider.String = d;
@@ -199,7 +203,7 @@ fig.Visible = 'on';
             trcNotes.String = '';
         end
         %Set the slider to the correct value, update the accompanying text
-        fSamp = 1/mean(cellfun(@(x) mean(diff(x)), stepdata.time));
+        fSamp = 1/median(cellfun(@(x) median(diff(x), 'omitnan'), stepdata.time), 'omitnan');
         fileSlider.Value = find(cellfun(@(x) strcmp(x, file),fileSlider.String),1);
         txtSlider.String = sprintf('%s\n%d/%d\n%0.2fHz', name, round(fileSlider.Value), fileSlider.Max, fSamp);
         %Reset the crop buttons
@@ -309,6 +313,9 @@ fig.Visible = 'on';
             end
             %Trim to plot limits
             cons = cons( cons > str2double(conMin.String) & cons < str2double(conMax.String) );
+            if isempty(cons)
+                return
+            end
             %Set the y bin size; this works well in all(?) cases
             hbinsz = 0.1;
             if radioKDF2.Value
@@ -717,21 +724,24 @@ fig.Visible = 'on';
 
     function custom03_callback(~,~)
 %         %Does FC rescaling, so you can see the effect before you make the files. See @FCrescale for more info.
-        % Alters the figure's stepdata, so rescale is useable for e.g. takePWD
-        customB3.String = 'ScaleFCs';
-        str = permCropB.String;
-        tmp = FCrescale([path file], str);
-        if ~isempty(tmp)
-            stepdata = tmp;
-            refilter_callback
-        end
+%         % Alters the figure's stepdata, so rescale is useable for e.g. takePWD
+%         customB3.String = 'ScaleFCs';
+%         str = permCropB.String;
+%         tmp = FCrescale([path file], str);
+%         if ~isempty(tmp)
+%             stepdata = tmp;
+%             refilter_callback
+%         end
         
-%         %Fit crop to a line, adjust to make it flat. For checking drift (Lumicks/Fran)
-%         customB3.String = 'MakeFlat';
-%         csd = cropstepdata(stepdata, cropT, 0);
-%         pf = polyfit([csd.time{:}], [csd.contour{:}], 1);
-%         stepdata.contour = cellfun(@(x,y) y - x * pf(1) , stepdata.time, stepdata.contour, 'Un', 0);
-%         refilter_callback;
+        %Fit crop to a line, adjust to make it flat. For checking drift (Lumicks/Fran)
+        customB3.String = 'MakeFlat';
+        csd = cropstepdata(stepdata, cropT, 0);
+        tt = [csd.time{:}];
+        yy = [csd.contour{:}];
+        ki = ~isnan(tt) & ~isnan(yy);
+        pf = polyfit(tt(ki), yy(ki), 1);
+        stepdata.contour = cellfun(@(x,y) y - x * pf(1) , stepdata.time, stepdata.contour, 'Un', 0);
+        refilter_callback;
     end
 
     function printFig_callback(~,~)

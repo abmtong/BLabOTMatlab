@@ -8,7 +8,9 @@ end
 
 exts = zeros(size(texts));
 opts.verbose = 0;
-opts = handleOpts(opts, inOpts);
+if nargin > 1
+    opts = handleOpts(opts, inOpts);
+end
 
 for i = 1:length(texts)
     opts.trapsep = texts(i);

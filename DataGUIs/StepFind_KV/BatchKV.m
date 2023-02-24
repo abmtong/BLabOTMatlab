@@ -64,7 +64,8 @@ dwells = dwells / Fs;
 if verbose
     stepN = length(steps);
     stepNp = length(steps(steps>0));
-    newP = normHist(steps, 0.25);
+    [hy, hx, hc] = nhistc(steps, 0.25);
+    newP = [hx(:) hy(:) hc(:)];
     
     figure('Name',sprintf('%s {%s [%s]}', mfilename, inputname(1), sprintf('%0.3f ',inPenalty)));
     %Plot step size distribution
@@ -76,6 +77,8 @@ if verbose
     
     cellfun(@(x,y,c)plot(x+y, 'Color', c), inContour, conshft, colsraw)
     cellfun(@(x,y,c)plot(x+y, 'Color', c), outTra, conshft, cols)
+    
+    try
     
     subplot2([4,1],3);
     x = newP(:,1);
@@ -125,5 +128,8 @@ if verbose
     text( (ft(1)-1) * ft(2), max(yy)*.5,sprintf('Naive guess mean: %0.3f, sd: %0.3f, nmin: %0.2f\n', mn, sd, mn^2/sd^2))
     text( (ft(1)-1) * ft(2), max(yy)*.1,sprintf('Fitdist k = %0.2f, th = %0.5f', gamdist.a, gamdist.b))
     xlim([0 2*xmx])
+    catch
+        warning('BatchKV fitting errored, skipping')
+    end
 end
 fprintf('BatchKV took %0.2fs\n', toc(startT))

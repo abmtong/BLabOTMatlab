@@ -2,8 +2,8 @@ function out = plotMinaConds(dat, fns, inOpts)
 
 opts.fil = 200; %Downsample by this much
 opts.Fs = 1e3; %Fsamp
-opts.minlen = 10; %Trace length, s
-opts.nplot = inf; %How many traces to plot (max)
+opts.minlen = 0; %Trace length, s
+opts.nplot = 0; %How many traces to plot (max)
 opts.medbands = 3; %Plot median trace as data bands (=1 SD, =2 MAD, =3 IQR)
 
 if nargin > 2
@@ -30,6 +30,33 @@ for i = n:-1:1
     %Grab traces
     datlo = tmp.lo;
     dathi = tmp.hi;
+    
+    %Deal with NaNs
+    for j = 1:length(datlo)
+        %Replace NaN with the previous data value
+        isn = find(isnan(datlo{j}));
+        for k = 1:length(isn)
+            datlo{j}(isn(k)) = datlo{j}(isn(k)-1);
+        end
+        assert(~any(isnan(datlo{j})))
+    end
+    for j = 1:length(dathi)
+        %Replace NaN with the previous data value
+        isn = find(isnan(dathi{j}));
+        for k = 1:length(isn)
+            dathi{j}(isn(k)) = dathi{j}(isn(k)-1);
+        end
+        assert(~any(isnan(dathi{j})))
+    end
+%     %Deal with NaNs
+%      % Eh just deal with median(..., 'omitnan')
+%     for j = 1:length(datlo)
+%         dtmp = datlo{j};
+%         %
+%         
+%         
+%     end
+    
     %Filter (downsample)
     datlo = cellfun(@(x) windowFilter(@mean, x, [], opts.fil), datlo, 'Un', 0);
     dathi = cellfun(@(x) windowFilter(@mean, x, [], opts.fil), dathi, 'Un', 0);
@@ -47,11 +74,11 @@ for i = n:-1:1
     %Extend each trace by its final value...
     lenlo = max(cellfun(@length, datlo));
     datlox = cellfun(@(x) [x x(end) * ones(1, lenlo-length(x))]', datlo, 'Un', 0);
-    medlo = median([datlox{:}], 2)';
+    medlo = median([datlox{:}], 2, 'omitnan')';
     
     lenhi = max(cellfun(@length, dathi));
     dathix = cellfun(@(x) [x x(end) * ones(1, lenhi-length(x))]', dathi, 'Un', 0);
-    medhi = median([dathix{:}], 2)';
+    medhi = median([dathix{:}], 2, 'omitnan')';
     
     %If plotting a data band:
     if opts.medbands
@@ -100,6 +127,11 @@ for i = n:-1:1
     %Count N traces and N cycles
     nmsL = tmp.loN;
     nmsH = tmp.hiN;
+    
+    %Fix empty names
+    nmsL(cellfun(@isempty,nmsL)) = {'Unknown'};
+    nmsH(cellfun(@isempty,nmsH)) = {'Unknown'};
+    
     %These are names '%s_L%02d.mat', so just strip the last 8 chars. Fails if %02d overflows, but w/e
     nmsL = cellfun(@(x) x(1:end-8), nmsL, 'Un', 0);
     nmsH = cellfun(@(x) x(1:end-8), nmsH, 'Un', 0);
@@ -121,10 +153,19 @@ end
 
 linkaxes(axsL, 'xy')
 linkaxes(axsH, 'xy')
-axsL(1).XLim = [0 95]; %Try to set an xlim such that there is no overlapping (i.e., there is no xtick on the right edge)
+axsL(1).XLim = [0 55]; %Try to set an xlim such that there is no overlapping (i.e., there is no xtick on the right edge)
 axsL(1).YLim = [-500 6500];
 
-axsH(1).XLim = [0 95];
+axsH(1).XLim = [0 22];
 axsH(1).YLim = [-500 6500];
+
+set(axsL, 'FontSize', 18);
+set(axsH, 'FontSize', 18);
+
+xlabel(axsL( ceil(end/2) ), 'Time (s)')
+xlabel(axsH( ceil(end/2) ), 'Time (s)')
+
+ylabel(axsL(1), 'Contour (bp)')
+ylabel(axsH(1), 'Contour (bp)')
 
 out = reshape([nn{:}], 4, [])'; %TBD, right now just outputs [N ext, N cond, N tot ext, N tot cond], last two should be equal

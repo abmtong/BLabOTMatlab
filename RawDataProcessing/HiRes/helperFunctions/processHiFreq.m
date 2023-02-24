@@ -21,7 +21,7 @@ for i = 1:length(letter)
     mmp = memmapfile([path filesep letter{i} file],'Format','single','Offset',header);
     out.(name{i}) = swapbytes(mmp.Data);
 end
-%For current VIs, data should be [625400x1 single = 200*3127]
-if any( structfun(@length,out) ~= 625400) && any(structfun(@length,out) ~= 700280 )
-    warning('Length of data in %s seems wrong (~=625400 or 700280)', file)
-end
+% %For current VIs, data should be [625400x1 single = 200*3127]
+% if any( structfun(@length,out) ~= 625400) && any(structfun(@length,out) ~= 700280 )
+%     warning('Length of data in %s seems wrong (~=625400 or 700280)', file)
+% end
