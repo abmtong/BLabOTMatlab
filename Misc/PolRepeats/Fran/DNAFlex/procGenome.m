@@ -123,7 +123,8 @@ switch opts.annot
                         if strfind(attribs, 'mitochondrion')
                             chr = 'chrM';
                         else
-                            error('Unknown region %s', attribs)
+                            chr='SKIP'; %Also makes it skip later
+                            warning('Unknown region %s', attribs)
                         end
                     else %Is a chromosome, format to chrI
                         %Strip chromosome= and semicolon
@@ -156,6 +157,11 @@ switch opts.annot
             
             %Find corresponding index in genome data
             ii = find( strcmp( {out.chr}, c{i} ) );
+            
+            if isempty(ii)
+                warning('Unknown chromosome %s', c{i})
+                continue
+            end
             
             %Save start, end, strand
             out(ii).gendat = cell2mat(gendataraw(ki, 2));

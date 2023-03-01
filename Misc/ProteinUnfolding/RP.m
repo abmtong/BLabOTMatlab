@@ -47,10 +47,11 @@ p2out = RPp2(p1out, opts);
 %P3: Fit pull to XWLC, calculate protein contour
 p3out = RPp3(p2out, opts);
 %P4: Find relax refold. Takes some time; could be better
-p4out = RPp4(p3out, opts);
+% p4out = RPp4(p3out, opts);
 
 %Save this struct
-out = p4out;
+out = p3out;
+% out = p4out;
 
 %Check a random three traces
 rr = randperm(length(out), 3);
@@ -62,4 +63,4 @@ RPp3b(out);
 %P3b_kv: Unfolding histogram (stepfinding)
 RPp3b_kv(out);
 %P4b: Refolding histogram
-RPp4b(out);
+% RPp4b(out);

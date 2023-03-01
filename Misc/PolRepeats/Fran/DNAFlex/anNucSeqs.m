@@ -3,13 +3,15 @@ function anNucSeqs(nucseqs, inOpts)
 
 % opts.tfflip = 0; %Flip based on gene direction?
 opts.filwid = 3; %Filter data. Might not be necessary if N seqs is large enough
+opts.name = ''; %Name for plotNucSeqs
+opts.flexmeth = 1; %Flexibility estimation method, see @calcflex
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
 end
 
 if iscell(nucseqs)
-    cellfun(@(x)anNucSeqs(x, opts),nucseqs)
+    cellfun(@(x,y)anNucSeqs(x, setfield(opts, 'name', sprintf('%s_%d', opts.name, y) )),nucseqs, num2cell(1:length(nucseqs)))
     return
 end
 
@@ -31,7 +33,7 @@ ki = ~cellfun(@isempty,seqs);
 seqs = seqs(ki);
 nfos = nfos(ki);
 
-plotNucSeqsFlipV2(seqs, nfos)
+plotNucSeqsFlipV2(seqs, nfos, opts)
 % 
 % %Seqs not flipped
 % seqsraw = seqs;

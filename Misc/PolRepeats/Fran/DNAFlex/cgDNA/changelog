@@ -1,0 +1,121 @@
+v1.0.1:
+ - Added parseFasta.m: read sequences in plain text and FASTA formats for use in cgDNA
+ - Sequences are checked (uppercase) before use
+ - Added text comments in plots from plotShapeParms.m
+
+v1.0:
+ - Changed some file names: cgDNAparamset1 and test_reference/
+ - Added citation information in comments
+ - Changed free energy calculations to report energies in units of kb T
+
+v0.9.4b:
+ - explicited test location change (in README)
+ - added missing mat files to package
+
+v0.9.4:
+ - simplified test procedure
+ - updated README
+ - small changes in comments
+
+v0.9.3:
+ - final touches
+ - updated README
+ - small changes in comments
+
+v0.9.2:
+ - test suite refurbish (3)
+ - added changelog
+ - added double Curves+ cycle reference files
+
+
+v0.9.1:
+ - test suite refurbish (2)
+ - further refinement of external steps of testing suite
+
+
+v0.9:
+ - test suite refurbish (1), bugfix
+ - moved all testing to cgDNAtests
+ - debugged shapes2vector
+
+
+v0.8.2:
+ - adding free energy calculations: (2)
+ - added freeEnergyDiff to compute deltaU between two configurations of the same DNA molecule
+ - added main_energy to showcase .lis parsing and free energy difference calculations
+
+
+v0.8:
+ - adding free energy calculations: (1)
+ - added parseLis to parse lis files to obtain a configuration and a sequence
+
+
+v0.7:
+ - added comments for complex structures
+ - commented 'basepair' in frames.m;
+ - commented 'params' in constructSeqParms;
+ - removed base pairs from the 'basepair' structure.
+
+
+v0.6:
+ - solved 3b, 3d for all.
+ - slight changes to function in octave;
+ - change name of test.m -> cgDNAtests.m;
+ - change test mechanism to be fully contained in test script;
+ - added fclose() in printShapeParms;
+ - added sparse matrix in constructSeqParms, with tests.
+
+
+v0.5:
+ - solved 3a and 3c for all scripts.
+ - cosmetic changes in main
+ - removed file loading in constructSeqParms (3c)
+ - 3a (cur2nondim, nondim2cur)
+ - optimised frames.m
+ - testing of coordinates is now @ %.13f
+
+
+v0.4:
+ - solved issues 3c (makePDB, printShapeParms);
+ - solved issue 4a;
+ - added wcc.m for Watson-Crick complementary sequence.
+ - cosmetic changes to main.m;
+ - made shapes.txt more informative (tested data is identical);
+ - substitute reference shapes.txt with new format (test_reference);;
+ - added wcc function to compute WC complementary sequence;
+ - used wcc in printShapeParms and makePDB;
+ - un-hardcoded filename in makePDB (base_atoms.pdb);
+ - changed printFrames name to conform with function naming convention.
+
+
+v0.3: modified vector2shapes and shapes2vector to avoid for loops (3a).
+
+
+v0.2:
+ - Separated print_frames.m from frames.m;
+ - added reference output to test_reference.
+ - removed optional file output from frames.m;
+ - pulled out the print_frames logic to a separate script;
+ - added frames output to file in main.m (calling print_frames);
+ - added output of old frames.m to test_reference.
+
+
+v0.1b:
+ - Added test case;
+ - debugged and tested previous commit.
+ - added a =test.m= script that executes main and converts mat files to plain text (16 digits);
+ - added a =test_reference= folder containing test results after initial commit;
+ - test using (should only find differences in .mat files.):
+      diff -wbr test_reference test
+
+
+
+v0.1:
+ - solved issue 2b; partially solved issue 1.
+ - removed duplicate definitions of vector2shapes and shapes2vector
+ - removed file saving from functions =constructed_seq_parms.mat= and
+   =absolute_coord.mat= are now generated in main.m (only for testing).
+ - TODO: explain the =basepair= structure returned by frames.m
+
+
+

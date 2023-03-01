@@ -9,7 +9,7 @@ if nargin > 1
     opts = handleOpts(opts, inOpts);
 end
 
-figure('Name', opts.name )
+figure('Name', opts.name , 'Color', [1 1 1])
 
 % %Plot 'average' nucleosome with @seqlogo
 % figure('Name', [opts.name ' SeqLogo'] ), seqlogo(seqs)

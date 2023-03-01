@@ -1,0 +1,147 @@
+
+%-------------------------------------------------------
+% cgDNA, version 1.0.1 (2014)
+%-------------------------------------------------------    
+
+cgDNA is a software (Matlab or Octave) package for
+predicting the ground-state conformation and stiffness
+matrix of a molecule of B-form DNA of any given sequence.
+Free energy differences between two configurations of a
+molecule of B-form DNA in standard environmental
+conditions, can then be computed.
+
+The ground-state conformation is provided in the Curves+
+definition of the DNA structural coordinates (both a
+non-dimensional version and the original unscaled version),
+and also as a PDB file of atomic coordinates. The PDB file
+can be used in the program 3DNA to obtain 3DNA structural
+coordinates if desired. The ground-state stiffness matrix
+is provided for non-dimensional version of the Curves+
+helical coordinates.
+
+More information is available at
+
+http://lcvmwww.epfl.ch/cgDNA
+
+and in:
+
+D. Petkeviciute, M. Pasi, O. Gonzalez and J.H. Maddocks. 
+ cgDNA: a software package for the prediction of 
+ sequence-dependent coarse-grain free energies of B-form 
+ DNA. Nucleic Acids Research 2014; doi: 10.1093/nar/gku825.
+
+
+If you find cgDNA useful, please cite the above
+publication.
+
+
+%-------------------------------------------------------
+% For the impatient...
+%-------------------------------------------------------
+Run the Matlab (or Octave) scripts main.m and main_energy.m
+
+
+%-------------------------------------------------------
+% cgDNA package contents
+%-------------------------------------------------------
+
+README -- this file
+main.m -- workflow to predict ground-state from a sequence
+main_energy.m -- workflow to predict free energy differences
+cgDNAparamset1.mat -- data file (model parameter set)
+idealBases.mat -- data file (ideal base atom positions)
+
+constructSeqParms.m -- function file
+cur2nondim.m -- function file
+nondim2cur.m -- function file
+frames.m -- function file
+makePDB.m -- function file
+printFrames.m -- function file
+shapes2vector.m -- function file
+vector2shapes.m -- function file
+freeEnergyDiff.m -- function file
+parseFasta.m -- function file
+parseLis.m -- function file
+printShapeParms.m -- function file
+plotShapeParms.m -- function file
+wcc.m -- function file
+
+cgDNAtests.m -- test suite
+examples/ -- example Curves+ output
+test/test_reference -- reference files for testing
+
+
+%-------------------------------------------------------
+% cgDNA usage notes
+%-------------------------------------------------------
+
+Please see the section on testing cgDNA, below. To use
+cgDNA:
+
+1) Add the location of the cgDNA library to your path
+(see "help addpath"). Alternatively, copy all the package 
+files into your working directory.
+
+2) Locate your working directory in your Matlab (or
+Octave) session.
+
+3) Enter "main" at the Matlab (or Octave) prompt to obtain
+the predicted ground-state conformation and stiffness matrix
+of a molecule of B-form DNA, given its base sequence. The
+script produces ground-state coarse-grain coordinates in
+"shapes.txt", and ideal atomic coordinates of bases in
+"base_atoms.pdb". The DNA sequence can be changed by editing
+the file "main.m".
+
+4) Enter "main_energy" at the prompt to run through an
+example workflow to estimate coarse-grain free energy
+difference between two configurations of a molecule of
+B-form DNA.  The nature of the configurations compared can
+be modified by editing the file "main_energy.m". Note that
+"main_energy" requires access to the "examples/" folder.
+
+A full description of the main programs and each function is
+provided at the top of each file.
+
+The package was tested on Matlab??? versions 7.7
+(R2008b), 7.14 (R2012a), 8.0 (R2012b) and GNU Octave
+version 3.6.4 (http://www.gnu.org/software/octave/).
+
+
+%-------------------------------------------------------
+% cgDNA testing
+%-------------------------------------------------------
+
+To test that cgDNA works correctly:
+
+1) Locate the "test" subfolder in the cgDNA directory
+in your Matlab (or Octave) session.
+
+2) Add the location of the cgDNA library to your path:
+e.g., enter "addpath .." at the Matlab (or Octave) prompt.
+
+3) Enter "cgDNAtests" at the prompt to perform tests: all
+the tests are required to be passed to ensure reliable
+results.
+
+4) Check compatibility with your Curves+ installation:
+follow instructions on screen to complete testing. 
+In particular, run Curves+ on 1bna_bases.pdb to obtain
+1bna_bases.lis:
+
+/Users/RL/Code/Cur+ <<!
+&inp file=1bna_bases.pdb,
+ lis=1bna_bases, 
+ lib=/Users/RL/Code/standard, &end
+2 1 -1 0 0
+1:12
+24:13
+!
+
+assuming your Curves+ installation is in "/Users/RL/Code"
+(see also http://gbio-pbil.ibcp.fr/Curves_plus).
+
+5) Re-run "cgDNAtests": all tests must be passed.
+
+Note that "cgDNAtest" relies on the "test_reference"
+subfolder, where reference test results are stored.

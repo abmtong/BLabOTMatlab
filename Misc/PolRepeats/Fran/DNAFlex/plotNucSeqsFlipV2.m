@@ -2,14 +2,18 @@ function plotNucSeqsFlipV2(seqs, strand, inOpts)
 %Plots visualization for a group of sequences
 
 opts.name = '';
-opts.filwid = 3; %Filter width, should be odd
+opts.filwid = 7; %Filter width, should be odd
              %601 sequence, fetched from doi.org/10.1038/s41598-020-66259-4 [not the original source]
-% opts.six01 = 'CTGGAGAATCCCGGTGCCGAGGCCGCTCAATTGGTCGTAGACAGCTCTAGCACCGCTTAAACGCACGTACGCGCTGTCCCCCGCGTTTTAACCGCCAAGGGGATTACTCCCTAGTCTCCAGGCACGTGTCAGATATATACATCCTGT';
+opts.six01 = 'CTGGAGAATCCCGGTGCCGAGGCCGCTCAATTGGTCGTAGACAGCTCTAGCACCGCTTAAACGCACGTACGCGCTGTCCCCCGCGTTTTAACCGCCAAGGGGATTACTCCCTAGTCTCCAGGCACGTGTCAGATATATACATCCTGT';
+%            %601R sequence, what we use apparently (same as what they call 601
+% opts.six01r ='CTGGAGAATCCCGGTGCCGAGGCCGCTCAATTGGTCGTAGACAGCTCTAGCACCGCTTAAACGCACGTACGCGCTGTCCCCCGCGTTTTAACCGCCAAGGGGATTACTCCCTAGTCTCCAGGCACGTGTCAGATATATACATCCTGT';
+opts.flexmeth = 1; %Flexibility estimation method, see @calcflex
+opts.pctAT = 7519412/12157086; %AT content, default yeast
 if nargin > 2
     opts = handleOpts(opts, inOpts);
 end
 
-figure('Name', opts.name )
+figure('Name', opts.name, 'Color', ones(1,3) )
 
 %Make strand col vector
 strand = strand(:);
@@ -31,22 +35,30 @@ for i = -1:1
     plot(gcpct);
 end
 axis tight
-line(xlim(), 7519412/12157086 * [1 1]); %Plot a line at the genome-wide average GC content, this value is hard-coded for Yeast right now
+line(xlim(), opts.gc * [1 1]); %Plot a line at the genome-wide average GC content, this value is hard-coded for Yeast right now
 legend({'-(flipped)' '0' '+' 'Avg AT'})
 title('AT Content')
 % xlabel('Position (bp)')
 ylabel('%AT')
 
+yl = ylim;
+xl = xlim;
+plot(mean(xl) * [1 1], yl, 'k')
+plot(mean(xl) * [1 1]+146/2, yl, 'k')
+plot(mean(xl) * [1 1]-146/2, yl, 'k')
+
 %Plot flexibility with calcflex
 subplot2([2 1], 2);
 hold on
-flexs = cellfun(@(x) windowFilter(@mean, calcflex(x), (opts.filwid-1) /2, 1) , seqs, 'Un', 0);
+% flexs = cellfun(@(x) windowFilter(@mean, calcflex(x, opts.flexmeth), (opts.filwid-1) /2, 1) , seqs, 'Un', 0);
+flexs = cellfun(@(x) calcflex(x, opts.flexmeth), seqs, 'Un', 0);
 for i = -1:1
     tmp = flexs(strand == i);
-    flx = mean(  cell2mat( tmp(:) ), 1 );
+    flx = mean(  cell2mat( tmp(:) ), 1 , 'omitnan');
     if i == -1
         flx = flx(end:-1:1);
     end
+    flx = windowFilter(@mean, flx, (opts.filwid-1) /2, 1);
     plot(flx)
 end
 axis tight
