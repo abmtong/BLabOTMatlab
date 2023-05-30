@@ -1,14 +1,14 @@
-function out = RPp4b(inst, inOpts)
-%Calc refolding transition path histogram
+function out = RPp3b(inst, inOpts)
+%Calc rip transition path histogram
 
-%Eh probably still too high noise...
-
-opts.fil = 20; %Filter (smooth, dont downsample)
+opts.fil = 10; %Filter (smooth, dont downsample)
 % opts.meth = 1; %Window method
 opts.wid = [200 200]; %Pts to take on each side of the rip
 
-opts.pwlcc = 0.38*127; %Protein size (nm)
+opts.pwlcc = 0.35*106; %Protein size (nm)
 % opts.pwlcfudge = 1; %Protein size offset, nm
+
+opts.usetfpbe = [1 1]; %Uses tfpbe1 and tfpbe2, if they exist (see RPpickbyeyeGUI). Make [0 0] to disable
 
 opts.verbose = 1; %Debug plots
 
@@ -19,28 +19,53 @@ end
 
 len = length(inst);
 tpcrp = cell(1,len);
+tpcrpr = cell(1,len);
 for i = 1:len
     %Get protein contour
     tmp = inst(i);
-    yy = tmp.conpro( tmp.retind:end );
-    ff = tmp.frc( tmp.retind:end );
+    yy = double( tmp.conpro );
+    
+%     %Deconvolve protein contour?
+%     convthing = exp(-(0:opts.convpts)/opts.convpts(2));
+%     %Normalize
+%     convthing = convthing / sum(convthing);
     
     %Filter
-%     yf = forcefilter(yy, ff, opts.fil);
     yf = windowFilter(@mean, yy, opts.fil, 1);
     %Crop
-    irng = tmp.refind - tmp.retind + 1 - opts.wid (1) : tmp.refind - tmp.retind + 1 + opts.wid(2);
+    irng = tmp.ripind - opts.wid (1) : tmp.ripind + opts.wid(2);
     if any(irng < 1 | irng > length(yf))
         %Skip this one
+        tpcrp{i} = inf;
+        tpcrpr{i} = inf;
         continue
     end
     yc = yf(irng);
+    ycr= yy(irng);
     
     %Save
     tpcrp{i} = yc;
+    tpcrpr{i} = ycr;
 end
 %Remove empty entries if they were skipped
-ki = ~cellfun(@isempty, tpcrp);
+ki1 = ~cellfun(@isempty, tpcrp);
+
+%Remove entries with wild outliers
+ki2 = ~ (cellfun(@(x) max(abs(x)), tpcrpr) > opts.pwlcc * 100);
+
+%Remove entries manually picked with RPpickbyeyeGUI
+ki3 = true(size(tpcrp));
+if isfield(inst, 'tfpbe1') && opts.usetfpbe(1)
+    ki3 = ki3 & [inst.tfpbe1];
+end
+if isfield(inst, 'tfpbe2') && opts.usetfpbe(2)
+    ki3 = ki3 & [inst.tfpbe2];
+end
+if ~all(ki3)
+    fprintf('Rejected %d/%d traces by picking\n', sum(~ki3), length(ki3))
+end
+
+ki = ki1 & ki2 & ki3;
 tpcrp = tpcrp(ki);
 inst = inst(ki);
 
@@ -52,10 +77,12 @@ if isfield(inst, 'file')
     for i = nfil:-1:1
         out(i).name = uu{i};
         out(i).tps = tpcrp( ic == i );
+        out(i).tpsr = tpcrpr( ic == i );
     end
 else
     out.name = '';
     out.tps = tpcrp;
+    out.tpsr = tpcrpr;
 end
 
 if opts.verbose

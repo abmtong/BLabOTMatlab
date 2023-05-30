@@ -2,7 +2,7 @@ function num = cdn2num(cdnarr)
 
 if ischar(cdnarr)
     cdnarr(cdnarr == 'A') = 1;
-    cdnarr(cdnarr == 'T') = 2;
+    cdnarr(cdnarr == 'T' | cdnarr == 'U') = 2;
     cdnarr(cdnarr == 'G') = 3;
     cdnarr(cdnarr == 'C') = 4;
 end

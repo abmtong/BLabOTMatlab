@@ -54,6 +54,10 @@ for i = 1:len
     ylabel('Protein Contour (nm)')
     legend({'Contour-time Trace'})
     yl = prctile(cc, [1 99]);
+    %For bad processing, yl might be NaN. Let yl be 'okay'
+    if any(isnan(yl))
+        yl = [0 100];
+    end
     ylim(yl) %Zoom y-axis to remove low force outliers
     
     %Plot but zoom to small region

@@ -2,6 +2,7 @@ function [y, x] = antonyBin(iny, binsz)
 
 %Bins by drawing a segment between adjacent points, and this segment is what gets binned
 % Useful(?) for having a tiny binsize but you dont want zero bins (e.g. if you're going to take the log of the count)
+% Maybe you could linear interp at ~10-100x and then bin that instead?
 
 %Create bins
 x = (floor(min(iny)/binsz):ceil(max(iny)/binsz)) * binsz;

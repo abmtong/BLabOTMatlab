@@ -24,14 +24,20 @@ hei = length(lnstarts); %Last line might be unfinished, see below
 out = zeros(len, hei);
 
 for i = 1:hei
-    if i == hei %Last line might be unfinished, handle specially. Actually works for every line, but slower (~30%)
-        %Pad the end of the last line with extra zeroes to make it of size lnwid*len 
-        out(:, i) = sum( reshape([grn(lnstarts(i):lnends(i)) zeros(1,len*lnwid-(lnends(i)-lnstarts(i)+1))], lnwid, len), 1);
-        % Could instead pad grn to length (len*hei*lnwid), might be better + removes this case
-    else
+%     if i == hei %Last line might be unfinished, handle specially. Actually works for every line, but slower (~30%)
+%         %If the scan stopped before the file stopped, this will be too short; if it was stopped after, too long
+%         %Pad the end of the last line with extra zeroes to make it of size lnwid*len 
+%         tmp = [grn(lnstarts(i):lnends(i)) zeros(1,len*lnwid-(lnends(i)-lnstarts(i)+1))];
+%         
+%         out(:, i) = sum( reshape( tmp(1:lnwid*len), lnwid, len), 1);
+%         % Could instead pad grn to length (len*hei*lnwid), might be better + removes this case
+%     else
+
+        %Pad to as long as it needs to be; then trim if it's too long
+        tmp = [grn(lnstarts(i):lnends(i)) zeros(1,len*lnwid-(lnends(i)-lnstarts(i)+1))];
         %Snip relevant part of grn, reshape & sum to get pixel value (integrated photon count)
-        out(:, i) = sum( reshape(grn(lnstarts(i):lnends(i)) , lnwid, len), 1);
-    end    
+        out(:, i) = sum( reshape( tmp(1:lnwid*len) , lnwid, len), 1);
+%     end    
 end
 
 %Calculate time: t is the time of the start of each line

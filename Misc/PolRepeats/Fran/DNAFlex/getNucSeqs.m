@@ -6,11 +6,12 @@ function out = getNucSeqs(chrseq, nucpos, inOpts)
 
 opts.method = 3; %Method choice
 opts.pad = 30;  %Method 1: Pad N bps on each side. Requires each NPS to be the same length
-opts.nbp = 201; %Method 2/3: Put the scored nuc position in the center, and grab this many bps
+opts.nbp = 301; %Method 2/3: Put the scored nuc position in the center, and grab this many bps
                 %Use Method 2 for even nbp, 3 for odd (could check this but whatever)
                %   The centering algorithm for this method still seems wrong: x and fliplr(x) are off by 1bp ish
                %   Is the positioning code 0-indexed? Just add 1?
                %   Or, since the true NPS is 'odd' (147), we should be dealing with odd no.s?
+               %   Choose a length so it also contains the (average) linker length
 if nargin > 2
     opts = handleOpts(opts, inOpts);
 end
@@ -20,6 +21,8 @@ if iscell(nucpos)
     out = cellfun(@(x) getNucSeqs(chrseq, x, opts), nucpos, 'Un', 0);
     return
 end
+
+stT = tic;
 
 wid = floor(opts.nbp/2);
 nchr = length(chrseq);
@@ -34,13 +37,18 @@ for i = nchr:-1:1
         continue
     end
     nnuc = size(nucpos(ii).nucpos,1);
-    %Location of genes: 1 if it is in a + gene, -1 if in a rev gene
+    %Location of genes: true if in a gene (separated by - and +)
     ngene = size( chrseq(i).gendat, 1);
-    genmap = zeros(size(seq));
+    genmapp = false(size(seq)); %'gene map plus'
+    genmapm = false(size(seq)); %'gene map minus'
     for j = 1:ngene
-        genmap( chrseq(i).gendat(j,1) : chrseq(i).gendat(j,2) ) = chrseq(i).gendat(j,3)*2-1;
+        if chrseq(i).gendat(j,3) %+ gene
+            genmapp( chrseq(i).gendat(j,1) : chrseq(i).gendat(j,2) ) = true;
+        else %- gene
+            genmapm( chrseq(i).gendat(j,1) : chrseq(i).gendat(j,2) ) = true;
+        end
     end
-    
+
     outnuc = cell(1,nnuc);
     nucnfo = zeros(1,nnuc); %Returns if this gene is in a fwd or rev gene
     for j = 1:nnuc
@@ -79,16 +87,27 @@ for i = nchr:-1:1
                 outnuc{j} = seq(st:en);
             otherwise
         end
-
-        
         %Check if this is inside a gene
-        genmapsnip = genmap( nucpos(ii).nucpos(j,1) : nucpos(ii).nucpos(j,2) );
-        nucnfo(j) =  max([0 genmapsnip]) + min([0 genmapsnip]); %1 if in fwd gene, -1 if rev, 0 if neither/both
+        isp = any( genmapp( nucpos(ii).nucpos(j,1) : nucpos(ii).nucpos(j,2) ) );
+        ism = any( genmapm( nucpos(ii).nucpos(j,1) : nucpos(ii).nucpos(j,2) ) );
+        %1 if in fwd gene, -1 if rev, 0 if neither, 2 if both
+        if isp && ism
+            nucnfo(j) = 2;
+        elseif isp
+            nucnfo(j) = 1;
+        elseif ism
+            nucnfo(j) = -1;
+        end
     end
+    %Remove empty cells = failed extractions
+    ki = ~cellfun(@isempty,outnuc);
+    %And save to output
     out(i).chr = chrseq(i).chr;
-    out(i).nucseq = outnuc;
-    out(i).nucnfo = nucnfo;
+    out(i).nucseq = outnuc(ki);
+    out(i).nucnfo = nucnfo(ki);
 end
+
+fprintf('getNucSeqs finished in %0.2fs\n', toc(stT))
 
 if nskip > 2*nchr
     warning('Many nucleosome positions were skipped, check for e.g. chromosome name matching')

@@ -26,9 +26,11 @@ if isempty(yrng)
     pad = ceil(5*ysd/dy);
     out = [zeros(1,pad) out zeros(1,pad)];
     y = [ (-pad:-1)*dy+y(1)  y y(end) + dy*(1:pad) ];
+    %Filter with a gaussian
     gaufh = @(x)sum(x.*(normpdf((1:length(x))*dy,dy*(length(x)/2+.5),ysd)));
     out = windowFilter(gaufh, out, ceil(5*ysd/dy), 1);
 else
+    %Why is this separate implementation here?
     cdfy = out;
     cdfx = y;
     y = yrng(1):dy:yrng(2);

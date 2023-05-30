@@ -18,5 +18,12 @@ if isempty(dop)
 end
 
 for i = 1:length(fols)
-    AProcessDataV2(fullfile(p, fols{i}, [fols{i} '.txt']), dop);
+    %Get shortest text file name?
+    dr = dir( fullfile(p, fols{i}, '*.txt') );
+    dr = {dr(~[dr.isdir]).name};
+    ln = cellfun(@length, dr);
+    [~, in] = min(ln);
+    nm = dr{in};
+    %
+    AProcessDataV2(fullfile(p, fols{i}, nm), dop);
 end

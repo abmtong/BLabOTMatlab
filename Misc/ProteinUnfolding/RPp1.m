@@ -1,5 +1,5 @@
 function out = RPp1(condat, inOpts)
-%Naming: 'Rohit Protein' project, so let's call these 'RP' part 1, 2, 3 etc.
+%Naming: 'Ross Protein' project, so let's call these 'RP' part 1, 2, 3 etc.
 %Part 1: Separate the raw data into pulling cycles
 
 %Input: ContourData struct , i.e. the processed data

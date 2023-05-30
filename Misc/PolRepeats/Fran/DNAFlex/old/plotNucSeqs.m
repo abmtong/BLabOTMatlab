@@ -49,12 +49,8 @@ plot( mean(xl) * [1 1], yl, 'k')
 plot( mean(xl) * [1 1]+146/2, yl, 'k')
 plot( mean(xl) * [1 1]-146/2, yl, 'k')
 
-% %Plot 601 as a reference line //no, too noisy
-% %Pad sequence to match the length
-% npad = length(seqs{1}) - length(opts.six01);
-% flex601 = [zeros(1, round( npad/2) ) calcflex(opts.six01) zeros(1,round( npad/2))];
-% %Smooth
-% flex601 = smooth(flex601, opts.filwid)';
-% plot( flex601 , 'k' );
+%Plot 601 as a reference line
+
+
 
 

@@ -17,9 +17,12 @@ for i = nfil:-1:1;
     iki = ic == i;
     %Get median XWLC fits
     txwlc = median( reshape( [inst(iki).xwlcft], length(inst(1).xwlcft), []), 2)';
-    %Subtract DNA ext
+    %Recalc protein contour
     tmp = cellfun(@(ex, fo) (ex - XWLC(fo, txwlc(1), txwlc(2)) * txwlc(3) ) ./ XWLC( fo, txwlc(end-1), inf ) , {inst(iki).ext}, {inst(iki).frc}, 'Un', 0);
+    %Update XWLC value, keep a copy of the old one
     [inst(iki).conpro] = deal(tmp{:});
+    [inst(iki).xwlcftold] = deal(tmp.xwlcft);
+    [inst(iki).xwlcft] = deal(txwlc);
 end
 
 out = inst;

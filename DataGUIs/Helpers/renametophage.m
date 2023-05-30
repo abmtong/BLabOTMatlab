@@ -38,6 +38,12 @@ switch sn
         out.extension = {in.signal};
         out.contour = {in.signal};
         out.force = {in.force};
+    case 'nanodata'
+        %My code for Nanopore data
+        out.time = {in.time};
+        out.extension = {in.cur};
+        out.contour = {in.cur};
+        out.force = {in.vol};
     otherwise
         out = [];
         warning('Struct name %s is unrecognized', sn)

@@ -1,17 +1,15 @@
 function out = calcflex(seq, refid)
-%Predicts the flexibility of a DNA sequence:
-% For each dinucleotide, assigns a flexibility
+%Predicts the flexibility of a DNA sequence
+% For each dinucleotide, assigns a flexibility score
 
 %If we convert ACGT > 1234, the dinucleotide XY is ref(x,y):
-
+% In addition to being alphabetical, it makes the ref matrix symmetric about the / diagonal
 if nargin < 2
     refid = 1;
 end
 
-
 switch refid
     case 1
-        
         %Unipro UGENE's values: https://doc.ugene.net/wiki/display/UM38/DNA+Flexibility
         %        A    C     G    T
         ref = [ 7.6 10.9   8.8 12.5; ... A
@@ -33,7 +31,7 @@ end
 %Convert to all caps
 seq = upper(seq);
 
-%Convert seq to numbers
+%Convert seq to numbers. Leave non-ACGT as NaN
 seqnum = nan(1, length(seq));
 seqnum( seq == 'A' ) = 1;
 seqnum( seq == 'C' ) = 2;

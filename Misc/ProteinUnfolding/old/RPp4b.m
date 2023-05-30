@@ -1,11 +1,13 @@
-function out = RPp3b(inst, inOpts)
-%Calc rip transition path histogram
+function out = RPp4b(inst, inOpts)
+%Calc refolding transition path histogram
+
+%Eh probably still too high noise...
 
 opts.fil = 20; %Filter (smooth, dont downsample)
 % opts.meth = 1; %Window method
 opts.wid = [200 200]; %Pts to take on each side of the rip
 
-opts.pwlcc = 0.38*106; %Protein size (nm)
+opts.pwlcc = 0.38*127; %Protein size (nm)
 % opts.pwlcfudge = 1; %Protein size offset, nm
 
 opts.verbose = 1; %Debug plots
@@ -17,33 +19,28 @@ end
 
 len = length(inst);
 tpcrp = cell(1,len);
-tpcrpr = cell(1,len);
 for i = 1:len
     %Get protein contour
     tmp = inst(i);
-    yy = tmp.conpro;
+    yy = tmp.conpro( tmp.retind:end );
+    ff = tmp.frc( tmp.retind:end );
+    
     %Filter
-    yf = windowFilter(@mean, yy, opts.fil, 1);
+%     yf = forcefilter(yy, ff, opts.fil);
+    yf = windowFilter(@median, yy, opts.fil, 1);
     %Crop
-    irng = tmp.ripind - opts.wid (1) : tmp.ripind + opts.wid(2);
+    irng = tmp.refind - tmp.retind + 1 - opts.wid (1) : tmp.refind - tmp.retind + 1 + opts.wid(2);
     if any(irng < 1 | irng > length(yf))
         %Skip this one
         continue
     end
     yc = yf(irng);
-    ycr= yy(irng);
     
     %Save
     tpcrp{i} = yc;
-    tpcrpr{i} = ycr;
 end
 %Remove empty entries if they were skipped
-ki1 = ~cellfun(@isempty, tpcrp);
-
-%Remove entries with wild outliers
-ki2 = ~ (cellfun(@(x) max(abs(x)), tpcrpr) > opts.pwlcc * 100);
-
-ki = ki1 & ki2;
+ki = ~cellfun(@isempty, tpcrp);
 tpcrp = tpcrp(ki);
 inst = inst(ki);
 
@@ -55,12 +52,10 @@ if isfield(inst, 'file')
     for i = nfil:-1:1
         out(i).name = uu{i};
         out(i).tps = tpcrp( ic == i );
-        out(i).tpsr = tpcrpr( ic == i );
     end
 else
     out.name = '';
     out.tps = tpcrp;
-    out.tpsr = tpcrpr;
 end
 
 if opts.verbose

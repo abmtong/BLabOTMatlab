@@ -11,7 +11,7 @@ opts.dwlcg = [50 900]; %DNA XWLC guess, [PL(nm) SM(pN)]
 opts.dwlcc = 2000*.34; %DNA contour length guess, 0.34nm/bp
 % Guess taken from what I've observed for DNA in HiRes
 opts.pwlcg = 0.4; %Protein XWLC PL guess
-opts.pwlcc = 0.38*106; %Protein contour length, will be used as a set value. ROSS is 106aa, but expts introduce loops that increase it
+opts.pwlcc = 0.35*106; %Protein contour length, will be used as a set value. ROSS is 106aa, but expts introduce loops that increase it
 % Guess taken from https://www.pnas.org/doi/10.1073/pnas.1300596110
 
 if nargin > 1

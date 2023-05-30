@@ -3,12 +3,12 @@ function plotNucSeqsFlipV2(seqs, strand, inOpts)
 
 opts.name = '';
 opts.filwid = 7; %Filter width, should be odd
-             %601 sequence, fetched from doi.org/10.1038/s41598-020-66259-4 [not the original source]
+             %601 sequence, fetched from doi.org/10.1038/s41598-020-66259-4 ; also called '601R'
 opts.six01 = 'CTGGAGAATCCCGGTGCCGAGGCCGCTCAATTGGTCGTAGACAGCTCTAGCACCGCTTAAACGCACGTACGCGCTGTCCCCCGCGTTTTAACCGCCAAGGGGATTACTCCCTAGTCTCCAGGCACGTGTCAGATATATACATCCTGT';
-%            %601R sequence, what we use apparently (same as what they call 601
-% opts.six01r ='CTGGAGAATCCCGGTGCCGAGGCCGCTCAATTGGTCGTAGACAGCTCTAGCACCGCTTAAACGCACGTACGCGCTGTCCCCCGCGTTTTAACCGCCAAGGGGATTACTCCCTAGTCTCCAGGCACGTGTCAGATATATACATCCTGT';
 opts.flexmeth = 1; %Flexibility estimation method, see @calcflex
 opts.pctAT = 7519412/12157086; %AT content, default yeast
+opts.tfflip = 1; %Flip the (-) genes?
+
 if nargin > 2
     opts = handleOpts(opts, inOpts);
 end
@@ -29,7 +29,7 @@ for i = -1:1
     nGC = sum( mtx == 'G' | mtx == 'C', 2)';
 %     nC = sum( mtx == 'C', 2);
     gcpct = windowFilter(@mean, 1-nGC / size(mtx, 2), (opts.filwid-1) /2, 1);
-    if i == -1
+    if i == -1 && opts.tfflip
         gcpct = gcpct(end:-1:1);
     end
     plot(gcpct);

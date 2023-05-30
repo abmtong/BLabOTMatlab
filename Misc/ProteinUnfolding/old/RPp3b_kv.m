@@ -5,7 +5,7 @@ opts.fil = 20; %Filter (smooth, dont downsample)
 % opts.meth = 1; %Window method
 opts.wid = [200 200]; %Pts to take on each side of the rip
 
-opts.pwlcc = 0.38*127; %Protein size (nm)
+opts.pwlcc = 0.35*127; %Protein size (nm)
 % opts.pwlcfudge = 1; %Protein size offset, nm
 
 opts.kvpen = 1e5; %KV stepfinding penalty

@@ -1,7 +1,7 @@
 function out = procNucMap(infp)
 %Loads nucleosome map data from NucMap (ngdc.cncb.ac.cn/nucmap/)
 
-%Each file is a .bed file (text) with lines e.g.:
+%Each file is a .bed file (tsv) with lines e.g.:
 %{
 chrV	255	396	chrV.1
 chrV	365	506	chrV.2

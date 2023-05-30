@@ -46,6 +46,8 @@ p1out = RPp1(cd.ContourData, opts);
 p2out = RPp2(p1out, opts);
 %P3: Fit pull to XWLC, calculate protein contour
 p3out = RPp3(p2out, opts);
+% P3_avg: Then reconvert with average XWLC values (as opposed to per-pull)
+p3out = RPp3_avg(p3out, opts);
 %P4: Find relax refold. Takes some time; could be better
 % p4out = RPp4(p3out, opts);
 
@@ -54,13 +56,13 @@ out = p3out;
 % out = p4out;
 
 %Check a random three traces
-rr = randperm(length(out), 3);
+rr = randperm(length(out), min(length(out), 3));
 RPcheck(out(rr))
 
 %Run histograms
 %P3b: Unfolding histogram
-RPp3b(out);
+RPp3bV2(out);
 %P3b_kv: Unfolding histogram (stepfinding)
-RPp3b_kv(out);
+% RPp3b_kv(out);
 %P4b: Refolding histogram
 % RPp4b(out);

@@ -115,6 +115,18 @@ radioKDF2t= uicontrol(radioKDF, 'Style', 'edit',        'Units', 'normalized', '
 radioKDF3t= uicontrol(radioKDF, 'Style', 'edit',        'Units', 'normalized', 'Position', [.7 0   .3 .33], 'String', '1', 'Callback', @kdf_callback);
 radioKDF2.Value = true; %Default to KDF Quick
 
+%This panel controls what the bottom plot plots, force or fluorescence (if the data has it)
+radioBot  = uibuttongroup(panlef,                       'Units', 'normalized', 'Position', [0 .15 1 .1 ], 'SelectionChangedFcn', @refilter_callback);
+% radioBotTxt = uicontrol(radioBot, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .66 1 .33], 'String', 'Bottom Plot', 'Callback', []);
+radioBot1 = uicontrol(radioBot, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0 .66 5 .34], 'String', 'Force', 'Callback', []);
+radioBot2 = uicontrol(radioBot, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0 .33 1 .33], 'String', 'Fluor', 'Callback', []);
+radioEd   = uicontrol(radioBot, 'Style', 'edit',     'Units', 'normalized', 'Position', [.5 .33 .5 .33], 'String', '10', 'Callback', @refilter_callback);
+radioChk1 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [0 .0 .33 .33], 'String', 'G', 'Value', true, 'Callback', @refilter_callback);
+radioChk2 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [.33 0 .33 .33], 'String', 'R', 'Value', true,  'Callback', @refilter_callback);
+radioChk3 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [.66 0 .33 .33], 'String', 'B', 'Value', true,  'Callback', @refilter_callback);
+radioBot.Visible = 'off'; %Only show if we detect fluorescence data
+radioBot1.Value = true; %Default to plotting force
+
 %Load first file
 loadFile_callback
 
@@ -192,6 +204,29 @@ fig.Visible = 'on';
             stepdata = renametophage(tmp, sn);
             name = file(1:end-4); %Strip trailing '.mat'
         end
+        
+        %Check if there's fluorescence data: if so, turn fluorescence options on
+        if isfield(stepdata, 'apdT') %Check for fluorescence data. Plotting in refilter_callback
+            radioBot.Visible = 'on';
+            %Lets make the bottom graph bigger, too
+            dy = 0.2;
+            subAxis.Position(4) = .2 +dy;
+            mainAxis.Position(2) = .31 + dy;
+            mainAxis.Position(4) = .68 - dy;
+            
+            %Orig dims:
+%             mainAxis = axes(panaxs, 'Position', [.05 .31 .78 .68]); %Holds the main distance-time plot
+%             subAxis  = axes(panaxs, 'Position', [.05 .05 .78 .2]);
+            
+        else %Turn it back off if the data is no longer found?
+            dy = 0;
+            subAxis.Position(4) = .2 +dy;
+            mainAxis.Position(2) = .31 + dy;
+            mainAxis.Position(4) = .68 - dy;
+            
+            radioBot.Visible = 'off';
+        end
+        
         %Clear main axis
         cla(mainAxis)
         %Name the figure to reflect the current file
@@ -203,7 +238,10 @@ fig.Visible = 'on';
             trcNotes.String = '';
         end
         %Set the slider to the correct value, update the accompanying text
-        fSamp = 1/median(cellfun(@(x) median(diff(x), 'omitnan'), stepdata.time), 'omitnan');
+%         fSamp = 1/median(cellfun(@(x) median(diff(x), 'omitnan'), stepdata.time), 'omitnan'); %Actually this fails somewhat if t is large
+        %Theres no saved sampling frequency, so estimate from the time field. Range / n_pts
+        ki = ~cellfun(@isempty, stepdata.time);
+        fSamp = (sum( cellfun(@length, stepdata.time(ki)) ) - length(stepdata.time(ki))) / sum( cellfun(@range, stepdata.time(ki)) ) ;
         fileSlider.Value = find(cellfun(@(x) strcmp(x, file),fileSlider.String),1);
         txtSlider.String = sprintf('%s\n%d/%d\n%0.2fHz', name, round(fileSlider.Value), fileSlider.Max, fSamp);
         %Reset the crop buttons
@@ -266,20 +304,88 @@ fig.Visible = 'on';
         arrayfun(@delete,mainAxis.Children) %Don't use cla to keep current zoom
         cellfun(@(x,y)plot(mainAxis, x, y, 'Color', .7 * [1 1 1]), stepdata.time, stepdata.contour);
         filtLine = plotCell(mainAxis, timF, conF);
-        %Plot force on bottom
+        
         arrayfun(@delete,subAxis.Children)
-        cellfun(@(x,y)plot(subAxis, x, y, 'Color', .7 * [1 1 1]), stepdata.time, stepdata.force)
-        plotCell(subAxis, timF, forF)
-        %Semi-passive feedback has sections cut out where the trap is moving.
-        % if these are saved, plot them: unfiltered in grey, filtered in dark grey
-        if isfield(stepdata, 'cut')
-            cconF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.cut.contour,'UniformOutput',0);
-            ctimF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.cut.time,'UniformOutput',0);
-            cforF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.cut.force,'UniformOutput',0);
-            cellfun(@(x,y)plot(mainAxis,x,y,'Color',[.7 .7 .7]), stepdata.cut.time, stepdata.cut.contour)
-            cellfun(@(x,y)plot(subAxis,x,y,'Color',[.7 .7 .7]), stepdata.cut.time, stepdata.cut.force)
-            cellfun(@(x,y)plot(mainAxis,x,y,'Color',[.2 .2 .2]), ctimF, cconF)
-            cellfun(@(x,y)plot(subAxis,x,y,'Color',[.2 .2 .2]), ctimF, cforF)
+        %Plot bottom
+        if radioBot1.Value %Plot force channel
+            cellfun(@(x,y)plot(subAxis, x, y, 'Color', .7 * [1 1 1]), stepdata.time, stepdata.force)
+            plotCell(subAxis, timF, forF)
+            %Semi-passive feedback has sections cut out where the trap is moving.
+            % if these are saved, plot them: unfiltered in grey, filtered in dark grey
+            if isfield(stepdata, 'cut')
+                cconF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.cut.contour,'UniformOutput',0);
+                ctimF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.cut.time,'UniformOutput',0);
+                cforF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.cut.force,'UniformOutput',0);
+                cellfun(@(x,y)plot(mainAxis,x,y,'Color',[.7 .7 .7]), stepdata.cut.time, stepdata.cut.contour)
+                cellfun(@(x,y)plot(subAxis,x,y,'Color',[.7 .7 .7]), stepdata.cut.time, stepdata.cut.force)
+                cellfun(@(x,y)plot(mainAxis,x,y,'Color',[.2 .2 .2]), ctimF, cconF)
+                cellfun(@(x,y)plot(subAxis,x,y,'Color',[.2 .2 .2]), ctimF, cforF)
+            end
+        elseif radioBot2.Value %Plot fluorescence
+            %Grab time
+            if isfield(stepdata, 'apdT')
+                
+                %Check for image (kymograph / movie)
+                if isfield(stepdata, 'apdimg')
+                    %Plot this img on the bottom
+                    apdt = stepdata.apdT;
+                    img = stepdata.apdimg;
+                    
+                    %Black out certain channels if asked
+                    if ~radioChk1.Value %Clear green
+                        img(:,:,2) = 0;
+                    end
+                    if ~radioChk2.Value %Clear red
+                        img(:,:,1) = 0;
+                    end
+                    if ~radioChk3.Value %Clear blue
+                        img(:,:,3) = 0;
+                    end
+                    
+                    %Maybe do some autocontrast per channel? eh
+                    [xx, yy] = meshgrid( linspace(0,1, size(img, 1)), apdt );
+                    zz = zeros(size(xx));
+                    
+                    %Apply max filter
+                    num = str2double(radioEd.String);
+                    if num > 1 %Check if it's a number (i.e. not NaN) and greater than 1
+                        num = ceil((num-1)/2); %Make filter half-width
+                        for i = 1:size(img, 1)
+                            %Max filter trace
+                            img(i,:,1) = windowFilter(@mean, img(i,:,1), num, 1);
+                            img(i,:,2) = windowFilter(@mean, img(i,:,2), num, 1);
+                            img(i,:,3) = windowFilter(@mean, img(i,:,3), num, 1);
+                            
+                        end
+                    end
+                    
+                    %img is double, so apply contrast (lets make it u8?)
+                    ctr = prctile( img(img>0), 95);
+                    imgctr = uint8( img/ctr*256 );
+                    
+                    surface( subAxis, yy', xx', zz', imgctr, 'EdgeColor', 'none' )
+                    
+                    ylim(subAxis, [0 1])
+                else %Else it's point scan
+                    gt = windowFilter(@mean, stepdata.apdT, fil, dec);
+                    %Let's have the order be G/R/B = 1/2/3 to match Flzr Green/Red=1/2 only
+                    if radioChk1.Value && isfield(stepdata,'apd1')
+                        %Take data
+                        g = windowFilter(@mean, stepdata.apd1, fil, dec);
+                        plot(subAxis, gt, g, 'g')
+                    end
+                    if radioChk2.Value && isfield(stepdata,'apd2')
+                        %Take data
+                        g = windowFilter(@mean, stepdata.apd2, fil, dec);
+                        plot(subAxis, gt, g, 'r')
+                    end
+                    if radioChk3.Value && isfield(stepdata,'apd3')
+                        %Take data
+                        g = windowFilter(@mean, stepdata.apd3, fil, dec);
+                        plot(subAxis, gt, g, 'b')
+                    end
+                end
+            end
         end
         %Calculate and list the local noise at each section
         locNoise_callback
@@ -525,7 +631,20 @@ fig.Visible = 'on';
     function fixLimit_callback(~,~)
         %Set the x/y limits to fit the plotted data
         tlim = [stepdata.time{1}(1) stepdata.time{end}(end)];
-        flim = [min(cellfun(@min, stepdata.force)), max(cellfun(@max, stepdata.force))];
+        if radioBot1.Value %Force
+            flim = [min(cellfun(@min, stepdata.force)), max(cellfun(@max, stepdata.force))];
+            zoom(subAxis, 'out')
+            ylim(subAxis, flim);
+        else
+            if radioBot2.Value %Fluorescence
+                %Get children and set ylims? Just axis tight?
+                if isfield(stepdata, 'apdimg')
+                    ylim(subAxis, [0 1]);
+                end
+%                 axis(subAxis, 'tight')
+            end
+            
+        end
         %For contour, fit the trace, but only consider where F>1, and stay within the input min/max boxes
         cmin = max(str2double(conMin.String), min(cellfun(@grabmin, stepdata.contour, stepdata.force)));
         cmax = min(str2double(conMax.String), max(cellfun(@grabmax, stepdata.contour, stepdata.force)));
@@ -535,10 +654,10 @@ fig.Visible = 'on';
         end
         %Zoom out, set limits, zoom reset so the figure 'remembers' this zoom on double-click
         zoom(mainAxis, 'out')
-        zoom(subAxis, 'out')
+%         zoom(subAxis, 'out')
         xlim(mainAxis, tlim)
         ylim(mainAxis, clim + [0 1])
-        ylim(subAxis, flim)
+%         ylim(subAxis, flim) %Moved up
         zoom(mainAxis, 'reset')
         zoom(subAxis, 'reset')
     end

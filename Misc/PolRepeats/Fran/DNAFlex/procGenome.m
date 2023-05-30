@@ -1,8 +1,9 @@
 function out = procGenome(infp, inOpts)
 %Loads a genomic FASTA + RefSeq annotation (GFF format)
-% GeneBank annotation has additional stuffs, ignore
-%Genome is in the format e.g.:
+
+%Formatting info:
 %{
+Genome is in the format e.g.:
 >NC_001133.9 Saccharomyces cerevisiae S288C chromosome I, complete sequence
 ccacaccacacccacacacccacacaccacaccacacaccacaccacacccacacacacacatCCTAACACTACCCTAAC
 ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
@@ -11,14 +12,25 @@ CAACCCACTGCCACTTACCCTACCATTACCCTACCATCCACCATGACCTACTCACCATACTGTTCTTCTACCCACCATAT
 TGAAACGCTAACAAATGATCGTAAATAACACACACGTGCTTACCCTACCACTTTATACCACCACCACATGCCATACTCAC
 ...
 A header line (one per chromosome), then the sequence
+There might be non-chromosomal sequences, which are skipped on import
+
+And the genome annotation in gff format, renamed to be the same filename as the genome but .gff:
+{some comments, prepended by #'s}
+NC_001133.9	RefSeq	region	1	230218	.	+	.	ID=NC_001133.9:1..230218;Dbxref=taxon:559292;Name=I;chromosome=I;gbkey=Src;genome=chromosome;mol_type=genomic DNA;strain=S288C
+NC_001133.9	RefSeq	telomere	1	801	.	-	.	ID=id-NC_001133.9:1..801;Dbxref=SGD:S000028862;Note=TEL01L%3B Telomeric region on the left arm of Chromosome I%3B composed of an X element core sequence%2C X element combinatorial repeats%2C and a short terminal stretch of telomeric repeats;gbkey=telomere
+NC_001133.9	RefSeq	origin_of_replication	707	776	.	+	.	ID=id-NC_001133.9:707..776;Dbxref=SGD:S000121252;Note=ARS102%3B Autonomously Replicating Sequence;gbkey=rep_origin
+NC_001133.9	RefSeq	gene	1807	2169	.	-	.	ID=gene-YAL068C;Dbxref=GeneID:851229;Name=PAU8;end_range=2169,.;gbkey=Gene;gene=PAU8;gene_biotype=protein_coding;locus_tag=YAL068C;partial=true;start_range=.,1807
+NC_001133.9	RefSeq	mRNA	1807	2169	.	-	.	
+
+Only cares about rows with 'region' (which defines which chromosome it is' and 'gene' rows (which define genes)
+See below code for details
 %}
-%And the genome annotation in gff format, renamed to be the same filename as the genome but .gff
 
 opts.hdrmeth = 2; %Method for converting the header line into chromosome name (see code)
 opts.annot = 'gff'; %Annotation format
 
 if nargin < 1
-    [f p] = uigetfile('*.fna');
+    [f, p] = uigetfile('*.fna');
     if ~p
         return
     end
