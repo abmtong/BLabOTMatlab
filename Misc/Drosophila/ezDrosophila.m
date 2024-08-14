@@ -22,10 +22,10 @@ opts.peakrad = 5; %Just take a circle with this raidus around the peaks
 opts.area = [];% [5 250]; %Acceptable area range, else reject
 opts.ecc =  [];%[0 .5]; %Acceptable eccentricity
 
-% opts.prcrng = [1e3 5e3]; %Percentile range, culls if outside it
+% opts.prcrng = [1e3 5e3]; %Mask cutoff range, culls if outside it
 
 %Image processing options
-opts.zrange = 2:10; %Take max over this Z-range
+opts.zrange = 2:16; %Take max over this Z-range
 
 %Background quantification method
 opts.bkgrad = 3; %Radius of circle for background detection, i.e. spot is ~this size
@@ -65,8 +65,12 @@ msk = bfOpen3DVolume(mskfp);
 msk = msk{1}{1};
 
 %Spots dont change along Z, so lets just max over a Z-range. Zs too high/low can look weird, so skip
-img = max(img(:,:,opts.zrange), [], 3);
-msk = max(msk(:,:,opts.zrange), [], 3);
+[img, imgz] = max(img(:,:,opts.zrange), [], 3);
+[msk, mskz] = max(msk(:,:,opts.zrange), [], 3);
+
+%Convert to i8 from dbl for memory (zmax is like 17)
+imgz = uint8(imgz);
+mskz = uint8(mskz);
 
 %Save the raw image here
 imgraw = img;
@@ -170,7 +174,7 @@ else
     rprops = struct('sum', vals, 'bbox', bboxs, 'cen', cens, 'area', num2cell(areas), 'ecc', num2cell(eccs), 'bdy', bdys' );
 end
 %And the final output
-out = struct( 'img', img, 'imgraw', imgraw, 'msk', msk, 'rprops', rprops, 'ki', ki);
+out = struct( 'img', img, 'imgraw', imgraw, 'msk', msk, 'imgz', imgz, 'mskz', mskz, 'rprops', rprops, 'ki', ki);
 
 if opts.debug
     %Draw image

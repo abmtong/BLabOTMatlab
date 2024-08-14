@@ -12,7 +12,9 @@ opts.dwlcg = [50 900]; %DNA XWLC guess, [PL(nm) SM(pN)]
 opts.dwlcc = 2000*.34; %DNA contour length guess, 0.34nm/bp
 % Guess taken from what I've observed for DNA in HiRes
 opts.pwlcg = 0.4; %Protein XWLC PL guess
-opts.pwlcc = 0.35*106; %Protein contour length, will be used as a set value. ROSS is 106aa, but expts introduce loops that increase it
+opts.pwlcc = 0.38*106; %Protein contour length, will be used as a set value. ROSS is 106aa, but expts introduce loops that increase it
+% opts.pwlcc = 0.35*78; %FoldIII
+
 % Guess taken from https://www.pnas.org/doi/10.1073/pnas.1300596110
 
 if nargin > 1
@@ -22,6 +24,7 @@ end
 %Fit pre-rip to DNA XWLC (detected in p2) and post-rip to XWLC DNA+protein (set protein CL constant, as PL and CL are roughly inversely proportional at low PL)
 len = length(inst);
 optopts = optimoptions('lsqcurvefit', 'Display', 'off');
+ki = true(1,len);
 for i = 1:len
     %Get this pull
     tmp = inst(i);
@@ -29,6 +32,13 @@ for i = 1:len
     x = double( windowFilter(@mean, tmp.ext( 1:tmp.retind ), [], opts.fil*2+1) );
     f = double( windowFilter(@mean, tmp.frc( 1:tmp.retind ), [], opts.fil*2+1) );
     ri = floor(tmp.ripind / (opts.fil*2+1));
+    
+    %ri must be at least be length(xg) below, else lsqcurvefit will error. Just skip if so [probably a bad rip detection]
+    if ri < 5
+        fprintf('Skipping pull %d/%d, probably bad rip detection\n', i, len)
+        ki(i) = false;
+        continue
+    end
     
     %Fit pre-rip to just XWLC
     xg = [opts.dwlcg opts.dwlcc 0 0];%PL (nm), SM (pN), CL (nm), dx, df, PL(protein) CL(protein) <<should probably fix
@@ -38,7 +48,7 @@ for i = 1:len
     dft = lsqcurvefit(fitfcn, xg, f(1:ri),x(1:ri), lb, ub, optopts);
     
     xg2 = [dft opts.pwlcg opts.pwlcc];%PL (nm), SM (pN), CL (nm), dx, df, PL(protein) CL(protein) <<should probably fix
-    lb2 = [lb 0 opts.pwlcc ]; %set ext and frc offsets to 0, but can enable if needed
+    lb2 = [lb 0.1 opts.pwlcc ]; %set ext and frc offsets to 0, but can enable if needed
     ub2 = [ub 2 opts.pwlcc];
     fitfcn2 = @(x0,f)( x0(3) * XWLC(f-x0(5), x0(1),x0(2)) + x0(4) + ((1:length(f)) > ri ) .* x0(7) .* XWLC(f-x0(5), x0(6),inf)  );
     pft = lsqcurvefit(fitfcn2, xg2, f, x, lb2, ub2, optopts);
@@ -61,6 +71,7 @@ for i = 1:len
 %     figure, plot( windowFilter(@mean, inst(i).conpro, [], 5)  )
 end
 
-out = inst;
+%Crop out those that failed processing
+out = inst(ki);
 
 

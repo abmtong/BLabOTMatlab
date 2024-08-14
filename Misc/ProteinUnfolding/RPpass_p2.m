@@ -32,8 +32,8 @@ for i = 1:len
     ext = double( inst(i).ext );
     frc = double( inst(i).frc );
     %Filter
-    extF = windowFilter(@mean, ext, opts.fil, 1);
-    frcF = windowFilter(@mean, frc, opts.fil, 1); %Only used if XWLC is used, but eh
+    extF = windowFilter(@median, ext, opts.fil, 1);
+    frcF = windowFilter(@median, frc, opts.fil, 1); %Only used if XWLC is used, but eh
     
     %Let's actually crop the edges since the filtering is so large
     if length(ext) > 2*opts.fil+1
@@ -218,7 +218,7 @@ for i = 1:len
 %         end
 %           iref = tin(2)+ki(1)-1;
         %Save all four data anyway: 'middle', left edge, right edge, type
-        outraw(j,:) = [iref, ki(1), ki(end), tt];
+        outraw(j,:) = [[iref, ki(1), ki(end)] + opts.fil, tt]; %Convert back to pre-cropped index
         
     end
     

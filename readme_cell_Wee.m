@@ -10,5 +10,5 @@ Fitting the raw data to a monotonic staircase was done by hidden markov model fi
 Calculating velocity distributions from data was done by a Savitzky-Golay differentiatiating filter
     The data was filtered with a S-G differentiating filter of order 1, width 101 pts (= 75ms at 1333Hz) to transform position data to velocity data.
     The velocities were binned together and fit to a sum of two Gaussians, one with mean 0 and one with positive mean.
-    Code in /DataGUIs/Velocity/vdist/m
+    Code in /DataGUIs/Velocity/vdist.m
 %}

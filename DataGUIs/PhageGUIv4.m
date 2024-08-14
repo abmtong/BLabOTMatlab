@@ -1,7 +1,7 @@
 function PhageGUIv4()
 %% PhageGUI: Interface for viewing optical tweezers .mat files
-%Expects a file with name phage*.mat that contains a struct, with fields time, contour, force, all of which are cell arrays
-%Can work with most other subgroups' mat files -- detects their format and re-wraps them into Phage-like [see @renametophage]
+%Expects a mat file that contains a struct, with fields time, contour, force, all of which are cell arrays of data
+% Can work with most other subgroups' mat files -- detects their format and re-wraps them to work with this GUI [see @renametophage]
 %Last annotated 191127
 
 %% Add paths, by running startup.m
@@ -208,16 +208,7 @@ fig.Visible = 'on';
         %Check if there's fluorescence data: if so, turn fluorescence options on
         if isfield(stepdata, 'apdT') %Check for fluorescence data. Plotting in refilter_callback
             radioBot.Visible = 'on';
-            %Lets make the bottom graph bigger, too
-            dy = 0.2;
-            subAxis.Position(4) = .2 +dy;
-            mainAxis.Position(2) = .31 + dy;
-            mainAxis.Position(4) = .68 - dy;
-            
-            %Orig dims:
-%             mainAxis = axes(panaxs, 'Position', [.05 .31 .78 .68]); %Holds the main distance-time plot
-%             subAxis  = axes(panaxs, 'Position', [.05 .05 .78 .2]);
-            
+
         else %Turn it back off if the data is no longer found?
             dy = 0;
             subAxis.Position(4) = .2 +dy;
@@ -322,6 +313,18 @@ fig.Visible = 'on';
                 cellfun(@(x,y)plot(subAxis,x,y,'Color',[.2 .2 .2]), ctimF, cforF)
             end
         elseif radioBot2.Value %Plot fluorescence
+            
+            %Lets make the bottom graph bigger
+            dy = 0.2;
+            subAxis.Position(4) = .2 +dy;
+            mainAxis.Position(2) = .31 + dy;
+            mainAxis.Position(4) = .68 - dy;
+            
+            %Orig dims:
+%             mainAxis = axes(panaxs, 'Position', [.05 .31 .78 .68]); %Holds the main distance-time plot
+%             subAxis  = axes(panaxs, 'Position', [.05 .05 .78 .2]);
+            
+            
             %Grab time
             if isfield(stepdata, 'apdT')
                 
@@ -794,6 +797,23 @@ fig.Visible = 'on';
 %% Custom Callbacks
 %These are here to do custom, variable things. May be moved to a more permanent button.
     function custom01_callback(~,~)
+        %If it's Boltzmann data, draw lines for ruler
+        if isfield(stepdata, 'opts') && isfield(stepdata.opts, 'Instrument') && strcmp(stepdata.opts.Instrument, 'Boltzmann')
+            customB1.String = 'MolRuler';
+            %Draw lines at 3500 + n*64 + offset
+            args = str2num(customB1t.String); %#ok<ST2NM>
+            yy = 3600 + 350 + 59 + (0:7) * 64 + args(2); %3600 (avg start pos) + 350 (offset to ruler start) + 59 (offset to first pause)
+            xx = xlim;
+            delete(stripes)
+            stripes = gobjects(1, length(yy));
+            for i = 1:length(yy)
+                stripes(i) = line(xx, yy(i)*[1 1]);
+            end
+            return
+        end
+        
+        
+        
         %Draw lines parallel to the X axis
         customB1.String = 'AspectRatio';
         xl = mainAxis.XLim;
@@ -803,7 +823,7 @@ fig.Visible = 'on';
         axdim = fig.Position(3:4).*panaxs.Position(3:4).*mainAxis.Position(3:4);
         %Set the aspect ratio (by distorting x)
         xr = yr * .03 * axdim(1)/axdim(2);
-        mainAxis.XLim = xl(1) + [0 xr];
+%         mainAxis.XLim = xl(1) + [0 xr];
         %Make the filtered line bold
         cellfun(@(x)set(x,'LineWidth',1.5), filtLine)
         %In this new axis, find what Y-values to draw the lines at

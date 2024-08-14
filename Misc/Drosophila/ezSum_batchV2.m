@@ -4,9 +4,14 @@ function out = ezSum_batchV2(inst, frchno, r, verbose, name)
 
 %V2: ROI follows the spot
 
-%Verbose option for ezSum, 0 = nothing, 1 = plots and gifs, 2 = gifs only
+%Radius. Since it follows now, can use a smallish box (3-4px 'radius')
+if nargin < 3
+    r = 4;
+end
+
+%Verbose option for ezSum, 0 = nothing, 1 = ezSum_plot, ezSum plots, and gifs, 2 = gifs only, 3 = ezSum_plot only
 if nargin < 4
-    verbose = 0;
+    verbose = 3;
 end
 
 %Name for gif output
@@ -14,12 +19,51 @@ if nargin < 5
     name = inputname(1);
 end
 
+%Also accept scalar struct input. This has params:
+%nam : name (name)
+%dat : data (inst)
+%fr : frchno cell, one per nc
+if nargin == 1 %isscalar(inst)
+    len = length(inst.fr);
+    out = cell(1, len);
+    
+    dfrng = [-10 20]; %Crop to these frames around frchno
+    
+%     dfrng = [-inf inf]; %
+    
+    for i = 1:len
+        %Let's crop to a range around frchno
+        frchno = inst.fr{i};
+        %Handle 3 or 4 inputs
+        if length(frchno) == 3
+            %Take +- 20 frames
+            frrng = frchno(1:2);
+        elseif length(frchno) == 4
+            frrng = [min( frchno([1 3])) max( frchno( [ 2 4] ) )];
+        end
+        frrng = frrng + dfrng;
+        frs = [inst.dat.frame];
+        ki = frs >= frrng(1) & frs <= frrng(2);
+        dat = inst.dat(ki);
+        %Since we've moved dat, we need to also move frchno. 
+        out{i} = ezSum_batchV2( dat , frchno, r, 0, sprintf('%s: #%d', inst.nam, i ));
+        
+        %Let's hack together plotting (in one fig)
+        if i == 1
+            [~, axs] = ezSum_plot(out{i}, [dat.frame], sprintf('Data: %s', inst.nam ));
+        else
+            [~, axs] = ezSum_plot(out{i}, [dat.frame], sprintf('Data: %s', inst.nam ), [], axs);
+        end
+    end
+    return
+end
+
 %Find the frame and channel to get spot detection from
 frs = [inst.frame];
 chs = [inst.ch];
 
 %Dilate to merge adjacent circles, if needed, when merging spot detections
-ndil = -1;
+ndil = 1;
 
 %Create options string
 frchstr = sprintf('[ %s]', sprintf('%d ', frchno)); %frchno -> [95 100 3]
@@ -82,9 +126,10 @@ elseif length(frchno) >= 3 %Range of frames
     %Print stats on 'box radii'
     radnan = rads( ~isnan(rads) );
     fprintf('Average particle radius of %0.2f, quartiles [%0.2f %0.2f %0.2f %0.2f %0.2f]\n', median(radnan, 'omitnan'), prctile(radnan, 0), prctile(radnan, 25), prctile(radnan, 50), prctile(radnan, 75), prctile(radnan, 100))
-    if any(~isframed)
-        warning('Some regions (%d/%d) may be too big for the current box size', sum(~isframed), len)
-    end
+%     if any(~isframed)
+%         warning('Some regions (%d/%d) may be too big for the current box size', sum(~isframed), len)
+%     end
+%   This warning is probably no longer necessary in V2 since it follows the spot
     
     %Rename to rprops, just need centroid field
     rprops = struct( 'cen', cens );
@@ -102,9 +147,9 @@ elseif length(frchno) >= 3 %Range of frames
     colormap gray
     axis tight
     hold on
-    %Draw the region boundaries over it
-    for i = 1:len
-        plot( newbdys{i}(:,2) , newbdys{i}(:,1), 'LineWidth', 1 )
+    %Draw the region boundaries over it, save plots if we remove regions later
+    for i = len:-1:1
+        pls(i) = plot( newbdys{i}(:,2) , newbdys{i}(:,1), 'LineWidth', 1 );
     end
     drawnow
 else
@@ -133,7 +178,13 @@ tfkeep = true(1,len); %Keep track if we want to keep particles
 %Minimum connected centroids, to ignore blips
 % Calculate dependent on the number of frames in frchno
 % mincens = 5;
-mincens = min(frchno(4) - frchno(3), frchno(2) - frchno(1) ) /2 ;
+if length(frchno) == 4
+    mincens = min(frchno(4) - frchno(3), frchno(2) - frchno(1) ) /2 ;
+elseif length(frchno) == 3
+    mincens = (frchno(2)-frchno(1) )/2;
+else
+    error('Unsupported frchno type')
+end
 mincens = max( round(mincens), 2); %Need at least 2 for interp1
 for i = 1:len
     %Find a corresponding spot for each frame
@@ -194,6 +245,10 @@ end
 %Note rejection
 if ~all(tfkeep)
     warning('Rejected %d/%d spots due to too few overlapping spots (%d)', sum(~tfkeep), length(tfkeep), mincens )
+    
+    %Make the circles in the image ... grey?
+    set(pls(~tfkeep), 'Color', [.5 .5 .5])
+    drawnow
 end
 
 %Apply cropping
@@ -206,6 +261,12 @@ for i = 1:len
     plot3(trackcens(i,:,1), trackcens(i,:,2), 1:nfr );
 end %Some weirdness outside the cycle of interest (naturally) but works for what we care about
 
+%process verbose flag: need two flags
+verbPlot = verbose; %Run ezSum_plot
+if verbose == 3 %Just one special case, for verbose == 3
+    verbPlot = 1;
+    verbose = 0;
+end
 
 %Create folder ezSum+Fr{Frame#} if gifs are to be made
 dirnam = sprintf('ezSum_%s_Fr%03d_%s', name, frchno(1), datestr(now, 'YYmmDDHHMMSS'));
@@ -232,9 +293,11 @@ out = [out{:}];
 
 %Add isframed if it was used
 if length(frchno) == 3
-    isfc = num2cell(isframed);
+    isfc = num2cell(isframed(tfkeep));
     [out.isframed] = deal(isfc{:});
 end
 
-ezSum_plot(out, frs, sprintf('Data: %s, %s', name, optstr ));
+if verbPlot
+    ezSum_plot(out, frs, sprintf('Data: %s, %s', name, optstr ));
+end
 

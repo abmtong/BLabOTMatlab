@@ -1,4 +1,4 @@
-function saveall(name, whattosave)
+function out = saveall(name, whattosave)
 %whattosave: wkspc (1), figs(2), or both (0)
 
 
@@ -28,7 +28,7 @@ mkdir(folnam);
 
 %save wkspc
 if whattosave == 0 || whattosave == 1
-    evalin('base', sprintf('save([''%s'' filesep ''wkspc.mat''])', folnam))
+    evalin('base', sprintf('save([''%s'' filesep ''wkspc.mat''],''-v7.3'')', folnam))
 end
 
 %save figs
@@ -42,8 +42,11 @@ if whattosave == 0 || whattosave == 2
         fnam = [folnam filesep 'fig' sprintf('%02d_%s',i, matlab.lang.makeValidName(fgs(i).Name))];
         savefig(fgs(i), [fnam '.fig']);
         print(fgs(i), [fnam '.png'], '-dpng', '-r192');
-        print(fgs(i), [fnam '.eps'], '-depsc', '-r192');
+%         print(fgs(i), [fnam '.eps'], '-depsc', '-r192'); %EPS, if needed
     end
 end
 
 fprintf(' Done.\n')
+if nargout
+    out = folnam;
+end

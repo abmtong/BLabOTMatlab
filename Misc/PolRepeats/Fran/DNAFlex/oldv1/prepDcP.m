@@ -50,7 +50,7 @@ for i = 1:4
     nwrite = min( nwrite, maxn );
     for j = 1:nwrite
         %Write >Name line
-        fprintf(fid, '>Genes_%s%d\n', chrlabel(i) , j); %Name must be without spaces; underscore before %s%d is used later to group files
+        fprintf(fid, '>Genes_%s%03d\n', chrlabel(i) , j); %Name must be without spaces; underscore before %s%d is used later to group files
         %Write sequence
         fprintf(fid, '%s\n', [tmp{(j-1)*seqperchunk+1: min(j*seqperchunk, end)}]);
     end

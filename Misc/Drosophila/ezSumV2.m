@@ -39,6 +39,7 @@ ifr = zeros(1,len);
 ich = zeros(1,len);
 vals = zeros(1,len);
 imgs = cell(1,len);
+zs = zeros(2,len);
 for i = 1:len
     %Get image
     img = inst(i).img;
@@ -62,6 +63,11 @@ for i = 1:len
     snp = imgbkg(rm2);
     snp = reshape(snp, mskwid, mskwid);
     imgs{i} = snp;
+    
+    %Calculate maxz of each spot in img, mask plane
+%     if isfield(inst, imgz)
+    zs(:,i) = [ max( inst(i).imgz(rm1) )  max( inst(i).mskz(rm1) ) ];
+%     end
 end
 %Maybe save snippets and output to gif to 'check the work' ?
 
@@ -71,6 +77,7 @@ if verbose == 1
 end
 maxval = zeros(1,2);
 valssep = cell(1,2);
+valssepz = cell(1,2);
 for i = 1:2
     %Separate by frame no
     ki = ich == i;
@@ -82,6 +89,12 @@ for i = 1:2
     xx = xx(si);
     yy = yy(si);
     valssep{i} = yy;
+    
+    %Grab Z values
+    zz = zs(:,ki);
+    zz = zz(:,si);
+    valssepz{i} = zz;
+    
     
     if verbose == 1
         %Plot
@@ -108,11 +121,14 @@ if verbose
 end
 
 %Make output: first add some metadata
-out.cen = [median(x), median(y)];
+out.cen = [median(x), median(y)] + sz/2; %Should +sz/2 here
+% warning('Cen is shifted by -sz/2, undo this when reanalyzing')
 out.rad = r;
 
 
 %Save output
 out.vals1 = valssep{1};
 out.vals2 = valssep{2};
+out.vals1z = valssepz{1};
+out.vals2z = valssepz{2};
 out.imgs = imgs;

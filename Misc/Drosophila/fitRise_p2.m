@@ -1,5 +1,6 @@
 function inst = fitRise_p2(inst, inOpts)
 %Part two: adjusts for background correction. Input: output of fitRise
+% Generally not used rn
 
 opts.backind = [120 200]; %Choose a region to sample background from.
 opts.backmeth = 1; %Method to get background

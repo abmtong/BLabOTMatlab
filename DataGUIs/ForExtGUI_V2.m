@@ -46,11 +46,19 @@ panwid_top = 0.05;
 panwid_left = 0.08; %Warning: if this is too small / window too narrow, slider goes up-down instead of left-right
 
 panaxs = uipanel('Position', [panwid_left 0 1-panwid_left 1-panwid_top]);
-mainAxis = axes('Parent', panaxs, 'Position', [.05 .31 .94 .68]);
+% %Original axes: PhageGUI-like (main top, sub lower)
+% mainAxis = axes('Parent', panaxs, 'Position', [.05 .31 .94 .68]);
+% subAxis  = axes('Parent', panaxs, 'Position', [.05 .05 .4 .2]);
+% subAxis2  = axes('Parent', panaxs, 'Position', [.55 .05 .4 .2]);
+
+%New axes: big F-X graph (subAxis)
+mainAxis = axes('Parent', panaxs, 'Position', [.50 .31 .49 .68]);
+subAxis  = axes('Parent', panaxs, 'Position', [.05 .05 .4 .94]);
+subAxis2  = axes('Parent', panaxs, 'Position', [.50 .05 .49 .2]);
+
+
 hold(mainAxis,'on')
-subAxis  = axes('Parent', panaxs, 'Position', [.05 .05 .4 .2]);
 hold(subAxis, 'on')
-subAxis2  = axes('Parent', panaxs, 'Position', [.55 .05 .4 .2]);
 hold(subAxis2, 'on')
 %This sets the colormap, which dictates how the color of the line changes; see >>doc colormap
 colormap cool
@@ -106,11 +114,14 @@ fig.Visible = 'on';
             save('GUIsettingsFX.mat', 'path', '-append')
             
             %Format the file slider
-            d = dir([path filesep 'ForceExtension*.mat']);
+            d = dir([path filesep '*.mat']);
             d = {d.name};
             len = length(d);
             %Sort, so it's by day then by N##
-            d = sort_phage(d);
+            try
+                d = sort_phage(d);
+            catch
+            end
             fileSlider.Min = 1;
             fileSlider.Max = len;
             fileSlider.String = d;
@@ -118,7 +129,7 @@ fig.Visible = 'on';
             if len ==1
                 fileSlider.Enable = 'off';
             else
-                fileSlider.SliderStep = [1 10] ./ (len-1);
+                fileSlider.SliderStep = min( [1 10] ./ (len-1), 1);
             end
         else %Called from fileSlider_callback
             file = f;
@@ -144,7 +155,8 @@ fig.Visible = 'on';
         
         %Load var.s into figure
         tim = ContourData.time(:)';
-        frc = ContourData.force(:)';
+%         frc = ContourData.force(:)';
+        frc = (ContourData.forceBX - ContourData.forceAX )/2; %Maybe use AX-BX force? instead of hypot?
         ext = ContourData.extension(:)';
         
         %Plot F-X on bottom
@@ -305,7 +317,14 @@ fig.Visible = 'on';
         opts.loF = flim(1);
         opts.hiF = flim(2);
         
-%         opts.inGuess = [30 500 4000];
+        %Override bounds/guess
+        opts.lb = [0   0   0   -00 -0];
+        opts.ub = [1e5 1e5 inf  00  0];
+        opts.inGuess = [40 900 4000];
+
+%         opts.lb = [0   3100   0   -00 -0];
+%         opts.ub = [1e5 3100 inf  00  0];
+%         opts.inGuess = [40 3100 4000];
         
         %Do fitting
         [xwlcfit, fitfcn] = fitForceExt(extFc, frcFc, opts, 0);
@@ -453,17 +472,22 @@ fig.Visible = 'on';
         
         %}
         
-        customB1.String = 'Plot cropped F-D';
-        %Plot the crop area F-D curve. Only works after fitting XWLC
-        fg = figure('Name', sprintf('Plot FX Curve %s', name), 'Color', ones(1,3));
-        ax = gca;
-        plot(ax, extFc, frcFc, 'LineWidth', 2, 'Color', 'r');
-        xlabel(ax, 'Extension')
-        ylabel(ax, 'Force')
+%         customB1.String = 'Plot cropped F-D';
+%         %Plot the crop area F-D curve. Only works after fitting XWLC
+%         fg = figure('Name', sprintf('Plot FX Curve %s', name), 'Color', ones(1,3));
+%         ax = gca;
+%         plot(ax, extFc, frcFc, 'LineWidth', 2, 'Color', 'r');
+%         xlabel(ax, 'Extension')
+%         ylabel(ax, 'Force')
+%         
+%         %Add a Measure button
+%         uicontrol('Parent', fg, 'Units', 'normalized', 'Position', [ 0, 0, .1, .1], 'String', 'Measure', 'Callback',@(x,y)drawline); %drawline takes no input args, but callbacks do two
+        customB1.String = 'Plot Trap Sep';
+        %Plot in SubAxis2
+        tsep = ContourData.extension - ContourData.forceAX / ContourData.cal.AX.k + ContourData.forceBX / ContourData.cal.BX.k;
+        plot(subAxis2, ContourData.time, tsep)
+        linkaxes([subAxis2, mainAxis], 'x')
         
-        %Add a Measure button
-        uicontrol('Parent', fg, 'Units', 'normalized', 'Position', [ 0, 0, .1, .1], 'String', 'Measure', 'Callback',@(x,y)drawline); %drawline takes no input args, but callbacks do two
-
     end
 
     function custom02_callback(~,~)

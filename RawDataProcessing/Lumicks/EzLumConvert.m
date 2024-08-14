@@ -4,9 +4,11 @@ function EzLumConvert(inOpts)
 
 opts.Fs = 78125; %Lumicks fsamp, 5^7
 opts.dsamp = 25; %Downsample by this amount, to e.g. 3125Hz
-opts.fliptraps = 0; %Assume trap 2 is left trap, trap 1 is right trap. =1 to flip
-opts.xwlcopts = [50 900 4.14];
-opts.saveraw = 1; %Save raw file as .mat after downsampling
+opts.fliptraps = 0; %Assume trap 2 is left trap (B), trap 1 is right trap (A). =1 to flip
+opts.xwlcopts = [50 900 4.14]; %For contour conversion
+opts.saveraw = 0; %Save raw file as .mat after downsampling
+opts.mirconv = [2.029, -9.4581]; %Multiplier for trap position. Seems to be valid 2022/10 - 2023/06 at least.
+
 
 if nargin > 0
     opts = handleOpts(opts, inOpts);
@@ -55,24 +57,28 @@ for i = 1:len
                 save(fullfile(p, dirnam, [fil '_RAW.mat']), 'lumraw')
             end
         case 'mat'
-            %Just load
+            %Just load data into raw
             raw = load( fullfile(p, f{i}) );
             fns = fieldnames(raw);
             raw = raw.(fns{1});
     end
     
-    %Extract f, ext fields and downsample
-    %     fax = windowFilter(@mean, raw.ForceHF_Force1x, [], opts.dsamp);
-    %     fay = windowFilter(@mean, raw.ForceHF_Force1y, [], opts.dsamp);
-    %     fbx = windowFilter(@mean, raw.ForceHF_Force2x, [], opts.dsamp);
-    %     fby = windowFilter(@mean, raw.ForceHF_Force2y, [], opts.dsamp);
+    %Extract force fields
     fax = raw.ForceHF_Force1x;
     fay = raw.ForceHF_Force1y;
     fbx = raw.ForceHF_Force2x;
     fby = raw.ForceHF_Force2y;
     
-    % This naming convention then matches HiRes, A is left trap
+    % This naming convention then matches HiRes, A is right trap
     
+    %Cal is probably in raw but lets just grab it again
+    [~, cal] = h5calread(fullfile(p, f{i}));
+    cfn = fieldnames(cal);
+    cal = cal.(cfn{end});
+    
+    %And calculate bead ext
+    beadext = - fax/cal.x1.k + fbx/cal.x2.k; %This should be two positive terms
+         
     %Flip traps if asked for
     if opts.fliptraps
         tmpax = fax;
@@ -82,35 +88,44 @@ for i = 1:len
         tmpay = fay;
         fay = fby;
         fby = tmpay;
+        
+        %And flip bead ext
+        beadext = -beadext;
     end
     
     %Calculate force
     frc = hypot(fbx - fax, fby - fay)/2;
     
-    %Extension as just PiezoMirror for now
-%     ext = windowFilter(@mean, raw.Distance_PiezoDistance, [], opts.dsamp);
-
-    %Sometimes this is called PiezoDistance ,sometimes Trapposition_N1X?
-    % The zero for Trapposition_N1X is not the 0 for bead sep, let's set the initial value to the initial Distance1 value
-    ext = raw.Trapposition_N1X - mean(raw.Trapposition_N1X(1:1e2)) + raw.Distance_Distance1.Value(1); %unit is um. Will be converted to bp later.
+    %Get trap pos. Use a calibration between Distance1 and TrappositionN1X obtained from EzLumConvert_Mirror
+    tpos = raw.Trapposition_N1X * opts.mirconv(1) + opts.mirconv(2);
+    tpos = tpos * 1000; %um to nm
     
-%     ext = raw.Distance_PiezoDistance; 
+    %Remove bead displacements
+    % First let's check that we've got the right signs for the traps: AX should be negative, BX positive
+    sgna = sign(median(fax));
+    sgnb = sign(median(fbx));
+    %Four cases based on sign. Sign of [A, B] should be [-, +]
+    if sgna == -1 && sgnb == 1
+        %Signs are correct
+    elseif sgna == 1 && sgnb == -1
+        warning('Trap signs might be flipped, check and fix with opts.fliptraps = %d', double(~opts.fliptraps))
+    else
+        warning('Trap signs are weird, check')
+    end
+
+    %Extension = trap pos - beadext;
+    ext = tpos - beadext;
     
     %Contour, assume XWLC
-    if isempty(frc)
-        con = [];
-    else
-        con = ext ./ XWLC(frc, opts.xwlcopts(1), opts.xwlcopts(2), opts.xwlcopts(3) ) /.34 *1000;
-    end
+    con = ext ./ XWLC(frc, opts.xwlcopts(1), opts.xwlcopts(2), opts.xwlcopts(3) ) /.34 ;
     
     %Time
     outFs = opts.Fs / opts.dsamp;
     tim = (0:length(frc)-1) / outFs;
     
     %Fluorescence
+    hasdata = 0;
     if isfield(raw, 'Infowave_Infowave') && ~all(~raw.Infowave_Infowave) %Only continue if we have the infowave
-        %Fluorescence
-        hasdata = 0;
         if isfield(raw, 'Photoncount_Green')
             %Save and convert average count to kHz
             [fl.gg, fl.at] = drawimageV2(raw.Infowave_Infowave, raw.Photoncount_Green);
@@ -179,6 +194,18 @@ for i = 1:len
     
     
     %Maybe save some metadata...
+    %Let's save the Distance1 curve as the offset
+    dx = raw.Distance_Distance1.Value';
+    dt = double(raw.Distance_Distance1.Timestamp - raw.Distance_Distance1.Timestamp(1) )' / 1e9;
+    %Write this in a way that will be plottable by PlotOff
+    off.AX = dx * 1e3;
+    off.AY = zeros(size(dx)); %Distance1
+    dsamp = floor( outFs * dt(2) );
+    off.BX = windowFilter(@mean, ext, [], dsamp); %Extension
+    off.BX = off.BX( 1:length(dt) );
+    off.BY = zeros(size(dx));
+    off.TX = dt;
+    
     
     %Assemble output stepdata
     stepdata.forceAX = {fax};
@@ -189,6 +216,8 @@ for i = 1:len
     stepdata.force = {frc};
     stepdata.time = {tim};
     stepdata.contour = {con};
+    stepdata.cal = raw.cal;
+    stepdata.off = off;
     
     %Save
     [~, fstrip, ~] = fileparts(f{i});

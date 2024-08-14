@@ -19,7 +19,7 @@ len = sum( exln(1:end-1) == 1 & exln(2:end) == 2);
 %Size of pixel, in samples, i.e. the length from start to the first pixel end (first 2)
 lnwid = find(exln == 2, 1);
 %Height is number of lines
-hei = length(lnstarts); %Last line might be unfinished, see below
+hei = min(length(lnstarts), length(lnends)); %Last line might be unfinished, see below
 %Preallocate
 out = zeros(len, hei);
 

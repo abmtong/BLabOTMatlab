@@ -7,7 +7,7 @@ function [out, dws] = fitVitterbi_tester(dist, noi, w)
 %Fits 1k steps with a given dist, avg dwell 10pts
 
 %Number of points to simulate. Say 5k, why not.
-n = 5e3;
+n = 1e3;
 
 %Mean dwell length (pts), 50 default (20Hz at 1kHz Fs)
 if nargin < 3
@@ -48,12 +48,15 @@ for i = 1:len
 end
 y = [y{:}];
 yn = y + randn(size(y))*noi;
-
-ft = fitVitterbiV3(yn, struct('ssz', 1, 'dir', 1, 'off', 0));
-
+tic
+ft = fitVitterbiV4(yn, struct('ssz', 1, 'dir', 0, 'off', 0, 'trnsprb', [1e-3 1e-300]));
+toc
+tic
+ft2 = fitVitterbiV3(yn, struct('ssz', 1, 'dir', 0, 'off', 0, 'trnsprb', [1e-3 1e-300]));
+toc
 figure('Name', sprintf('FitVitTester Dist %s, SNR %0.2f, Mean %0.2f', dist, noi, w ),'Color', [1 1 1])
 subplot(3,1,1), hold on, xlabel('Time (pts)'), ylabel('Position (bp)'), title('Fitting')
-plot(yn, 'Color', [.7 .7 .7]), plot(y, 'g'), plot(ft, 'b')
+plot(yn, 'Color', [.7 .7 .7]), plot(y, 'g'), plot(ft, 'b'), plot(ft2, 'r')
 [fdw, me] = tra2ind(ft);
 fdw = diff(fdw);
 axis('tight'), xlim([600 1600]), yl = ylim;

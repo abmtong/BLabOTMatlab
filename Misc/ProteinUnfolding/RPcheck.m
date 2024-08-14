@@ -1,7 +1,7 @@
 function RPcheck(inst)
 %Check RP results. Can be used at any point in the RP process : checks fieldnames for progress
 
-fil = 10;
+fil = 100;
 
 %For each trace..
 len = length(inst);
@@ -21,30 +21,44 @@ for i = 1:len
     end
     %Vertical bars for rip + back location
     yl = ylim;
-    plot( tmp.ripind *[1 1], yl, 'r', 'LineWidth', 1 )
-    plot( tmp.retind *[1 1], yl, 'k', 'LineWidth', 1 )
-    legend({'Data' 'Rip location' 'Retract start'})
+    tfr = [0 0 0]; %Rip, Ret, Ref plotted
+    if ~isempty(tmp.ripind)
+        plot( tmp.ripind *[1 1], yl, 'r', 'LineWidth', 1 )
+        tfr(1) = 1;
+    end
+    if ~isempty(tmp.retind)
+        plot( tmp.retind *[1 1], yl, 'k', 'LineWidth', 1 )
+        tfr(2) = 1;
+    end
     
+    if isfield(tmp, 'refind') && ~isempty(tmp.refind)
+        plot( tmp.refind *[1 1], yl, 'g', 'LineWidth', 1 )
+        tfr(3) = 1;
+    end
+    lgn = {'Data' 'Rip location' 'Retract start' 'Zip location'};
+    
+    legend(lgn(logical([1 tfr])))
     %Exit if no protein contour (pre-p3)
     if ~isfield(tmp, 'conpro')
         continue
     end
     %Plot XWLC fit
-    xx = windowFilter(@mean, tmp.ext, [], fil);
-    yy = windowFilter(@mean, tmp.frc, [], fil);
-    ri = floor(tmp.ripind / 10);
-    %fitfcn2 taken from p3
-    fitfcn2 = @(x0,f)( x0(3) * XWLC(f-x0(5), x0(1),x0(2)) + x0(4) + ((1:length(f)) > ri ) .* x0(7) .* XWLC(f-x0(5), x0(6),inf)  );
-    xf = fitfcn2(tmp.xwlcft, yy);
-    %Plot
-    subplot(2,2,2), hold on
-    title('Pulling cycle, Force-Ext')
-    xlabel('Extension (nm)')
-    ylabel('Force (pN)')
-    plot(xx, yy)
-    plot(xf, yy)
-    legend({'Data' 'XWLC DNA+Protein fit'})
-    
+    if isfield(tmp, 'xwlcft')
+        xx = windowFilter(@mean, tmp.ext, [], fil);
+        yy = windowFilter(@mean, tmp.frc, [], fil);
+        ri = floor(tmp.ripind / 10);
+        %fitfcn2 taken from p3
+        fitfcn2 = @(x0,f)( x0(3) * XWLC(f-x0(5), x0(1),x0(2)) + x0(4) + ((1:length(f)) > ri ) .* x0(7) .* XWLC(f-x0(5), x0(6),inf)  );
+        xf = fitfcn2(tmp.xwlcft, yy);
+        %Plot
+        subplot(2,2,2), hold on
+        title('Pulling cycle, Force-Ext')
+        xlabel('Extension (nm)')
+        ylabel('Force (pN)')
+        plot(xx, yy)
+        plot(xf, yy)
+        legend({'Data' 'XWLC DNA+Protein fit'})
+    end
     %Plot protein contour
     subplot(2,2,3)
     cc = windowFilter(@mean, tmp.conpro, [], fil);
@@ -64,7 +78,9 @@ for i = 1:len
     subplot(2,2,4)
     plot(tmp.conpro)
     ylim(yl)
-    xlim( tmp.ripind + [-1 1] * 200 )
+    if ~isempty(tmp.ripind)
+        xlim( tmp.ripind + [-1 1] * 200 )
+    end
     title('Unfolding Transition Path')
     xlabel('Time (pts)')
     ylabel('Protein Contour (nm)')

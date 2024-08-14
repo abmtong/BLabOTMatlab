@@ -1,28 +1,27 @@
 function out = ezDrosophila_batch(infp)
-
+%Alternate data processing for Drosophila embryo MS2/PP7 fluorescence images
 
 frange = [];% 10:10:200; %Let us only process certain frames. Leave empty to do all frames
 
 %Files are arranged in this structure:
 %{
-RawDynamicsData\<DATE>\<NAME>\<pre>_<time>_<zslice>_RAW_<ch>.tif
- This is the raw data
 ProcessedData\<DATE>-<NAME>_\dogs\<dogtype><DATE>-<NAME>_<Frame>_<ch>
  This is 'dogs' which are the spot detection results
- 
 PreProcessedData\<DATE>-<NAME>\<DATE>-<Name>_<03d>_<ch>
- This is the raw data processed into something more handleable, combined across Z slices
-and DynamicsResults, which I am not going to use
+ This is the raw data as volume data (stacks of images)
+
+RawDynamicsData\<DATE>\<NAME>\<pre>_<time>_<zslice>_RAW_<ch>.tif
+ This is the raw data, as individual images. Redundant with PreProcessedData (?).
 
 <DATE> is YYYY-MM-DD
 <ch> is ch%02d
 <frame> is %03d
-<pre> I'm guessing is the microscope name, E7_Series006
-<time> is the frame number , t%02d ?
+<pre> I'm guessing is the microscope name, e.g. E7_Series006
+<time> is the frame number, t%02d
 <zslice> is the z slice, z%02d
-<dogtype> is 'dogStack_' or 'prob' depending on analysis type (traditional vs ML)
-name = P2P-MS2v5-LacZ-PP7v4-E7
+<dogtype> is 'dogStack_' or 'prob' depending on analysis type ('Difference Of Gaussians' [dog] vs ML segmentation)
 
+name = P2P-MS2v5-LacZ-PP7v4-E7
 file = E7_Series006_t00_z00_RAW_ch00.tif
 dogStack_2022-12-30-P2P-MS2v5-LacZ-PP7v4-E7_001_ch01
 %}
@@ -30,9 +29,13 @@ dogStack_2022-12-30-P2P-MS2v5-LacZ-PP7v4-E7_001_ch01
 %So choose one of the PreProcessedData files and nav from there
 
 if nargin < 1
-    [f, p] = uigetfile('*.tif');
+    [f, p] = uigetfile('*.tif', 'Pick one .tif in \PreProcessedData\');
     infp = fullfile(p,f);
 end
+
+%Add .\bfmatlab
+thisp = fileparts(mfilename);
+addpath(fullfile(thisp, 'bfmatlab'))
 
 %Grab names from this file
 [p f e] = fileparts(infp);
@@ -46,6 +49,10 @@ prename = f(1:end-9);
 d = dir(p);
 nams = {d.name};
 nams = nams( ~[d.isdir] );
+%One file will just be an image with '-His' instead of the channel; this can create a rare bug with str2double so remove
+ihis = cellfun(@(x) strcmp( x(end-6:end), 'His.tif' ), nams);
+nams = nams(~ihis);
+
 %Extract the frame#s of these files
 frnos = cellfun( @(x) str2double( x( end-11:end-9 )), nams );
 %This wont always work, but should be 'good enough'. Assumes a lot...
@@ -72,9 +79,12 @@ parfor i = 1:len %Parfor for speed
     imgfp1 = fullfile(pbase, 'PreProcessedData', prename, sprintf('%s_%03d_ch%02d.tif', prename, frnos(i), 1 ));
     imgfp2 = fullfile(pbase, 'PreProcessedData', prename, sprintf('%s_%03d_ch%02d.tif', prename, frnos(i), 2 ));
     %Create mask paths
-    mskfp1 = fullfile(pbase, 'ProcessedData', [prename '_'], 'dogs', sprintf('prob%s_%03d_ch%02d.tif', prename, frnos(i), 1 ));
-    mskfp2 = fullfile(pbase, 'ProcessedData', [prename '_'], 'dogs', sprintf('prob%s_%03d_ch%02d.tif', prename, frnos(i), 2 ));
-    
+%     mskfp1 = fullfile(pbase, 'ProcessedData', [prename '_'], 'dogs', sprintf('prob%s_%03d_ch%02d.tif', prename, frnos(i), 1 ));
+%     mskfp2 = fullfile(pbase, 'ProcessedData', [prename '_'], 'dogs', sprintf('prob%s_%03d_ch%02d.tif', prename, frnos(i), 2 ));
+    mskfp1 = fullfile(pbase, 'ProcessedData', [prename '_'], sprintf('prob%s_%03d_ch%02d.tif', prename, frnos(i), 1 ));
+    mskfp2 = fullfile(pbase, 'ProcessedData', [prename '_'], sprintf('prob%s_%03d_ch%02d.tif', prename, frnos(i), 2 ));
+
+
     %Run ezDrosophila
     tmp1 = ezDrosophila(imgfp1, mskfp1);
     tmp2 = ezDrosophila(imgfp2, mskfp2);

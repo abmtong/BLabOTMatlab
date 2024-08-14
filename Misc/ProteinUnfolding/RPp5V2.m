@@ -119,7 +119,7 @@ for i = 1:nfile
             %         frcfu = frcpf(uef);
             
             %%Probably should downsample along ext axis instead of @unique
-            <><><><>
+%             <><><><>
             
             %And interp
             xxi = xrng(1):opts.ibinsz:xrng(2);

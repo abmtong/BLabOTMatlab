@@ -22,7 +22,7 @@ if nargin < 2 || isempty(inNums)
     [file{1}, path] = uigetfile([path filesep '*.dat'], 'Pick your data file');
 else
     switch inOpts.Instrument
-        case {'HiRes' 'HiRes PSD' 'HiRes-legacy' 'HiRes bPD'}
+        case {'HiRes' 'HiRes PSD' 'HiRes-legacy' 'HiRes bPD' 'HiRes QPD'}
             spfn = '%sN%02d.dat';
         case 'Boltzmann'
             spfn = '%s_%03d.dat';
@@ -59,7 +59,7 @@ calopts.Instrument = opts.Instrument;
 calopts.normalize = opts.normalize;
 %Get Fs
 switch calopts.Instrument
-    case {'HiRes' 'HiRes PSD'}
+    case {'HiRes' 'HiRes PSD' 'HiRes QPD'}
 %         calopts.Fsamp = 62500; %Hard code this, at least for now
         cal = ACalibrateV2(fullfile(path, file{3}), calopts);
         drawnow %Can inspect calibration while program continues
@@ -76,6 +76,8 @@ switch calopts.Instrument
     case 'Lumicks'
         %Just load calibration from the cal file
         cal = h5calread(fullfile(path, file{3}));
+    otherwise
+        error('No Calibration defined for instrument %s', calopts.Instrument)
 end
 
 
@@ -107,7 +109,7 @@ switch opts.Protocol
         cal.(dy).k = 1e-5;
     otherwise
         switch inOpts.Instrument
-            case {'HiRes' 'HiRes PSD'}
+            case {'HiRes' 'HiRes PSD', 'HiRes QPD'}
                 %HiRes offset is pre-processed:
                 %rawoff V3 is a 8x[] matrix, with each row being a detector in order [AY BY AX BX MX MY SA SB]
                 % rawoff = readDat(sprintf('%s\\%sN%02d.dat', path, mmddyy, inNums(2)));

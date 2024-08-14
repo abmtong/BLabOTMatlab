@@ -59,6 +59,23 @@ if isequal(filterFcn, @mean)
     outData = [oDsta outData(width:end) oDend];
     outData = outData(inDecimate:inDecimate:end);
     return
+elseif isequal(filterFcn, @median)
+    %Check if the signal processing toolbox fcn @medfilt1 exists
+    if exist('medfilt1', 'file')
+        %Filter with medfilt1, much faster than generic fallback method
+        if isempty(inHalfWidth)
+            width = inDecimate;
+        else
+            width = 2*inHalfWidth+1;
+        end
+        %Filter with medfilt1
+        outData = medfilt1(inData, width, 'truncate');
+        %Decimate
+        outData = outData(inDecimate:inDecimate:end);
+        return
+    elseif length(inData) > 1e5
+        warning('Trying to median filter without the Signal Processing Toolbox: will be slow for large arrays')
+    end
 end
 
 %Calculate the output length, preserve size and type

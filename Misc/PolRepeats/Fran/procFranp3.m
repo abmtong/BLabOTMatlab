@@ -1,4 +1,5 @@
 function out = procFranp3(inst, rAopts)
+%Analyze aligned traces
 
 %Check for crossers
 bdys = [558 631 704]-16;
@@ -36,12 +37,14 @@ tcr = cell(1,len);
 %Extract Fsamp from file
 for i = 1:len
     %Time from crossing the entry to the exit site
-    tmp = cellfun(@(x) find( x >= bdys(3), 1, 'first') - find( x >= bdys(1), 1, 'first'), out(i).drA(out(i).tfc), 'Un', 0 );
+    tmp = cellfun(@(x) find( x >= bdys(3), 1, 'first') - find( x >= bdys(1), 1, 'first'), out(i).drA, 'Un', 0 );
+    %Turn empty to NaN to preserve tfpick indexing
+    tmp( cellfun(@isempty, tmp) ) = {nan};
     tcr{i} = [tmp{:}]/rAopts.Fs;
     out(i).tcr = tcr{i};
 end
 %And plot
-ccdf = @(x) plot( sort(x), (length(x):-1:1)/length(x) );
+ccdf = @(x) plot( sort(x(~isnan(x)) ), (length(x(~isnan(x))):-1:1)/length(x(~isnan(x))) );
 nams = {inst.nam};
 ifcross = cellfun(@any, {inst.tfc});
 

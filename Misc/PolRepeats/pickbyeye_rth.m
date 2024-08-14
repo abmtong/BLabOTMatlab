@@ -1,7 +1,11 @@
-function pickbyeye_rth(dat, ind)
+function pickbyeye_rth(drA, ind, ki)
 if nargin < 2
     ind = 1;
 end
+if nargin < 3
+    ki = true(size(drA));
+end
+
 %Shift y-value by this much per
 ysh = 1;
 
@@ -19,10 +23,10 @@ opts.shift = 0;
 opts.fil = 20; %41pts @ 800Hz = 20Hz filter
 
 %Calculate RTHs: singles and global
-[yy, xx] = cellfun(@(x)sumNucHist(x, opts), dat, 'Un', 0);
+[yy, xx] = cellfun(@(x)sumNucHist(x, opts), drA, 'Un', 0);
 % [yg xg] = sumNucHist(dat, opts);
 
-len = length(dat);
+len = length(drA);
 fprintf('Picking %d traces by eye\n', len)
 yshcell = num2cell(ysh * (0:len-1));
 fg = figure;
@@ -48,6 +52,10 @@ end
 % %Red line at n+1 nuc and n-1 nuc
 % plot([1 1]*(opts.disp(end) - opts.per), yl, 'r')
 % plot([1 1]*(opts.disp(end) + opts.per), yl, 'r')
+
+
+%Pre-delete ~ki, for picking again
+cellfun(@delete, (trs(~ki)))
 
 function outputtf(~,~)
     %Assignin

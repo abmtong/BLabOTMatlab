@@ -1,5 +1,7 @@
-function out = procGenome(infp, inOpts)
+function out = procGenomeV2(infp, inOpts)
 %Loads a genomic FASTA + RefSeq annotation (GFF format)
+
+%OH this doesn't separate the other genomic scaffolds from the main genome. Fix or just skip those genes
 
 %Formatting info:
 %{
@@ -25,6 +27,7 @@ NC_001133.9	RefSeq	mRNA	1807	2169	.	-	.
 Only cares about rows with 'region' (which defines which chromosome it is' and 'gene' rows (which define genes)
 See below code for details
 %}
+
 
 opts.hdrmeth = 2; %Method for converting the header line into chromosome name (see code)
 opts.annot = 'gff'; %Annotation format
@@ -85,7 +88,7 @@ for i = nchr:-1:1
             else %Handle some odd cases
                 if regexp(namln, 'mitochondri')
                     fn = 'chrM';
-                else %Miscellaneous DNA component, ignore
+                else %Miscellaneous DNA scaffold, ignore
                     fprintf('Skipping %s\n', namln)
                     continue
                 end
@@ -116,39 +119,55 @@ switch opts.annot
         %Columns are: seqname, source, feature_type, start, end, score, strand (+/- = fwd/rev), frame, attributes
         
         %Extract the gene refs (tmp{3} -- 'gene')
+        chrtype = tmp2{1};
         gfftype = tmp2{3};
         
         %Prealloc. Just assume an upper limit of 2e5? (human has ~2e4?)
-        gendataraw = cell(2e5, 2);
-        %Process each line by gfftype
-        chr = 'invalid';
+        gendataraw = cell(2e5, 3);
+        %Process gfftype 'gene' markers
+%         chr = 'invalid';
         ngene = 0;
         for i = 1:length(gfftype)
-            switch gfftype{i}
-                case 'region'
-                    %New region (i.e. chromosome), set
-                    %Scrub chromosome name from 9th col, 'chromosome=I'
-                    attribs = tmp2{9}{i};
-                    [re1, re2] = regexp(attribs, 'chromosome=\w+;');
-                    if isempty(re1)
-                        %Check if it's mitochondrial DNA
-                        if strfind(attribs, 'mitochondrion')
-                            chr = 'chrM';
-                        else
-                            chr='SKIP'; %Also makes it skip later
-                            warning('Unknown region %s', attribs)
-                        end
-                    else %Is a chromosome, format to chrI
-                        %Strip chromosome= and semicolon
-                        chr = ['chr' attribs(re1+11:re2-1)];
+            %Check for gene + we're in a normal chromosome (
+            chrraw = chrtype{i};
+            gffraw = gfftype{i};
+            if strcmp(gffraw, 'gene') && strcmp(chrraw(1:3), 'NC_')
+                %tmp2{1}{i} is e.g. NC_0000001.11, the _ to . is the chromosome number
+                % 23 = X, 24 = Y ; let's rename them
+                %First grab the number:
+                chrnum = str2double( chrraw( 4: find(chrraw == '.', 1, 'first')-1 ) );
+                
+                %Format to chr1, chr2, ...chrX
+                if chrnum ==23
+                    chr = 'chrX';
+                elseif chrnum == 24
+                    chr = 'chrY';
+                elseif chrnum <= 22
+                    chr = sprintf('chr%d', chrnum);
+                else
+                    if strcmp(chrnum, 'NC_012920.1')
+                        %Human mitochondrial DNA, just skip
+                    else
+                        fprintf('Skipping gene on %s\n', chrraw)
                     end
-                case 'gene'
-                    %Add gene to record
-                    ngene = ngene + 1;
-                    gendataraw(ngene, :) = {chr [tmp2{4}(i) tmp2{5}(i) tmp2{7}{i} == '+']};
+                    continue
+                end
+                
+                %Get gene info
+                attribs = tmp2{9}{i};
+                
+                %Strip gene name from attributes column, 'ID=gene-MIR1285-2;' -> gene-MIR1285-2
+                [re1, re2] = regexp(attribs, 'ID=[^;]+;');
+                
+                if isempty(re1)
+                    warning('Gene ID not found: check, string %s', attribs)
+                end
+                
+                ngene = ngene + 1;
+                gendataraw(ngene, :) = {chr [tmp2{4}(i) tmp2{5}(i) tmp2{7}{i} == '+'] tmp2{9}{i}(re1+3:re2-1) };
             end
-            
         end
+        
         %Strip empty
         gendataraw = gendataraw(1:ngene, :);
         
@@ -156,15 +175,7 @@ switch opts.annot
         [c, ia, ic] = unique(gendataraw(:,1));
         nchr = length(c);
         for i = nchr:-1:1
-            %Ignore non-chromosome entries
-            switch opts.hdrmeth
-                case [1 2]
-                    if ~strncmp(c{i} , 'chr',3)
-                        continue
-                    end
-                otherwise
-            end
-            
+            %
             ki = ic == i;
             
             %Find corresponding index in genome data
@@ -177,56 +188,14 @@ switch opts.annot
             
             %Save start, end, strand
             out(ii).gendat = cell2mat(gendataraw(ki, 2));
+            out(ii).name = gendataraw(ki,3);
         end
         
         %Strip empty rows, if genome has weird entries
         ki = arrayfun(@(x)all(structfun(@isempty,x)), out);
         out = out(~ki);
         
-    case 'csv'
-        % Used to load data from a csv, archived here
-        % Comparing the gff and the csv, the csv only gave protein products, while the gff had more things (e.g. tRNA and other functional RNAs)
-        %Now load genome features, expects same filename but .csv
-        [p f e] = fileparts(infp);
-        gbfp = fullfile(p, [f '.csv']);
-        
-        %File is a csv, so load
-        fid2 = fopen(gbfp);
-        tmp2 = readtable(gbfp);
-        %Columns: x_Name Accession Start Stop Strand GeneID Locus LocusTag ProteinLength ProteinName
-        fclose(fid2);
-        
-        %Convert chromosome ID to suitable format
-        switch opts.hdrmeth
-            case {1 2}
-                chrfns = strrep( tmp2.x_Name, 'chromosome ', 'chr');
-                %Handle the mitochondrial data
-                tf = ~cellfun(@isempty, strfind( tmp2.x_Name, 'mitochondri'));
-                chrfns(tf) = {'chrM'};
-            otherwise
-                error('Invalid hdrmeth')
-        end
-        
-        %Convert strand data to suitable format
-        strand = strcmp(tmp2.Strand, '+'); %1 = fwd strand, 0 = rev strand
-        %Group by chromosome ID
-        [c, ia, ic] = unique(chrfns);
-        nchr = length(c);
-        for i = nchr:-1:1
-            %Ignore non-chromosome entries
-            switch opts.hdrmeth
-                case 1
-                    if ~strncmp(c{i} , 'chr',3)
-                        continue
-                    end
-                otherwise
-            end
-            
-            ki = ic == i;
-            %Save start, end, strand
-            out(i).gendat = [tmp2.Start(ki) tmp2.Stop(ki) strand(ki)];
-        end
-    otherwise
+    
 end
 
 

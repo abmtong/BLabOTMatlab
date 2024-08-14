@@ -9,17 +9,21 @@ end
 %Movie options.... eh just do this by editing
 opts.Fs = 800;
 opts.fil = 100; %Filter; 500-2k is probably good?
-opts.color = [0 1 0]; %r/g/b f/fs/nuc
-
+% opts.color = [0 1 0]; %r/g/b f/fs/nuc
+% opts.color = [1 0 0]; %Red - Fran hWT
+% opts.color = [0 0.74902 0.74902]; %Teal - Fran FACT
+opts.color = [0.49412 0.18431 0.55686]; %Purple - Fran FACT + Spt4/5
+      %The above colors are all Matlab defaults somewhere (color picker)
+      
 opts.figsz = [1920 1080] * .75;
-opts.fontsz = 16;
+opts.fontsz = 24;
 scale = 1;
 opts.title = 'hWT nucleosome';
 opts.outname = 'zjMov';
 
 % ds = [542 615 688]
 
-opts.xl = [0 25]; %160s nuc, 55s F, 25s FS
+opts.xl = [0 160]; %160s nuc, 55s F, 25s FS
 
 opts.yl = [500 700];
 opts.dt = 1/8; %Seconds to advance plot per frame. Want ~30s movie?
@@ -76,8 +80,8 @@ end
 %And the text/time box. Set xlim here
 xlim(ax, xl)
 ylim(ax, yl)
-txbox = [xl(2)/8 12]; %Dimensions of box. Should probably make x-extent x-width dependent
-rectangle('Position', [xl(1)  yl(2) - txbox(2) txbox]);
+txbox = [xl(2)/6 12]; %Dimensions of box. Should probably make x-extent x-width dependent
+rectangle('Position', [xl(1)  yl(2) - txbox(2) txbox], 'FaceColor', [1 1 0]);
 tx = text(xl(1), yl(2), ' Time: 0s', 'VerticalAlignment', 'top', 'FontSize', opts.fontsz, 'LineWidth', 1);
 
 

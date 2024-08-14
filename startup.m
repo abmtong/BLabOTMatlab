@@ -1,9 +1,13 @@
 function startup
 %Startup function to add most commonly used folders to the search path
 %I recommend you either start in the folder with this function [so Matlab runs this automatically], or make a shortcut to run this .m file
-%Do not move this .m file from the root Matlab folder, as paths are constructed relative to this file
+%Do not move this .m file from the root of the repo, as paths are constructed relative to this file
 
-%Keep track if this file has been run, and only allow it to be run once per Matlab instance.
+%I like these formatting options, so apply them here
+format shortG %Allows for display of numbers with varying exponents, e.g. [1 1e99] displays as-is instead of 1e99 x [0, 1]
+format compact %Removes blank lines when the command window shows an output
+
+%Keep track if this file has been run, and only allow the paths to be set once
 % This file takes about 0.5s to run, with 12 path folders to add.
 persistent startuphasrun
 if startuphasrun
@@ -19,6 +23,8 @@ folders = {...
     'RawDataProcessing/Lumicks' ...
     'RawDataProcessing/HiRes/helperFunctions' ...
     'RawDataProcessing/Calibration' ...
+    'Misc/PolRepeats' ...
+    'Misc/PolRepeats/Fran' ...
     'DataGUIs' ...
     'DataGUIs/StepFind_KV' ...
     'DataGUIs/StepFind_HMM' ...
@@ -30,8 +36,8 @@ folders = {...
     'DataGUIs/Fitting'}; %Use / because it works on both Win and Unix
 cellfun(@(x)addpath([basepath filesep x]), folders);
 
-%I like these formatting options, so also apply them here
-format shortG %Allows for display of numbers with varying exponents, e.g. [1 1e99] displays instead of 1e99 x [0, 1]
-format compact %Removes blank lines when the command window shows an output
+%Set some figure defaults
+set(groot, 'DefaultFigureColor', [1 1 1])
+set(groot, 'DefaultAxesFontSize', 16)
 
 startuphasrun = 1; %Set hasrun so this does not run again

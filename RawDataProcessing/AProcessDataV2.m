@@ -35,7 +35,7 @@ mmddyy = sprintf('%06d', str2double(txtlines{1}));
 %Sanity check for mmddyy
 if ~(str2double(txtlines{1}) > 010000)
     inp = input('Date seems wrong, whats is the date?');
-    mmddyy = sprintf('%06d', str2double(inp));
+    mmddyy = sprintf('%06d', inp);
 end
 len = length(txtlines)-1;
 %Preallocate the matrix to hold data numbers, comments, and options changes
@@ -56,7 +56,7 @@ for i = 1:len
     %Scan each line for 'num num num comment'. Can't do this from the start since e.g. '04 03 02' has no trailing %s, which causes textscan to stop.
     linedat = textscan(txtlines{i+1}, '%d %d %d %s','Whitespace','\t');
     %Get numbers
-    tempnum = [linedat{1:3}];
+    tempnum = [linedat{1}(1) linedat{2}(1) linedat{3}(1)];
     if numel(tempnum) ~= 3
         fprintf('Skipping line: %s\n', txtlines{i+1})
         continue
@@ -97,7 +97,7 @@ switch opts.Instrument
 end
 
 %To debug, we can't have the error be caught for dbstop to fire
-debug = 0; %#ok<*UNRCH>
+debug = 1; %#ok<*UNRCH>
 if debug
     warning('Debugging AProcessData')
 end
@@ -120,13 +120,13 @@ for i = 1:size(nndat,1)
             try
                 %Swap off and cal
                 ProcessOneDataV2(p, nndat(i,[1 3 2]), opts);
-                warning('Data/off/cal %s [%d %d %d] rearranged to [%d, %d, %d].', mmddyy, nndat(i,:), nndat(i,[1 3 2]));
+                warning('Data/off/cal %s [%d %d %d] rearranged to [%d, %d, %d].', mmddyy, nndat(i,1),nndat(i,2),nndat(i,3), nndat(i,1),nndat(i,3),nndat(i,2));
             catch
                 try %Add one to dat and off
                     ProcessOneDataV2(path, nndat(i,:)+[0 1 1], opts);
-                    warning('Data/off/cal %s [%d %d %d] shifted to [%d, %d, %d].', mmddyy, nndat(i,:), nndat(i,:)+[0 1 1]);
+                    warning('Data/off/cal %s [%d %d %d] shifted to [%d, %d, %d].', mmddyy, nndat(i,1),nndat(i,2),nndat(i,3), nndat(i,1),nndat(i,2)+1,nndat(i,3)+1);
                 catch
-                    warning('Data/off/cal %s [%d %d %d] failed.\n', mmddyy, nndat(i,:));
+                    warning('Data/off/cal %s [%d %d %d] failed.\n', mmddyy, nndat(i,1),nndat(i,2),nndat(i,3));
                 end
             end
         end

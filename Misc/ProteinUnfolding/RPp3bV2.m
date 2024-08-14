@@ -7,13 +7,15 @@ opts.fil = 5; %Filter (smooth, dont downsample)
 opts.filtype = 2; %Filter type, =1 for mean, =2 for median, =3 for savitsky-golay with order 1
 
 opts.wid = [200 200]; %Pts to take on each side of the rip
-opts.tpmeth = 0; %Method for cropping TPs, 0 = just window, 1 = also do Woodhouse-like TPs (cross x1 to cross x2)
+opts.tpmeth = 1; %Method for cropping TPs, 0 = just window, 1 = also do Woodhouse-like TPs (cross x1 to cross x2)
 
 %Options if tpmeth == 1
 opts.tpwid = [0.1 0.9]; %Crossing lines for determining TPs
 opts.tppad = 100; %Pts to pad on each side after finding the TP
 opts.tppadmult = 0.5; %Pts to pad on each side, as a multiple of the tp length
 opts.tpfil = 10; %Filtering for TPs for detection, different from opts.fil (filter more to get a more noise-independent TP detection
+
+opts.tpzero = 0; %Zero the F side of the TP, i.e. subtract by median of pre-rip
 
 opts.pwlcc = 0.38*106; %Protein size (nm)
 % opts.pwlcfudge = 1; %Protein size offset, nm
@@ -28,6 +30,7 @@ opts.verbose = 1; %Plot
 opts.Fs = 25e3; %Fsamp, just for conversion to time
 opts.conbinsz = 0.5; %Contour histogram bin size
 opts.ngauss = 4; %Number of gaussians to fit contour histogram to
+opts.gauguess = [0 8 16 opts.pwlcc]; %Guess for gaussian means
 
 opts.convdat = [3, 0]; %Model for the bead movement, as convolution with exp(-( 0:convdat(2) ) / convdat(1) ); decent starting value is Fc/Fsamp
                         % Set convdat(2) == 0 to turn off. Try to keep convdat(2) / convdat(1) > 5 or so
@@ -51,14 +54,17 @@ for i = 1:len
     tmp = inst(i);
     yy = double( tmp.conpro );
     
-    %Sloppy, but hotwire refolding index as rip index
+    %Sloppy, but hotwire refolding index as rip index and invert
     if opts.refold
         tmp.ripind = tmp.refind;
-        if isempty(tmp.refind)
-            continue
-        end
+        
+        %         %And flip to keep F>U direction
+        %         yy = opts.pwlcc - yy;
     end
-    
+    if isempty(tmp.ripind)
+        continue
+    end
+
     %Crop just the TP, with some padding so filtering/deconv is ok
     pad = max( opts.fil, opts.convdat(2)*2 );
     irng = tmp.ripind - opts.wid(1) - pad : tmp.ripind + opts.wid(2) + pad;
@@ -101,6 +107,17 @@ for i = 1:len
     %Un-pad
     yy = yy(pad+1:end-pad);
     yf = yf(pad+1:end-pad);
+    
+    %Zero, if asked
+    if opts.tpzero
+        if opts.refold
+            yy = yy - median(yy(round(end/2):end));
+            yf = yf - median(yf(round(end/2):end));
+        else
+            yy = yy - median(yy(1:round(end/2)));
+            yf = yf - median(yf(1:round(end/2)));
+        end
+    end
     
     %Crop to just the transition path, if asked
     if opts.tpmeth == 1
@@ -198,7 +215,7 @@ if opts.verbose
     %plot 'median' one
     medtr = median( reshape( [tpcrp{:}], length(tpcrp{1}), [] ), 2, 'omitnan');
     plot(xx, medtr, 'k', 'LineWidth', 2)
-    xlim(opts.wid.*[-1 1])
+    xlim(opts.wid.*[-1 1]/ opts.Fs * 1e3 )
     yl = [ min(medtr, [], 'omitnan') max(medtr, [], 'omitnan') ] + range(medtr) * 0.5 .* [-1 1];
     ylim(yl)
     title('Transition Paths')
@@ -211,7 +228,7 @@ if opts.verbose
     %Normalize: total N per bin -> N per molecule per nm
     y = y / opts.conbinsz / length(tpcrp) / opts.Fs * 1e3;
     %Plot and fit to N gaussians
-    ngaufit_cf(x,y, opts.ngauss, ax)
+    ngaufit_cf(x,y, opts.ngauss, ax, opts.gauguess)
     xlim(yl)
     title('Residence Time Histogram')
     xlabel('Protein Contour (nm)')

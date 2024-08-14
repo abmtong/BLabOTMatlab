@@ -14,7 +14,7 @@ opts.Fs = 1000; %Trace sampling frequency
 opts.ssz = 1; %Spacing of states
 opts.off = 0; %Offset of states
 opts.dir = 1; %1 for POSITIVE only, -1 for NEG only, 0 for BOTH
-opts.trnsprb = 1e-3; %Transition probability.
+opts.trnsprb = [1e-3 1e-200]; %Transition probability.
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
@@ -56,7 +56,7 @@ if isempty(pp)
 %             opts.off = x(mx);
 %         end
         
-        outraw{i} = fitVitterbiV3(dat{i}, opts);
+        outraw{i} = fitVitterbiV4(dat{i}, opts);
         if ~isempty(outraw{i})
             ins{i} = tra2ind(removeTrBts(outraw{i}, rtbdir));
             fprintf('\b-\n')
@@ -69,12 +69,16 @@ if isempty(pp)
     fprintf('\b]\n')
 else
     parfor i = 1:len
-%         if opts.alignkdf
-%             [y, x] = kdf(dat{i}, 0.1);
-%             [~,mx] = max(y);
-%             opts.off = x(mx);
-%         end
-        outraw{i} = fitVitterbiV3(dat{i}, opts);
+        %         if opts.alignkdf
+        %             [y, x] = kdf(dat{i}, 0.1);
+        %             [~,mx] = max(y);
+        %             opts.off = x(mx);
+        %         end
+        try
+            outraw{i} = fitVitterbiV4(dat{i}, opts);
+        catch
+            warning('Trace %d failed', i)
+        end
         if ~isempty(outraw{i})
             ins{i} = tra2ind(removeTrBts(outraw{i}, rtbdir));
             fprintf('\b-\n')

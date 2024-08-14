@@ -12,12 +12,14 @@ if nargin < 1 || isempty(infp)
     infp = cellfun(@(x)fullfile(p, x), f, 'Un', 0);
 end
 
+opts.dwlcg = [400 10000 ];
+opts.pwlcc = 0.38*78; %106 for Ross, 78 for FoldIII
+
 if nargin > 1
-    opts = inOpts;
-else
-    opts = [];
+    opts = handleOpts(opts, inOpts);
 end
 
+fprintf('Using a protein length of ~%d aa\n', round(opts.pwlcc/0.38))
 
 if iscell(infp)
     out = cellfun(@(x)RP(x, opts), infp, 'Un', 0);
@@ -47,7 +49,7 @@ p2out = RPp2(p1out, opts);
 %P3: Fit pull to XWLC, calculate protein contour
 p3out = RPp3(p2out, opts);
 % P3_avg: Then reconvert with average XWLC values (as opposed to per-pull)
-p3out = RPp3_avg(p3out, opts);
+p3out = RPp3_avg(p3out);
 %P4: Find relax refold. Takes some time; could be better
 % p4out = RPp4(p3out, opts);
 

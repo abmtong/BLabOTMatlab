@@ -18,7 +18,7 @@ opts.convTrapY = 1;
 % opts = [];
 
 switch inOpts.Instrument
-    case {'HiRes' 'HiRes PSD' 'HiRes bPD'}
+    case {'HiRes' 'HiRes PSD' 'HiRes bPD' 'HiRes QPD'}
         %Defaults for readDat
         opts.numLanes = 8;
         opts.numSamples = 1;

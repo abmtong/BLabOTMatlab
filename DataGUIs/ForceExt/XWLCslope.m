@@ -15,17 +15,21 @@ if nargin < 4
     kT = 4.14;
 end
 
-xpl = XWLC(F, P, S, kT);
+%Take derivative by ( f(x+dx) - f(x+dx) ) / 2dx
+dx = 1e-3; %relative dx, actual dx = F*dx. In case input F is smaller than dx, will never cross zero
 
-slps = ( F(2:end) - F(1:end-1) ) ./ ( xpl(2:end) - xpl(1:end-1) );
-slpx = ( F(2:end) + F(1:end-1) ) /2;
+xpl1 = XWLC(F*(1-dx), P, S, kT);
+xpl2 = XWLC(F*(1+dx), P, S, kT);
 
-%Plot if no nargout
+slps = ( F*2*dx ) ./ ( xpl2 - xpl1 );
+slpx = F ;
+
+%Plot if no argout
 if ~nargout
     figure, plot(slpx, slps)
     hold on, plot(slpx([1 end]), S * [1 1])
     xlabel('Force (pN)')
-    ylabel('DNA stiffness (pN/nm * 1nm)')
+    ylabel('DNA stiffness (pN)')
 else
     outXpLm = slps;
     outx = slpx;

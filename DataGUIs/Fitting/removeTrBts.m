@@ -1,6 +1,6 @@
 function [outtr, isbt] = removeTrBts(tr, stepdir)
 %Takes in an increasing staircase (eg an output from fitVitterbi) and removes backtracks
-%Output is the trace and isbt, a bool if the step is a backtrack or not (i.e., if ind=tra2ind(outtr), ind(i) is the start of a backtrack)
+%Output is the trace and isbt, a bool if the step is a backtrack or not (i.e., if ind=tra2ind(outtr), ind( isbt(i) ) is the start of a backtrack)
 
 %dir = 1 for positive, -1 for negative
 if nargin < 2
@@ -13,8 +13,37 @@ if isempty(tr)
     return
 end
 
+%if stepdir = -1, just apply to negative data
+if stepdir < 0
+    tr = -tr;
+end
+
+%Keep a copy of the original trace (tr0)
 tr0 = tr;
 
+%V2: simpler
+len = length(tr);
+for i = 2:len
+    if tr(i) < tr(i-1)
+        tr(i) = tr(i-1);
+    end
+end
+
+%Find backtracks
+[~, me] = tra2ind(tr);
+%Get steps with backtracks = where tr > tr0
+bts = unique( tr( tr > tr0 ) );
+%Convert to index of me
+isbt = arrayfun(@(x) find( me == x, 1, 'first' ), bts);
+
+%Assign outputs
+outtr = tr;
+if stepdir < 0
+    outtr = -outtr;
+end
+
+%V1 version, probably slow?
+%{
 while true
     %Convert to ind/mea
     [ind, mea] = tra2ind(tr);
@@ -47,6 +76,8 @@ isbt = arrayfun(@(x,y) any(in0 > x & in0 < y), in(1:end-1), in(2:end));
 isbt = find(isbt);
 
 outtr = tr;
+%}
+
 
 %{
 % %Find duplicated steps

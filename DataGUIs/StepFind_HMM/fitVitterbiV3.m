@@ -60,7 +60,7 @@ maxarrsz = 1e9; %1GB arrays max
 if len * widmx * 8 > maxarrsz %Check if array size will be too large
     %If so, cut up traces into pieces with maxarrsz/5 size
     npcs = ceil( len * widmx * 8 * 5 / maxarrsz );
-    warning('Trace too long, splitting %d point trace into %d parts', len, npcs)
+%     warning('Trace too long, splitting %d point trace into %d parts', len, npcs)
     %Cut up
     trcutind = round(linspace(1,len+1, npcs+1));
     trs = arrayfun(@(x,y) tr(x:y), trcutind(1:end-1), trcutind(2:end)-1, 'Un', 0);
@@ -68,7 +68,7 @@ if len * widmx * 8 > maxarrsz %Check if array size will be too large
     fits = cellfun(@(x)fitVitterbiV3(x, opts), trs, 'Un', 0);
     %Rejoin
     out = [fits{:}];
-    warning('Trace direction may be incorrect at edges, beware')
+%     warning('Trace direction may be incorrect at edges, beware')
     return
 end
 

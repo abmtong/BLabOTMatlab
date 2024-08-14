@@ -18,6 +18,10 @@ fprintf('Grabbing files with name %s_*.txt\n', f)
 dcpfiles = dir( fullfile(p, [f '*' e]));
 dcpfiles = {dcpfiles.name};
 
+%Sort to preserve number order, i.e. 1 2 3 ... instead of 1, 10, 11, ...
+% Actually just solve this by changing to %03d...
+
+
 len = length(dcpfiles);
 rawdat = cell(1,len); %Store cyc-ity
 rawnfo = zeros(1,len); %Store data type
@@ -27,10 +31,10 @@ for i = 1:len
     fid = fopen(fullfile(p, dcpfiles{i}));
     %Read first line, which is a header
     fgetl(fid);
-    %Read next lines as [position,cyc-ity,cyc-icityNormed]
+    %Read next lines as [position,cyc-ityNormed,cyc-icity] *Normed = scaled to make Yeast genome distribution Normal
     lns = textscan(fid, '%d,%f,%f');
     fclose(fid);
-    %Just take the cyc-ityNormed, pad front/end with NaN
+    %Just take the cyc-ity, pad front/end with NaN
     rawdat{i} = [nan(1,24) lns{3}' nan(1,25)];
     
     %Convert name to group (-1/0/1/2)

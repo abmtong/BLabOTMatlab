@@ -84,7 +84,7 @@ txtCustom  = uicontrol(fg, 'Style', 'edit', 'Position', [col(2) rx(15) 400 txty]
 txtButOK  = uicontrol(fg, 'Style', 'pushbutton', 'Position', [col(4)+100 rx(17) 100 txty*2], 'String', 'Ok', 'Callback', @(~,~)uiresume(fg));
 
 %Set defaults
-dropInst.Value = 6; %Instrument - HiRes PSD
+dropInst.Value = 1; %Instrument - HiRes QPD
 dropInst_cb(dropInst);
 dropProt.Value = 1; %Protocol - Semipassive
 dropProt_cb(dropProt);
@@ -165,7 +165,7 @@ delete(fg)
                 txtLorFlt.Value = 1;
                 txtLorFlt.Enable = 'on';
                 txtWaterV.Enable = 'on';
-                txtCustom.String = '{''cal.Fmax'', ''1e4'';}';
+                txtCustom.String = '{''cal.Fmax'', ''2e4'';}';
                 tfNormalize.Value = 1;
                 txtCFsamp.String = '70000';
             case 2 %Meitner

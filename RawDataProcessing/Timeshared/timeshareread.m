@@ -172,7 +172,7 @@ if any(hdr(13) == [1 3])
         % I guess since this info is specifically for this channel, as the other scan params apply to the PSD as well.
         
         %Read the actual data
-        fldat = fread(flfid, 'uint64');
+        fldat = fread(flfid, 'uint32');
         tmpfl = uint16(fldat)';
         %check to make sure no values overflew
         if any(tmpfl == intmax('uint16'))

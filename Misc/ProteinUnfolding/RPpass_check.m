@@ -2,7 +2,7 @@ function out = RPpass_check(inst)
 
 %Plot checks: plot ext with mu values
 
-opts.fil = 200;
+opts.fil = 20;
 
 
 len = length(inst);
@@ -11,18 +11,18 @@ for i = 1:len
     figure Name RPpass_check
     hold on
     %Plot data
-    plot(windowFilter(@mean, tmp.ext, opts.fil, 1))
+    plot(windowFilter(@median, tmp.conpro, opts.fil, 1))
     
-    %Plot lines for U/F
-    xl = [1 length(tmp.ext)];
-    axis tight
-    %Used ones = green, original guess = red
-    plot(xl, tmp.extuf(1) *[1 1], 'g')
-    plot(xl, tmp.extuf(2) *[1 1], 'g')
-    plot(xl, tmp.extuf(3) *[1 1], 'r')
-    plot(xl, tmp.extuf(4) *[1 1], 'r')
-    yl = tmp.extuf(1:2) + [-1 1] * ( tmp.extuf(2) - tmp.extuf(1) ) * 0.3;
-    
+%     %Plot lines for U/F
+%     xl = [1 length(tmp.conpro)];
+%     axis tight
+%     %Used ones = green, original guess = red
+%     plot(xl, tmp.extuf(1) *[1 1], 'g')
+%     plot(xl, tmp.extuf(2) *[1 1], 'g')
+%     plot(xl, tmp.extuf(3) *[1 1], 'r')
+%     plot(xl, tmp.extuf(4) *[1 1], 'r')
+%     yl = tmp.extuf(1:2) + [-1 1] * ( tmp.extuf(2) - tmp.extuf(1) ) * 0.3;
+    yl = ylim;
     %Plot lines for transitions
     hei = size(tmp.rips, 1);
     for j = 1:hei

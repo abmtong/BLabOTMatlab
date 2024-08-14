@@ -1,10 +1,14 @@
-function inst = fitRise(inst)
+function inst = fitRise(inst, inOpts)
 %Fits output of ezSum_batch to {some shape} to get appearance time
 
 opts.irng = [1 40]; %[80 120]; %X-range to fit to (get a bit before + a bit after the rise). Choose with e.g. ezSum_plot(inst) and pick a region around the rise
 opts.fitmeth = 1; %Fit method, see code
 opts.debug = 1; %Debug plot
 opts.fil = 3; %Half-width of median filter (takes 2*fil+1 points)
+
+if nargin > 1
+    opts = handleOpts(opts, inOpts);
+end
 
 len = length(inst);
 outraw = cell(len,2); %Raw fits
@@ -19,10 +23,16 @@ for i = 1:len
     tmp2f = windowFilter(@median, tmp2, opts.fil, 1);
     
     %Crop to irng
-    tmp1c = tmp1( opts.irng(1):opts.irng(2) );
-    tmp2c = tmp2( opts.irng(1):opts.irng(2) );
-    tmp1fc = tmp1f( opts.irng(1):opts.irng(2) );
-    tmp2fc = tmp2f( opts.irng(1):opts.irng(2) );
+    ki =  (1:length(tmp1)) >= opts.irng(1) & (1:length(tmp1)) <= opts.irng(2);
+    tmp1c = tmp1( ki );
+    tmp2c = tmp2( ki );
+    tmp1fc = tmp1f( ki );
+    tmp2fc = tmp2f( ki );
+
+    %     tmp1c = tmp1( opts.irng(1):opts.irng(2) );
+%     tmp2c = tmp2( opts.irng(1):opts.irng(2) );
+%     tmp1fc = tmp1f( opts.irng(1):opts.irng(2) );
+%     tmp2fc = tmp2f( opts.irng(1):opts.irng(2) );
     
     
     %Fit to {something}
@@ -52,23 +62,30 @@ for i = 1:len
         %Squish these to [i, i+1], so get squish params
         minmax1 = [ min(tmp1c) max(tmp1c)-min(tmp1c)];
         minmax2 = [ min(tmp2c) max(tmp2c)-min(tmp2c)];
+        dy = 1; %Spacing of plots
+        
+        %Set to not scale
+        minmax1 = [0 1];
+        minmax2 = [0 1];
+        dy = 1000;
+        
         
         %And plot: raw, filtered, fit
-        plot(ax, i+ (tmp1c - minmax1(1)) / minmax1(2), 'Color', hsv2rgb( 1/3, .3, .8 ) )
-        plot(ax, i+ (tmp1fc - minmax1(1)) / minmax1(2), 'Color', hsv2rgb( 1/3, 1, .5 ) )
+        plot(ax, dy*i+ (tmp1c - minmax1(1)) / minmax1(2), 'Color', hsv2rgb( 1/3, .3, .8 ) )
+        plot(ax, dy*i+ (tmp1fc - minmax1(1)) / minmax1(2), 'Color', hsv2rgb( 1/3, 1, .5 ) )
 
-        plot(ax, i+ (tmp2c - minmax2(1)) / minmax2(2), 'Color', hsv2rgb( 0, .3, .8 ) )
-        plot(ax, i+ (tmp2fc - minmax2(1)) / minmax2(2), 'Color', hsv2rgb( 0, 1, .5 ) )
+        plot(ax, dy*i+ (tmp2c - minmax2(1)) / minmax2(2), 'Color', hsv2rgb( 0, .3, .8 ) )
+        plot(ax, dy*i+ (tmp2fc - minmax2(1)) / minmax2(2), 'Color', hsv2rgb( 0, 1, .5 ) )
 
         %Dont plot if isnan (was skipped)
         if ~isnan(out(i,1))
             %Plot fit line
-            plot(ax, i+ (outraw{i,1}{2} - minmax1(1)) / minmax1(2), 'Color', hsv2rgb( 1/3, 1, .3 ), 'LineWidth', 1 )
+            plot(ax, dy*i+ (outraw{i,1}{2} - minmax1(1)) / minmax1(2), 'Color', hsv2rgb( 1/3, 1, .3 ), 'LineWidth', 1 )
             %And a vertical line at the point
             plot(ax, (1+out(i,1)) * [1 1],  i+[0 1], 'Color', 'g')
         end
         if ~isnan(out(i,2))
-            plot(ax, i+ (outraw{i,2}{2} - minmax2(1)) / minmax2(2), 'Color', hsv2rgb( 1, 1, .3 ), 'LineWidth', 1 )
+            plot(ax, dy*i+ (outraw{i,2}{2} - minmax2(1)) / minmax2(2), 'Color', hsv2rgb( 1, 1, .3 ), 'LineWidth', 1 )
             plot(ax, (1+out(i,2)) * [1 1],  i+[0 1], 'Color', 'r')
         end
         drawnow

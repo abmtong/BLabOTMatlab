@@ -120,6 +120,10 @@ switch opts.lortype
         lb = [0 0 0 0 0 0 0];
         ub = [10*Fcg, 10*Dg, 1 inf inf inf inf];
         Guess = [Fcg, Dg, .3, opts.Fnyq/2, .5, opts.Fnyq/3, .5 ];
+    case 7 %Fc D al f0 g0 f1
+        lb = [0 0 0 0 0 0];
+        ub = [10*Fcg, 10*Dg, 1 inf inf inf];
+        Guess = [Fcg, Dg, .3, opts.Fnyq/2, .5, opts.Fnyq/3, 1e3 ];
     otherwise %just first order filters
         lb = [0 0 0 15000];
         ub = [10*Fcg 10*Dg opts.Fs*10 opts.Fs*10];
@@ -138,7 +142,7 @@ fit = lsqnonlin(fitfcn, Guess,lb,ub,options);
 % @lsqcurvefit(@(x,xdata)fcn(x,xdata), xdata, ydata,...) is essentially @lsqnonlin(@(x)fcn(x,xdata)-ydata,...), doesn't matter which to use
 
 %Calculate alpha, kappa from fit parameters
-%Drag coefficient of a sphere in water (unit 
+%Drag coefficient of a sphere in water (unit kg/s^2?)
 dC = 6*pi*opts.wV*opts.ra;
 %Theoretical Diffusion Coefficient
 D = opts.kT/dC;

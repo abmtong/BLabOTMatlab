@@ -9,6 +9,8 @@ if nargin < 2
     nbp = 301;
 end
 
+
+
 %Plot here, too?
 figure('Name', sprintf('DNAcycP Results %s',inputname(1)), 'Color', [1 1 1])
 hold on
@@ -31,6 +33,7 @@ for i = 1:4
     %Plot LHS, negated, as dashed
     kil = xx <= 0;
     plot(-xx(kil), yy(kil), '--', 'Color', ob.Color)
+    
 
     %Let's not do a data band for these, just assume its 'small enough' as it has been seen
     % %     plot(xx,y2); %Plot median
@@ -82,6 +85,12 @@ line( (147/2-25) * [1 1], yl)
 xl = xlim;
 % rectangle('Position', [xl(1) yl(1) 25 diff(yl)], 'EdgeColor', 'none', 'FaceColor', [0 0 0 0.25])
 rectangle('Position', [xl(2)-25 yl(1) 25 diff(yl)], 'EdgeColor', 'none', 'FaceColor', [0 0 0 0.25])
+
+
+%
+
+
+
 
 
 

@@ -3,8 +3,9 @@ function out = procFranp2(inp, inrAop)
 % Just gets whole trace, assumes start position is 0
 %Folder structure /a NAME/*.mat
 
-
-fmin = 4; %Minimum force, crop trace at first force < fmin (for broken tethers, e.g.)
+newcon = 0; %Recalculate contour from ext and F
+xwlcparams = {50 900}; %XWLC params for newcon
+fmin = 3; %Minimum force, crop trace at first force < fmin (for broken tethers, e.g.)
 
 %Take folder
 if isempty(inp)
@@ -25,6 +26,8 @@ inrAop2.start = 0;
 inrAop2.perschd = inrAop2.perschd/2;
 inrAop2.filwid = inrAop2.filwid*2;
 inrAop2.binsm = inrAop2.binsm/2;
+inrAop2.verbose = 0;
+inrAop2.verbosecell = 0;
 
 %Storage
 len = length(fols);
@@ -36,7 +39,14 @@ frcs = cell(1,len);
 for i = 1:length(fols)
     %Get data
     fn = fols{i};
-    [d, ~, f] = getFCs(-1, fullfile(inp, fn));
+    [d, e, f] = getFCs(-1, fullfile(inp, fn));
+    
+    %Recalc contour if asked. Useful for non-my data
+    if newcon
+        warning('Recalculating Contour')
+        d = cellfun(@(x,y) x ./ XWLC(y, xwlcparams{:}) / .34, e, f, 'Un', 0);
+    end
+    
     %Remove tether break data (by checking if force drops to below fmin
     for j = 1:length(f)
         ki = find(f{j} < fmin, 1, 'first');
@@ -45,13 +55,21 @@ for i = 1:length(fols)
             f{j} = f{j}(1:ki-1);
         end
     end
+    %Remove empty
+    ki = cellfun(@length, d) > 10;
+    
+    %Skip empty
+    if all(~ki)
+        continue
+    end
+    
     %Zero based on start position
-    d0 = cellfun(@(x) x - mean(x(1:10)), d, 'Un', 0);
+    d0 = cellfun(@(x) x - mean(x(1:10)), d(ki), 'Un', 0);
     %RulerAlign
     dR = rulerAlignV2(d0, inrAop);
     %RulerAlign again, twice
     dR = rulerAlignV2(dR, inrAop2);
-    dR = rulerAlignV2(dR, inrAop2);
+    dR = rulerAlignV2(dR, inrAop2); 
     %SumNucHist
     [hy, hx] = sumNucHist(dR, inrAop);
     %Process filename

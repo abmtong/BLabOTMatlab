@@ -1,5 +1,6 @@
 function out = ezFactAnalyze(inp, rAopts)
 %Input: Path, rAopts
+% Mostly obseleted by the procFran pipeline
 
 %getFCs, rulerAlign, then sumNucHist [on all vs. only crossers]
 narginchk(2,2)

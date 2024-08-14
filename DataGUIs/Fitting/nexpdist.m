@@ -33,3 +33,8 @@ end
 
 out.pdf = eval( sprintf( '@(x%s) ( %s 0 ) / (%s 0)', str1, str2 , str3 ));
 out.cdf = eval( sprintf( '@(x%s) ( %s 0 ) / (%s 0)', str1, str2b, str3 ));
+
+%Eps out the minimum?
+% warning('Using an exp dist with a probability floor')
+% out.pdf = eval( sprintf( '@(x%s) max(eps(max(x)), ( %s 0 ) / (%s 0))', str1, str2 , str3 ));
+% out.cdf = eval( sprintf( '@(x%s) max(eps(max(x)), ( %s 0 ) / (%s 0))', str1, str2b, str3 ));

@@ -107,13 +107,13 @@ if opts.fitsing
     %Fit each trace separately
     if opts.groupdws == 1
 %         [o, or] = cellfun(@(x) fitnexp_hybrid(x( x > opts.xrng(1) & x < min(opts.xrng(2), prctile(x, opts.prcmax)) ), opts.nmax, 0), dws, 'Un', 0);
-        [o, or] = cellfun(@(x) fitnexp_hybridV2(x, fnx), dws, 'Un', 0);
+        [o, or] = cellfun(@(x) fitnexp_hybridV3(x, fnx), dws, 'Un', 0);
     else
         %Group dwells
 %         dwsgrp = cellfun(@(x) sum( reshape( x(1: opts.groupdws*floor(length(x)/opts.groupdws)), opts.groupdws, []), 1), dws, 'Un', 0);
 %         [o, or] = cellfun(@(x) fitngam_hybrid(x( x > opts.xrng(1) & x < min(opts.xrng(2), prctile(x, opts.prcmax)) ), opts.groupdws, opts.nmax, 0), dwsgrp, 'Un', 0);
         dwsgrp = cellfun(@(x) sum( reshape( x(1: opts.groupdws*floor(length(x)/opts.groupdws)), opts.groupdws, []), 1), dws, 'Un', 0);
-        [o, or] = cellfun(@(x) fitngam_hybridV2(x, fnx), dwsgrp, 'Un', 0);
+        [o, or] = cellfun(@(x) fitngam_hybridV3(x, fnx), dwsgrp, 'Un', 0);
     end
     out.sfit = o;
     out.sfitraw = or;
@@ -123,14 +123,14 @@ end
 if opts.groupdws == 1
     dwall = [dws{:}];
 %     [oa, ora] = fitnexp_hybrid(dwall( dwall > opts.xrng(1) & dwall < min(opts.xrng(2), prctile(dwall, opts.prcmax)) ), opts.nmax, 1);
-    [oa, ora] = fitnexp_hybridV2(dwall, fnx);
+    [oa, ora] = fitnexp_hybridV3(dwall, fnx);
 else
 %     dwsgrp = cellfun(@(x) sum( reshape( x(1: opts.groupdws*floor(length(x)/opts.groupdws)), opts.groupdws, []), 1), dws, 'Un', 0);
 %     dwall = [dwsgrp{:}];
 %     [oa, ora] = fitngam_hybrid(dwall( dwall > opts.xrng(1) & dwall < min(opts.xrng(2), prctile(dwall, opts.prcmax)) ), opts.nmax, opts.groupdws, 1);
     dwsgrp = cellfun(@(x) sum( reshape( x(1: opts.groupdws*floor(length(x)/opts.groupdws)), opts.groupdws, []), 1), dws, 'Un', 0);
     dwall = [dwsgrp{:}];
-    [oa, ora] = fitngam_hybridV2(dwall, fnx);
+    [oa, ora] = fitngam_hybridV3(dwall, fnx);
 end
 
 %Save results in out

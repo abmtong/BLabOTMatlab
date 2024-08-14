@@ -26,6 +26,7 @@ end
 
 %Filtering options
 opts.filwid = 20; %Smoothing filter half-width (pts)
+opts.filtype = 1; %Filter type (1 = mean, 2 = median)
 opts.binsm = 1; %Residence time histogram filter half-width (bp)
 opts.rptsmsd = 1; %Smooth the histogram
 opts.persmsd = 0.1; %Smooth the period scores with a gaussian filter of this std (bp)
@@ -50,7 +51,8 @@ opts.nrep = 8; %Number of repeats
 %Options: Alignment analysis
 opts.trim = 0; %Trim edges of the estimated repeat range by this amount (e.g. 0.01 to trim 1% from top and bottom)
 
-opts.verbose = 1;
+opts.verbose = 1; %Verbose for single traces
+opts.verbosecell = 1;%Verbose for multiple traces
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
@@ -71,38 +73,46 @@ if iscell(tra)
     out = out(ki);
     outraw = [outraw{ki}];
     
-    %Plot some stats
-    offs = [outraw.off];
-    scls = [outraw.scl];
-    offscrs = [outraw.offscr];
-    sclscrs = [outraw.sclscr];
-    figure('Name', sprintf('RulerAlign Scatter %s', inputname(1)))
-    scatter(offs, scls, [], offscrs/range(offscrs) + sclscrs/range(sclscrs), 'filled')
-    for i = 1:length(offs)
-        text(offs(i), scls(i), sprintf('%d', nums(i)));
+    if opts.verbosecell
+        rulerAlignChkBatch(out, outraw, opts)
+%         %Plot some stats
+%         offs = [outraw.off];
+%         scls = [outraw.scl];
+%         offscrs = [outraw.offscr];
+%         sclscrs = [outraw.sclscr];
+%         figure('Name', sprintf('RulerAlign Scatter %s', inputname(1)))
+%         scatter(offs, scls, [], offscrs/range(offscrs) + sclscrs/range(sclscrs), 'filled')
+%         for i = 1:length(offs)
+%             text(offs(i), scls(i), sprintf('%d', nums(i)));
+%         end
+%         colormap winter
+%         colorbar
+%         
+%         %Plot aligned traces
+%         figure('Name', sprintf('RulerAlign Traces %s', inputname(1)))
+%         hold on
+%         cellfun(@(x)plot((1:floor(length(x)/(2*opts.filwid+1)))/opts.Fs*(2*opts.filwid+1), windowFilter(@mean, x, [], 2*opts.filwid+1) ), out)
+%         xl = xlim;
+%         arrayfun(@(x) plot(xl, x * [1 1]), bsxfun(@plus, opts.pauloc, (0:opts.nrep-1)'*opts.per))
+%         cellfun(@(x, y) text( length(x)/opts.Fs, x(end), sprintf('%d', y) ), out, num2cell(nums))
+%         %Plot aligned histogram
+%         [sumy, sumx] = sumNucHist(out, setfield(setfield(opts, 'verbose', 1), 'disp', [])); %#ok<SFLD>
+%         %Plot sum histogram
+%         inds = arrayfun(@(x) find(sumx >= x, 1, 'first'), (0:opts.nrep)*opts.per);
+%         yy = median( reshape( sumy(inds(1):inds(end)-1), [], opts.nrep ), 2 )';
+%         xx = sumx(inds(1):inds(2)-1);
+%         figure, plot(xx,yy);
     end
-    colormap winter
-    colorbar
-    
-    %Plot aligned traces
-    figure('Name', sprintf('RulerAlign Traces %s', inputname(1)))
-    hold on
-    cellfun(@(x)plot((1:floor(length(x)/(2*opts.filwid+1)))/opts.Fs*(2*opts.filwid+1), windowFilter(@mean, x, [], 2*opts.filwid+1) ), out)
-    xl = xlim;
-    arrayfun(@(x) plot(xl, x * [1 1]), bsxfun(@plus, opts.pauloc, (0:opts.nrep-1)'*opts.per))
-    cellfun(@(x, y) text( length(x)/opts.Fs, x(end), sprintf('%d', y) ), out, num2cell(nums))
-    %Plot aligned histogram
-    [sumy, sumx] = sumNucHist(out, setfield(setfield(opts, 'verbose', 1), 'disp', [])); %#ok<SFLD>
-    %Plot sum histogram
-    inds = arrayfun(@(x) find(sumx >= x, 1, 'first'), (0:opts.nrep)*opts.per);
-    yy = median( reshape( sumy(inds(1):inds(end)-1), [], opts.nrep ), 2 )';
-    xx = sumx(inds(1):inds(2)-1);
-    figure, plot(xx,yy);
     return
 end
 
 %Filter the data
-traF = windowFilter(@mean, tra, opts.filwid, 1);
+switch opts.filtype
+    case 1 %Mean
+        traF = windowFilter(@mean, tra, opts.filwid, 1);
+    case 2 %Median
+        traF = windowFilter(@median, tra, opts.filwid, 1);
+end
 
 %Bin
 binsz = opts.perschd; %Might want to use a different binsz, so keep separate
