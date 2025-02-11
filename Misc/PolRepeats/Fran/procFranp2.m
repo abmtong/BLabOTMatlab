@@ -51,8 +51,8 @@ for i = 1:length(fols)
     for j = 1:length(f)
         ki = find(f{j} < fmin, 1, 'first');
         if ki
-            d{j} = d{j}(1:ki-1);
-            f{j} = f{j}(1:ki-1);
+            d{j} = d{j}(1:ki-10);
+            f{j} = f{j}(1:ki-10);
         end
     end
     %Remove empty

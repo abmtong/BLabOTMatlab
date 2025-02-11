@@ -9,7 +9,7 @@ fil = 100;
 
 %4kb handles xloc (with the molecular ruler)
 xloc = [1200 1468 1488 1520 1551]; %Nuc key locs, avg [stall, entry, dyad, end] extenstion @ 13pN for 4kb handles
-xloc = [0 0 1200 1468 1488 1520 1551]; %Nuc key locs, avg [stall, entry, dyad, end] extenstion @ 13pN for 4kb handles
+% xloc = [0 0 1200 1468 1488 1520 1551]; %Nuc key locs, avg [stall, entry, dyad, end] extenstion @ 13pN for 4kb handles
   % These are obtained by [-NTP, abasic@entry, abasic@dyad, No Nuc] traces
   % Nuc is 146bp ~ 50nm, so entry-dyad should be ~25nm apart, end is a bit further
   %   ADD line at 1520, the current cutoff pt

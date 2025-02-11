@@ -4,12 +4,12 @@ function [out, outraw] = procFran_pddp2(inst, opts)
 opts.onlycross = 1; %Only crossers?
 opts.onlypick = 1; %Only picked traces?
 
-opts.Fs = 1e3;
+opts.Fs = 800;
 opts.fil = 5; %Filter half-width (fil*2+1 bp)
 btthr = 1; %Minimum backtrack distance
 roi = [558 704]-16; %Only take crossing region
 
-debug = 1; %Debug plot
+debug = 0; %Debug plot
 if debug
     figure Name Debug
     dax = gca;

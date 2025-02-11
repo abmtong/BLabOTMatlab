@@ -55,6 +55,10 @@ for i = 1:len
     end
     %Scan each line for 'num num num comment'. Can't do this from the start since e.g. '04 03 02' has no trailing %s, which causes textscan to stop.
     linedat = textscan(txtlines{i+1}, '%d %d %d %s','Whitespace','\t');
+    %Skip if empty
+    if any( cellfun(@isempty, linedat(1:3)) )
+        continue
+    end
     %Get numbers
     tempnum = [linedat{1}(1) linedat{2}(1) linedat{3}(1)];
     if numel(tempnum) ~= 3

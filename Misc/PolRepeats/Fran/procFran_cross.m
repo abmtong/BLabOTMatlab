@@ -10,10 +10,10 @@ ax = gca;
 hold on
 ax.YScale = 'log';
 
-
+roi = [558 704]-16;
 
 len = length(inst);
-outraw = zeros(len,2); %mean, CI
+outraw = zeros(len,4); %exp fit, median, N_reach, N_cross
 for i = 1:len
     %Get data
     t = inst(i).tcr;
@@ -34,8 +34,12 @@ for i = 1:len
     mu = ft(2);
     ci = [0 0];
     
+    %Calculate basic crossing stats
+    nreach = sum( cellfun(@(x) any(x > roi(1)), inst(i).drA ) );
+    ncross = length(t);
+    
     %Save
-    outraw(i,:) = [mu median(xx)];
+    outraw(i,:) = [mu median(xx) nreach ncross];
     
     
     %Plot

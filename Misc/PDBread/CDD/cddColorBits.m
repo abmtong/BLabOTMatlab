@@ -1,4 +1,4 @@
-function [out, outraw] = ccdColorBits(cdddat, pdbstartres)
+function [out, outraw] = cddColorBits(cdddat, pdbstartres)
 %Calculates relative entropy of each position in an MSA
 % Calculation/idea taken from Conserved Domain Database (CDD), they call it 'color bits'
 

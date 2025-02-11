@@ -16,7 +16,7 @@ natom = length(res);
 %Cull b's so that they're 'okay'
 minb = min(bfacs(:,2)); %Minimum to overwrite the NaNs = not aligned
 % minb = 0;
-maxb = prctile(bfacs(:,2), 75); %Reduce the maximum 
+% maxb = prctile(bfacs(:,2), 75); %Reduce the maximum ?
 
 for i = 1:natom
     rn = res(i);

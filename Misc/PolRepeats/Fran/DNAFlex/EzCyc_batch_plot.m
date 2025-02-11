@@ -1,4 +1,4 @@
-function [ out outp ] = EzCyc_batch_plot(datall)
+function [ out, outp ] = EzCyc_batch_plot(datall)
 %Plot output of EzCyc_Batch_plot
 
 %Basically, ... we want to do the Entry-Exit-Dyad for all genes?

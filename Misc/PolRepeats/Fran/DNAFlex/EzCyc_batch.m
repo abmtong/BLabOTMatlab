@@ -12,6 +12,9 @@ end
 
 if isempty(inp)
     inp = uigetdir();
+    if ~inp
+        return
+    end
 end
 
 %Get the *.nucleosome.DANPOSPeak.bed files
@@ -52,5 +55,3 @@ for i = 1:len
 end
 
 close all
-
-

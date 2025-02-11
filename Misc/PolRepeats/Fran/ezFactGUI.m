@@ -1,4 +1,4 @@
-function TxPullGUI(inst)
+function ezFactGUI(inst)
 %Pick by eye 
 %Based on getResByHanGUI
 
@@ -8,24 +8,23 @@ if nargin < 1
 end
 
 %Just rename inst for ... reasons
-dat = inst;
+dat = inst(1);
+len = length(dat.drA);
 
 %Add tf fields if they don't exist. Let's use convention that these == 1 if we want to keep them, so let's keep all by default
-if ~isfield(dat, 'tfpbe1')
-    [dat.tfpbe1] = deal(nan);
+if ~isfield(dat, 'tfpbe')
+    dat.tfpick = ones(1, len);
 end
-
-if ~isfield(dat, 'tfpbe2')
-    [dat.tfpbe2] = deal(nan);
-end
-% Lets just use tfpbe1 as the marker... initialize as nan
 
 %Declare variables
 num = 1; %Index of current file
+Fs= 1e3;
+per = 64; %Ruler periodicity
 
-%Default button labels. Will show but1lab{1} if tfpbe1 == 0, {2} if == 1
-but1lab = {'No LF' 'Has LF'};
-but2lab = {'No HF' 'Has HF'};
+%Button labels
+but0lab = {'Shift down' 'Shift up'};
+but1lab = {'Reject' 'Keep'};
+but2lab = {'Crop early' 'Crop end'};
 
 %Make figure
 ssz = get(groot, 'ScreenSize');
@@ -45,7 +44,8 @@ numtext = uicontrol('Style', 'text', 'Units', 'normalized', 'Position', [.525, .
 butlef = uicontrol( 'Units', 'normalized', 'Position', [.525+.15, .75, .15, .2],       'String', '<', 'Callback',@(x,y)cycleData(x,y,-1) );
 butrig = uicontrol( 'Units', 'normalized', 'Position', [.525+.3, .75, .15, .2],       'String', '>', 'Callback',@(x,y)cycleData(x,y,+1) );
 
-but0    = uicontrol( 'Units', 'normalized', 'Position', [.525+.3, .55, .15, .2],  'String', 'Reject', 'Callback',@butn_cb );
+but0n    = uicontrol( 'Units', 'normalized', 'Position', [.525+.3, .55, .15, .1],  'String', but0lab{1}, 'Callback',@(x,y)but0_cb(x,y,-1) );
+but0y    = uicontrol( 'Units', 'normalized', 'Position', [.525+.3, .65, .15, .1],  'String', but0lab{2}, 'Callback',@(x,y)but0_cb(x,y,+1) );
 but1n   = uicontrol( 'Units', 'normalized', 'Position', [.525, .55, .15, .1],     'String', but1lab{1}, 'Callback',@(x,y)but1_cb(x,y,0) );
 but1y   = uicontrol( 'Units', 'normalized', 'Position', [.525, .65, .15, .1],     'String', but1lab{2}, 'Callback',@(x,y)but1_cb(x,y,1) );
 but2n   = uicontrol( 'Units', 'normalized', 'Position', [.525+.15, .55, .15, .1], 'String', but2lab{1}, 'Callback',@(x,y)but2_cb(x,y,0) );
@@ -59,112 +59,98 @@ but2y   = uicontrol( 'Units', 'normalized', 'Position', [.525+.15, .65, .15, .1]
 % but2   = uicontrol( 'Units', 'normalized', 'Position', [.60, .90, .25, .05],       'String', but2lab{2}, 'Callback',@but2_cb );
 
 %Set some constants (options)
-xl = [1.5 45]; %X lim for plotting
-fcen = 7; %Force to zero at
+yruler = 59 + (0:7)*per; %RulerAlign y-values
+ynuc = [558 631 704]-16; %Nucleosome region
 
-%XWLC params. Estimate with TxPull_XWLC, e.g.
-handletype = 1;
-switch handletype
-    case 1
-        xwlc = [48 1340]; %For 4kb handles
-        fprintf('Using XWLC guess for 4kb handle expt\n')
-    case 2
-        xwlc = [55 397]; %For 2kb handles
-        fprintf('Using XWLC guess for 2kb handle expt\n')
-end
+
 %Load first data
 cycleData([],[],0)
 
     function cycleData(~,~,d)
         %Change to the next data, +1 or -1 depending on d
-        num = mod( num-1+d, length(dat) ) + 1;
+        num = mod( num-1+d, length(dat.drA) ) + 1;
         
-        fg.Name = sprintf('Trace %s%s', dat(num).name);
-        numtext.String = sprintf('%d/%d', num, length(dat));
+        fg.Name =  ''; %sprintf('Trace %s%s', dat(num).name);
+        numtext.String = sprintf('%d/%d', num, length(dat.drA));
         
         %Get data
-        ext = dat(num).ext;
-        frc = dat(num).frc;
+        ext = dat.drA{num};
+%         frc = dat.drA(num).frc;
+        tim = (1:length(ext)) / Fs;
         
         if isfield(inst, 'xwlc')
             xwlc = inst(num).xwlc(1:2);
         end
-        con = ext ./ XWLC(frc, xwlc(1), xwlc(2));
+%         con = ext ./ XWLC(frc, xwlc(1), xwlc(2));
+        con = [];
         
         %Filter
-        ff = windowFilter(@mean, frc, [], 100);
-        cf = windowFilter(@mean, con, [], 100);
+        tf = windowFilter(@mean, tim, [], 100);
+%         cf = windowFilter(@mean, con, [], 100);
         xf = windowFilter(@mean, ext, [], 100);
         
         %Crop contour graph to highest force
-        [~, maxi] = max(ff);
+        [~, maxi] = max(tf);
         
         
-        %Plot raw force-ext above
+        %Plot ext above
         cla(ax1)
-        plot(ax1, xf, ff);
-        %Maybe plot with time as color? code example below
-%         surface(mainAxis, [timF;timF],[frcF;frcF],zeros(2,length(timF)),[timF;timF], 'edgecol', 'interp');
+        plot(ax1, tf, xf);
+        %Add ruler pause locations
+        arrayfun(@(x) plot(ax1, tf([1 end]), x * [1 1], 'b'), yruler)
+        arrayfun(@(x) plot(ax1, tf([1 end]), x * [1 1], 'g'), ynuc)
         axis(ax1, 'tight')
         
-        %Plot contour-force below
+        
+        
+        %Plot zoom of nuc below
         cla(ax2)
-        plot(ax2, ff(1:maxi), cf(1:maxi) );
-        
-        %Set lims
-        xlim(ax2, xl)
-        %Dynamic y-lim based on crossing pt of y=fcen
-        y0 = cf(find(ff > fcen, 1, 'first'));
-        if isempty(y0)
-            %Fallback, just set to median
-            y0 = median(cf);
+        icr = find(xf > ynuc(1), 1, 'first');
+        if isempty(icr)
+            return
         end
-        ylim(ax2, y0 + [-30 30])
+        tf = tf(icr:end);
+        xf = xf(icr:end);
+        plot(ax2, tf, xf);
+        %Add ruler pause locations
+        arrayfun(@(x) plot(ax2, tf([1 end]), x * [1 1], 'g'), ynuc)
+        axis(ax2, 'tight')
         
         
-%         %Set button strings
-%         but1.String = but1lab{ dat(num).tfpbe1 + 1 };
-%         but2.String = but2lab{ dat(num).tfpbe2 + 1 };
-        
-        %Set title for ax2 based on tfpbe
-        nameFigure;
     end
 
     function but1_cb(~,~,tf)
-        %Set as tfpbe1
-        dat(num).tfpbe1 = tf;
-        nameFigure
+        %Set tfpbe
+        dat.tfpick(num) = tf;
+%         nameFigure
     end
 
     function but2_cb(~,~,tf)
-        %Set as tfpbe2
-        dat(num).tfpbe2 = tf;
-        nameFigure
-    end
-
-    function butn_cb(~,~)
-        %Reject = set nan
-        dat(num).tfpbe2 = nan;
-        dat(num).tfpbe2 = nan;
-        nameFigure
-    end
-
-    function nameFigure()
-        %State nucleosome state based on tfpbe1/2
-        t1 = dat(num).tfpbe1;
-        t2 = dat(num).tfpbe2;
+        %Crop
+        x = ginput(1);
+        x = x(1);
+        tim = (1:length(dat.drA{num})) / Fs;
         
-        outcomes = { 'Bare DNA' 'Tet' 'Hex' 'Nuc' };
-        if ~isnan(t1) && ~isnan(t2)
-            str = outcomes{ t1 + t2*2 +1};
+        if tf
+            %Crop end
+            ki = tim <= x;
+            dat.drA{num} = dat.drA{num}(ki);
         else
-            str = 'Not assigned / Rejected';
+            %Crop early
+            ki = tim >= x;
+            dat.drA{num} = dat.drA{num}(ki);
         end
-        
-        %Name figure
-        title(ax2, str)
+        cycleData([],[],0);
         
     end
+
+    function but0_cb(~,~, shiftdir)
+        %Shift up/down
+        dat.drA{num} = dat.drA{num} + per * shiftdir;
+        cycleData([],[],0);
+    end
+
+
 
     function addwkspc(~,~,tfclose)
         %Assign to workspace, on button press or on exit

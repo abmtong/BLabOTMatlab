@@ -3,7 +3,9 @@ function out = fitNuc(inst)
 
 %Force bounds to remove the LF transition
 % frng = [1 2.5 5 35]; %For Nuc
-frng = [1 2 5 35]; %For Nuc F. Maybe should use the same values...
+% frng = [1 2 5 35]; %For Nuc F. Maybe should use the same values...
+frng = [1.5 2.5 5 50];
+frng = [1 1.5 5 50]; %FOX?
 fil = 100;
 
 debug = 1; %Debug flag
@@ -18,6 +20,9 @@ for i = 1:len
     %Grab data and filter
     ext = double( windowFilter(@mean, inst(i).ext, [], fil) );
     frc = double( windowFilter(@mean, inst(i).frc, [], fil) );
+    
+%     ext = double( windowFilter(@mean, inst(i).ext, fil/2, 1) );
+%     frc = double( windowFilter(@mean, inst(i).frc, fil/2, 1) );
     
     %Crop last point
     ext = ext(1:end-1);
@@ -74,8 +79,8 @@ for i = 1:len
         plot( XWLC(frc, ft(1), ft(2) )* ft(3) , frc) 
         plot( XWLC(frc, ft(1), ft(2) )* (ft(3)+ft(4)) , frc) 
         plot( XWLC(frc, ft(1), ft(2) )* (ft(3)+ft(5)) , frc) 
-        
-        arrayfun(@(x) plot(x*[1 1], ylim), ext([i1 i2 i3 i3b i4b i4]))
+        yl = ylim;
+        arrayfun(@(x,y) plot(x*[1 1], [0 y]), ext([i1 i2 i3 i3b i4b i4]) , [frng(1) frng(2) frng(3) frng(4) frng(4) yl(2) ]  )
         
         pause(.5)
     end

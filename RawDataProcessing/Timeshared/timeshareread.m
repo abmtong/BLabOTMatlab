@@ -25,6 +25,7 @@ if nargin < 2
     dtype = 'int16'; %for Meitner; Boltzmann is single
     %Seems like the Boltzmann VI converts the FPGA int16s (2 bytes) to singles (4 bytes) when averaging
     % Guessing this is to save against the integer rounding, but really that is at most 1/32767 (=3e-5) which is probs negligible
+    %  The error is max. 3e-4V, which is probably around .06pN (S*a*k = 200), which I guess isn't nothing? but still probably over an OoM smaller than the force noise
 end
 
 %Open QPD file, big-endian

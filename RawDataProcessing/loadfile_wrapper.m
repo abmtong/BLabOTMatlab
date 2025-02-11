@@ -17,6 +17,8 @@ opts.convTrapX = 1;
 opts.convTrapY = 1;
 % opts = [];
 
+% opts = handleOpts(opts, inOpts); %This is done inside the switch, because each instrument has different defaults (set additional defaults, then override with input ones)
+
 switch inOpts.Instrument
     case {'HiRes' 'HiRes PSD' 'HiRes bPD' 'HiRes QPD'}
         %Defaults for readDat
@@ -225,7 +227,7 @@ switch inOpts.Instrument
         opts.Fs = 78125 / dSamp;
 %         opts.lumsgn = sgn; %Save this sign if it needs to be propagated (e.g. through offset + data)
     otherwise
-        error('Instrument %s not recognized', opts.Instrument)
+        error('Instrument %s not recognized', inOpts.Instrument)
 end
 
 

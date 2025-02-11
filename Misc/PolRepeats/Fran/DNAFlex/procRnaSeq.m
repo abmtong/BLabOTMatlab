@@ -14,7 +14,7 @@ So read first line, then load as %s %s %f %f %f %f %f
 
 
 if nargin < 1 || isempty(infp)
-    [f p] = uigetfile('*.rsem', 'Mu', 'on');
+    [f, p] = uigetfile('*.rsem', 'Mu', 'on');
     if ~p
         return
     end

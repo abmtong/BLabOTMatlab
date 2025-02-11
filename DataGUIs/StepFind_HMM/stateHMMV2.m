@@ -281,6 +281,17 @@ for i = len-1:-1:1
     st2(i) = vitdpim(i,st2(i+1));
 end
 
+%Calculate logprob of this path. Is this just log(vitsc), if we didn't kept track of normalization? Oh well
+%Noise term
+lp1 = sum( log(normpdf(tr-newmu(st), 0, newsig) ) );
+%Transitions term
+lp2 = zeros(1,len-1);
+for i = 1:len-1
+    lp2(i) = newa(st(i), st(i+1));
+end
+lp2 = sum( log( lp2 ) );
+logprob = lp1+lp2;
+
 out.a = newa;
 out.mu = newmu;
 out.sig = newsig;
@@ -289,6 +300,7 @@ out.ns = ns;
 out.fitmle = fitmle(:)';
 out.fit = st(:)';
 out.fitnoopt = st2(:)';
+out.logprob = logprob;
 
 out.start = inModel;
 %Changed output to not be out.start and out.finish, so old code may error.

@@ -66,6 +66,10 @@ tic;
 
 if nargin < 1
     [f, p] = uigetfile('*.pdb', 'Mu', 'on');
+    if ~p
+        PDBdata = [];
+        return
+    end
     if iscell(f)
         tmp = cellfun(@(x) pdb2mat(fullfile(p, x)), f, 'Un', 0);
         PDBdata = [tmp{:}];
