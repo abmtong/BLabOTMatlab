@@ -47,19 +47,15 @@ p1out = RPp1(cd.ContourData, opts);
 %P2: Separate pull and relax ; find rip
 p2out = RPp2(p1out, opts);
 %P3: Fit pull to XWLC, calculate protein contour
-p3out = RPp3V2(p2out, opts);
-%Redo P2 and P3 for better ripfinding
-p3out = RPp2(p3out, opts);
-p3out = RPp3V3(p3out, opts);
-
-% % P3_avg: Then reconvert with average XWLC values (as opposed to per-pull)
+p3out = RPp3(p2out, opts);
+% P3_avg: Then reconvert with average XWLC values (as opposed to per-pull)
 p3out = RPp3_avg(p3out);
 %P4: Find relax refold. Takes some time; could be better
-p4out = RPp4V3(p3out, opts);
+% p4out = RPp4(p3out, opts);
 
 %Save this struct
-% out = p3out;
-out = p4out;
+out = p3out;
+% out = p4out;
 
 %Check a random three traces
 rr = randperm(length(out), min(length(out), 3));

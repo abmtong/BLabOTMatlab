@@ -1,5 +1,6 @@
-function out = RPp3v2(inst, inOpts)
+function out = RPp3_all(inst, inOpts)
 %p3: With the segments identified, let's fit to WLC
+% _all: use both extend and retract cycles
 
 %How to match up data from different traces? Just fit them all? Downsample and join?
 
@@ -29,9 +30,10 @@ for i = 1:len
     %Get this pull
     tmp = inst(i);
     %Filter 
-    x = double( windowFilter(@mean, tmp.ext( 1:tmp.retind ), [], opts.fil*2+1) );
-    f = double( windowFilter(@mean, tmp.frc( 1:tmp.retind ), [], opts.fil*2+1) );
+    x = double( windowFilter(@mean, tmp.ext, [], opts.fil*2+1) );
+    f = double( windowFilter(@mean, tmp.frc, [], opts.fil*2+1) );
     ri = floor(tmp.ripind / (opts.fil*2+1));
+    zi = floor(tmp.refind / (opts.fil*2+1));
     
     %ri must be at least be length(xg) below, else lsqcurvefit will error. Just skip if so [probably a bad rip detection]
     if ri < 5
@@ -47,10 +49,11 @@ for i = 1:len
     fitfcn = @(x0,f)( x0(3) * XWLC(f-x0(5), x0(1),x0(2)) + x0(4) );
     dft = lsqcurvefit(fitfcn, xg, f(1:ri),x(1:ri), lb, ub, optopts);
     
+    %Fit start/end to XWLC, others to XWLC+Protein
     xg2 = [dft opts.pwlcg opts.pwlcc];%PL (nm), SM (pN), CL (nm), dx, df, PL(protein) CL(protein) <<should probably fix
-    lb2 = [lb 0.1 0 ]; %set ext and frc offsets to 0, but can enable if needed
-    ub2 = [ub 2 opts.pwlcc*3];
-    fitfcn2 = @(x0,f)( x0(3) * XWLC(f-x0(5), x0(1),x0(2)) + x0(4) + ((1:length(f)) > ri ) .* x0(7) .* XWLC(f-x0(5), x0(6),inf)  );
+    lb2 = [lb 0.1 opts.pwlcc ]; %set ext and frc offsets to 0, but can enable if needed
+    ub2 = [ub 2 opts.pwlcc];
+    fitfcn2 = @(x0,f)( x0(3) * XWLC(f-x0(5), x0(1),x0(2)) + x0(4) + ((1:length(f)) > ri & (1:length(f)) <zi ) .* x0(7) .* XWLC(f-x0(5), x0(6),inf)  );
     pft = lsqcurvefit(fitfcn2, xg2, f, x, lb2, ub2, optopts);
     
     %Subtract away DNA portion

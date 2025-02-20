@@ -17,7 +17,7 @@ opts.tpfil = 10; %Filtering for TPs for detection, different from opts.fil (filt
 
 opts.tpzero = 0; %Zero the F side of the TP, i.e. subtract by median of pre-rip
 
-% opts.pwlcc = 0.38*106; %Protein size (nm)
+opts.pwlcc = 0.38*106; %Protein size (nm)
 % opts.pwlcfudge = 1; %Protein size offset, nm
 
 opts.refold = 0; %Calc refolding vs. unfolding
@@ -30,7 +30,7 @@ opts.verbose = 1; %Plot
 opts.Fs = 25e3; %Fsamp, just for conversion to time
 opts.conbinsz = 0.5; %Contour histogram bin size
 opts.ngauss = 4; %Number of gaussians to fit contour histogram to
-opts.gauguess = []; %Guess for gaussian means. Defaults to evenly-spaced, if empty
+opts.gauguess = [0 8 16 opts.pwlcc]; %Guess for gaussian means
 
 opts.convdat = [3, 0]; %Model for the bead movement, as convolution with exp(-( 0:convdat(2) ) / convdat(1) ); decent starting value is Fc/Fsamp
                         % Set convdat(2) == 0 to turn off. Try to keep convdat(2) / convdat(1) > 5 or so
@@ -54,13 +54,12 @@ for i = 1:len
     tmp = inst(i);
     yy = double( tmp.conpro );
     
-    opts.pwlcc = tmp.xwlcft(7);
-    
     %Sloppy, but hotwire refolding index as rip index and invert
     if opts.refold
         tmp.ripind = tmp.refind;
-        %And flip to keep F>U direction
-        yy = opts.pwlcc - yy;
+        
+        %         %And flip to keep F>U direction
+        %         yy = opts.pwlcc - yy;
     end
     if isempty(tmp.ripind)
         continue
@@ -127,10 +126,10 @@ for i = 1:len
         % Lets assume the crossing is one-way, so we don't have to check for going backwards
         %Filter specially for this method
         yftp = windowFilter(@mean, yy, opts.tpfil, 1);
-        %Invert if opts.refold -- already done above.
-%         if opts.refold
-%             yftp = opts.pwlcc - yftp;
-%         end
+        %Invert if opts.refold
+        if opts.refold
+            yftp = opts.pwlcc - yftp;
+        end
         ind1 = find( yftp < opts.tpwid(1) * opts.pwlcc, 1, 'last');
         ind2 = find( yftp > opts.tpwid(2) * opts.pwlcc, 1, 'first');
         %And NaN out things outside of ind1:ind2, with some padding

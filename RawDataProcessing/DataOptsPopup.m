@@ -177,7 +177,7 @@ delete(fg)
                 txtLorFlt.Value = 1;
                 txtLorFlt.Enable = 'on';
                 txtWaterV.Enable = 'on';
-                txtCustom.String = '{''field'', ''value'';}';
+                txtCustom.String = '{''cal.Fmax'', ''2e4'';}';
                 tfNormalize.Value = 1;
                 txtCFsamp.String = '200000/3';
             case 3 %Boltzmann
@@ -190,7 +190,7 @@ delete(fg)
                 txtLorFlt.Value = 1;
                 txtLorFlt.Enable = 'on';
                 txtWaterV.Enable = 'on';
-                txtCustom.String = '{''field'', ''value'';}';
+                txtCustom.String = '{''cal.Fmax'', ''2e4'';}';
                 tfNormalize.Value = 1;
                 txtCFsamp.String = '100000';
             case 4 %Mini

@@ -34,10 +34,13 @@ but2lab = {'Un-Reject (Cherrypick)' 'Reject (Cherrypick)'};
 %Make figure
 ssz = get(groot, 'ScreenSize');
 fg = figure('Position', ssz + [ssz(3:4)/10 -ssz(3:4)/5], 'Color', [1 1 1], 'CloseRequestFcn', @(x,y)addwkspc([],[],1));
-ax1 = subplot2(fg, [2 2], 1);
-ax2 = subplot2(fg, [2 2], [2 4]);
+ax1 = subplot2(fg, [2 2], 1); %F-X
+ax2 = subplot2(fg, [2 2], 2); %Con-t
+ax3 = subplot2(fg, [2 2], 4); %F-t
 hold(ax1, 'on')
 hold(ax2, 'on')
+hold(ax3, 'on')
+
 %Set labels
 xlabel(ax1, 'Extension (nm)')
 ylabel(ax1, 'Force (pN)')
@@ -50,7 +53,7 @@ butlef = uicontrol( 'Units', 'normalized', 'Position', [.525+.15, .75, .15, .2],
 butrig = uicontrol( 'Units', 'normalized', 'Position', [.525+.3, .75, .15, .2],       'String', '>', 'Callback',@(x,y)cycleData(x,y,+1) );
 but1   = uicontrol( 'Units', 'normalized', 'Position', [.525, .55, .20, .2],       'String', but1lab{2}, 'Callback',@but1_cb );
 but2   = uicontrol( 'Units', 'normalized', 'Position', [.525+.25, .55, .20, .2],       'String', but2lab{2}, 'Callback',@but2_cb );
-
+but3   =  uicontrol( 'Units', 'normalized', 'Position', [.525+.25, .45, .20, .1],       'String', 'Set Rip Index', 'Callback',@but3_cb );
 % Backup uicontrols: in the top bar instead
 % numtext = uicontrol('Style', 'text', 'Units', 'normalized', 'Position', [.05, .90, .05, .05], 'String', '0/0', 'Callback',@(x,y)cycleData(x,y,-1) );
 % butlef = uicontrol( 'Units', 'normalized', 'Position', [.1, .90, .05, .05],       'String', '<', 'Callback',@(x,y)cycleData(x,y,-1) );
@@ -77,22 +80,34 @@ cycleData([],[],0)
         con = dat(num).conpro;
         %Plot the F-X trace above, with fits
         cla(ax1)
-        plot(ax1, windowFilter(@mean, ext, smfx, 1), windowFilter(@mean, frc, smfx, 1));
+        plot(ax1, windowFilter(@median, ext, smfx, 1), windowFilter(@median, frc, smfx, 1));
         ff = linspace( 2, max(frc), 100 ); %Hard code minimum F for XWLC
         xwlcft = dat(num).xwlcft;
         plot(ax1, XWLC(ff, xwlcft(1), xwlcft(2)) * xwlcft(3) , ff );
         plot(ax1, XWLC(ff, xwlcft(1), xwlcft(2)) * xwlcft(3) + XWLC(ff, xwlcft(6), inf) * xwlcft(7) , ff );
-        legend(ax1, {'F-X data' 'DNA Fit' 'DNA+Protein fit'})
-        axis tight
+        axis(ax1, 'tight')
+        legend(ax1, {'F-X data' 'DNA Fit' 'DNA+Protein fit'}, 'Location', 'northwest')
         %And the contour below
         cla(ax2)
-        plot(ax2, (1:length(con))-dat(num).ripind , windowFilter(@mean, con, smcon, 1));
-        axis tight
+        plot(ax2, (1:length(con))-dat(num).ripind , windowFilter(@median, con, smcon, 1));
+        axis(ax2, 'tight')
         xl = xlim(ax2);
         %Add marker lines for start/end
+        ymark = [0 dat(num).xwlcft(7)];
         arrayfun(@(x) plot(ax2, xl, x * [1 1], 'k'), ymark)
         %Zoom to around rip location
-        xlim( conxwid );
+        xlim(ax2, conxwid );
+        %And the force-time below
+        cla(ax3)
+        plot(ax3, windowFilter(@median, dat(num).frc, smfx, 1));
+        axis(ax3, 'tight')
+        yl = ylim(ax3);
+        %Add vertical lines for ripind/retind
+        plot(ax3, [1 1]*dat(num).ripind, yl, 'r')
+        plot(ax3, [1 1]*dat(num).retind, yl, 'k')
+        if isfield(dat, 'refind')
+            plot(ax3, [1 1]*dat(num).refind, yl, 'g');
+        end
         
         %Set button strings
         but1.String = but1lab{ dat(num).tfpbe1 + 1 };
@@ -111,6 +126,18 @@ cycleData([],[],0)
         %Negate tfpbe2 and set string
         dat(num).tfpbe2 = ~dat(num).tfpbe2;
         but2.String = but2lab{ dat(num).tfpbe2 + 1 };
+    end
+
+    function but3_cb(~,~)
+        %User input a value for ripind
+        %Set current axis
+        axes(ax3)
+        %Ginput
+        a = ginput(1);
+        %And set
+        dat(num).ripind = floor(a(1));
+        %Add a red line for fun
+        plot(ax3, dat(num).ripind * [1 1], ylim)
     end
 
     function addwkspc(~,~,tfclose)

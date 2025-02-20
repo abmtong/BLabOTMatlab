@@ -22,9 +22,6 @@ for i = nfil:-1:1;
     else
         %Or if not, use median XWLC fit
         txwlc = median( reshape( [inst(iki).xwlcft], length(inst(1).xwlcft), []), 2)';
-        
-        %Shift something? DNA WLC? Or something else?
-        
     end
     %Recalc protein contour
     tmp = cellfun(@(ex, fo) (ex - XWLC(fo, txwlc(1), txwlc(2)) * txwlc(3) ) ./ XWLC( fo, txwlc(end-1), inf ) , {inst(iki).ext}, {inst(iki).frc}, 'Un', 0);

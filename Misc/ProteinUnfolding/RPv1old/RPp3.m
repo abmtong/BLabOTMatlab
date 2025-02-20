@@ -1,4 +1,4 @@
-function out = RPp3v2(inst, inOpts)
+function out = RPp3(inst, inOpts)
 %p3: With the segments identified, let's fit to WLC
 
 %How to match up data from different traces? Just fit them all? Downsample and join?
@@ -48,8 +48,8 @@ for i = 1:len
     dft = lsqcurvefit(fitfcn, xg, f(1:ri),x(1:ri), lb, ub, optopts);
     
     xg2 = [dft opts.pwlcg opts.pwlcc];%PL (nm), SM (pN), CL (nm), dx, df, PL(protein) CL(protein) <<should probably fix
-    lb2 = [lb 0.1 0 ]; %set ext and frc offsets to 0, but can enable if needed
-    ub2 = [ub 2 opts.pwlcc*3];
+    lb2 = [lb 0.1 opts.pwlcc ]; %set ext and frc offsets to 0, but can enable if needed
+    ub2 = [ub 2 opts.pwlcc];
     fitfcn2 = @(x0,f)( x0(3) * XWLC(f-x0(5), x0(1),x0(2)) + x0(4) + ((1:length(f)) > ri ) .* x0(7) .* XWLC(f-x0(5), x0(6),inf)  );
     pft = lsqcurvefit(fitfcn2, xg2, f, x, lb2, ub2, optopts);
     

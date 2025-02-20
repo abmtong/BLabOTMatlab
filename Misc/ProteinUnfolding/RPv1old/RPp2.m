@@ -25,15 +25,8 @@ for i = 1:len
     %Divide pull and relax region by maximum tpos value
     [~, retind] = max(tmp.tpos); %retind = 'retract index'
     
-    %If we've done fitting, use DNA XWLC from inst.xwlcft
-    if isfield(inst, 'xwlcft') && ~isempty(inst(i).xwlcft)
-        dwlcg = inst(i).xwlcft(1:2);
-    else
-        dwlcg = opts.dwlcg;
-    end
-    
     %Find rip by converting to contour (via a guess) and finding steps
-    con = tmp.ext ./ XWLC(tmp.frc, dwlcg(1), dwlcg(2));
+    con = tmp.ext ./ XWLC(tmp.frc, opts.dwlcg(1), opts.dwlcg(2));
     % Crop to force range
     ki = find(tmp.frc > opts.frng(1), 1, 'first') : find(tmp.frc < opts.frng(2), 1, 'last');
     ki(ki > retind) = []; %Only consider pulling cycle
