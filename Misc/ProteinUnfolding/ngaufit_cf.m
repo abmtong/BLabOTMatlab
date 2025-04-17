@@ -11,7 +11,7 @@ function [out, fh] = ngaufit_cf(xx, yy, ngau, ax, muguess)
 xx = double(xx);
 yy = double(yy);
 
-if nargin < 4 %Axis is not supplied, plot in new figure
+if nargin < 4 || isempty(ax)%Axis is not supplied, plot in new figure
     figure, ax=gca; hold on
 end
 

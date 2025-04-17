@@ -54,7 +54,13 @@ for i = 1:len
     tmp = inst(i);
     yy = double( tmp.conpro );
     
-    opts.pwlcc = tmp.xwlcft(7);
+    %Scale if factor exists
+    if isfield(tmp, 'pclscale')
+        yy = yy * tmp.pclscale;
+        opts.pwlcc = tmp.xwlcft(7) * tmp.pclscale;
+    else
+        opts.pwlcc = tmp.xwlcft(7);
+    end
     
     %Sloppy, but hotwire refolding index as rip index and invert
     if opts.refold
@@ -229,7 +235,7 @@ if opts.verbose
     %Normalize: total N per bin -> N per molecule per nm
     y = y / opts.conbinsz / length(tpcrp) / opts.Fs * 1e3;
     %Plot and fit to N gaussians
-    ngaufit_cf(x,y, opts.ngauss, ax, opts.gauguess)
+    ngaufit_cf(x,y, opts.ngauss, ax, opts.gauguess);
     xlim(yl)
     title('Residence Time Histogram')
     xlabel('Protein Contour (nm)')

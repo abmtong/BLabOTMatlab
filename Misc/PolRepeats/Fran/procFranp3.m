@@ -2,7 +2,11 @@ function out = procFranp3(inst, rAopts)
 %Analyze aligned traces
 
 %Check for crossers
-bdys = [558 631 704]-16;
+if isfield(rAopts, 'disp')
+    bdys = rAopts.disp;
+else
+    bdys = [558 631 704]-16;
+end
 crx = bdys(end);
 
 %Plot sum RTH

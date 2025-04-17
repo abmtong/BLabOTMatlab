@@ -3,7 +3,6 @@ function out = RPp3V2(inst, inOpts)
 %V2: Fit to three pieces: pull pre-rip, pull post-rip, relax pre-refold
 %    Also protein WLC is allowed to vary. May need to 'normalize' this length in p3b
 
-% opts.procon =  0.38*66 ; %Protein contour, nm: lets say 0.4nm/aa
 opts.fil = 30; %Filter with this width, downsample
 % opts.verbose = 1; %Plot fit
 
@@ -16,7 +15,7 @@ opts.pwlcc = 0.38*106; %Protein contour length, will be used as a set value. ROS
 % opts.pwlcc = 0.35*78; %FoldIII
 opts.fminretract = 12; %Force cutoff for retraction part. Useful for better fitting protein param.s
 
-opts.xwlcopt = [1 1 1 1 1 1 1]; %Set to 0 to fix these to guess
+opts.xwlcset = nan(1,7); %Set to non-nan to fix these to the value
 
 % Guess taken from https://www.pnas.org/doi/10.1073/pnas.1300596110
 
@@ -55,14 +54,33 @@ for i = 1:len
     xg = [opts.dwlcg opts.dwlcc 0 0];%PL (nm), SM (pN), CL (nm), dx, df, PL(protein) CL(protein) <<should probably fix
     lb = [0   0   0   -00 -0 ]; %set ext and frc offsets to 0, but can enable if needed
     ub = [1e3 1e4 inf  00  0 ];
+    
+    %Set to values if supplied
+    if any(~isnan(opts.xwlcset))
+        xki = ~isnan(opts.xwlcset(1:length(xg)));
+        xg(xki) = opts.xwlcset(xki);
+        lb(xki) = opts.xwlcset(xki);
+        ub(xki) = opts.xwlcset(xki);
+    end
+    
     fitfcn = @(x0,f)( x0(3) * XWLC(f-x0(5), x0(1),x0(2)) + x0(4) );
     dft = lsqcurvefit(fitfcn, xg, f(1:ri),x(1:ri), lb, ub, optopts);
     
     xg2 = [dft opts.pwlcg opts.pwlcc];%PL (nm), SM (pN), CL (nm), dx, df, PL(protein) CL(protein) <<should probably fix
     lb2 = [lb 0.1 0 ]; %set ext and frc offsets to 0, but can enable if needed
-    ub2 = [ub 2 opts.pwlcc*3];
+%     ub2 = [ub 2 opts.pwlcc*3];
+    ub2 = [ub 2 inf];
     fitfcn2 = @(x0,f)( x0(3) * XWLC(f-x0(5), x0(1),x0(2)) + x0(4) + ...
             ((1:length(f)) > ri ) .* x0(7) .* XWLC(f-x0(5), x0(6),inf) );
+        
+    %Set to values if supplied
+    if any(~isnan(opts.xwlcset))
+        xki = ~isnan(opts.xwlcset(1:length(xg2)));
+        xg2(xki) = opts.xwlcset(xki);
+        lb2(xki) = opts.xwlcset(xki);
+        ub2(xki) = opts.xwlcset(xki);
+    end
+    
     pft = lsqcurvefit(fitfcn2, xg2, f, x, lb2, ub2, optopts);
     
     %Subtract away DNA portion

@@ -370,21 +370,22 @@ fig.Visible = 'on';
                     
                     ylim(subAxis, [0 1])
                 else %Else it's point scan
-                    gt = windowFilter(@mean, stepdata.apdT, fil, dec);
+                    flfil = str2double(radioEd.String);
+                    gt = windowFilter(@mean, stepdata.apdT, flfil, dec);
                     %Let's have the order be G/R/B = 1/2/3 to match Flzr Green/Red=1/2 only
                     if radioChk1.Value && isfield(stepdata,'apd1')
                         %Take data
-                        g = windowFilter(@mean, stepdata.apd1, fil, dec);
+                        g = windowFilter(@mean, double(stepdata.apd1), flfil, dec);
                         plot(subAxis, gt, g, 'g')
                     end
                     if radioChk2.Value && isfield(stepdata,'apd2')
                         %Take data
-                        g = windowFilter(@mean, stepdata.apd2, fil, dec);
+                        g = windowFilter(@mean, double(stepdata.apd2), flfil, dec);
                         plot(subAxis, gt, g, 'r')
                     end
                     if radioChk3.Value && isfield(stepdata,'apd3')
                         %Take data
-                        g = windowFilter(@mean, stepdata.apd3, fil, dec);
+                        g = windowFilter(@mean, double(stepdata.apd31), flfil, dec);
                         plot(subAxis, gt, g, 'b')
                     end
                 end

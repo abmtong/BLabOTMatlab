@@ -13,13 +13,13 @@ if nargin < 1 || isempty(infp)
 end
 
 opts.dwlcg = [400 10000 ];
-opts.pwlcc = 0.38*78; %106 for Ross, 78 for FoldIII
+opts.pwlcc = 0.38*106; %106 for Ross, 78 for FoldIII
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
 end
 
-fprintf('Using a protein length of ~%d aa\n', round(opts.pwlcc/0.38))
+% fprintf('Using a protein length of ~[%d-%d] aa\n', round(opts.pwlcc/0.38)/2, round(opts.pwlcc/0.38)*2)
 
 if iscell(infp)
     out = cellfun(@(x)RP(x, opts), infp, 'Un', 0);
@@ -30,6 +30,8 @@ if iscell(infp)
     end
     %And combine
     out = [out{:}];
+    %Check per-tether stats
+    RPcheck_tethers(out);
     return
 end
 
@@ -50,11 +52,13 @@ p2out = RPp2(p1out, opts);
 p3out = RPp3V2(p2out, opts);
 %Redo P2 and P3 for better ripfinding
 p3out = RPp2(p3out, opts);
-p3out = RPp3V3(p3out, opts);
+p3out = RPp3V2(p3out, opts);
 
-% % P3_avg: Then reconvert with average XWLC values (as opposed to per-pull)
+%P3_avg: Then reconvert with average XWLC values (as opposed to per-pull)
 p3out = RPp3_avg(p3out);
-%P4: Find relax refold. Takes some time; could be better
+p3out = RPp3_avgp2(p3out);
+
+%P4: Find relax refold
 p4out = RPp4V3(p3out, opts);
 
 %Save this struct
@@ -63,7 +67,7 @@ out = p4out;
 
 %Check a random three traces
 rr = randperm(length(out), min(length(out), 3));
-RPcheck(out(rr))
+RPcheck(out(rr));
 
 %Run histograms
 %P3b: Unfolding histogram

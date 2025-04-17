@@ -8,7 +8,7 @@ opts.fliptraps = 0; %Assume trap 2 is left trap (B), trap 1 is right trap (A). =
 opts.xwlcopts = [50 900 4.14]; %For contour conversion
 opts.saveraw = 0; %Save raw file as .mat after downsampling
 opts.mirconv = [2.029, -9.4581]; %Multiplier for trap position. Seems to be valid 2022/10 - 2023/06 at least.
-
+opts.output = 0; %1 = Phage file, 0 = ForceExtension file
 
 if nargin > 0
     opts = handleOpts(opts, inOpts);
@@ -200,28 +200,46 @@ for i = 1:len
     %Write this in a way that will be plottable by PlotOff
     off.AX = dx * 1e3;
     off.AY = zeros(size(dx)); %Distance1
-    dsamp = floor( outFs * dt(2) );
+    dsamp = floor( length(ext) / length(dt) ); % floor( outFs * dt(2) );
     off.BX = windowFilter(@mean, ext, [], dsamp); %Extension
     off.BX = off.BX( 1:length(dt) );
     off.BY = zeros(size(dx));
     off.TX = dt;
     
+    switch opts.output
+        case 1 %Phage data
+            %Assemble output stepdata
+            stepdata.forceAX = {fax};
+            stepdata.forceBX = {fbx};
+            stepdata.forceAY = {fay};
+            stepdata.forceBY = {fby};
+            stepdata.extension = {ext};
+            stepdata.force = {frc};
+            stepdata.time = {tim};
+            stepdata.contour = {con};
+            stepdata.cal = raw.cal;
+            stepdata.off = off;
+            %Save
+            [~, fstrip, ~] = fileparts(f{i});
+            save(fullfile(p, [fstrip '.mat']), 'stepdata')
+        otherwise
+            %Assemble output ContourData
+            ContourData.forceAX = fax;
+            ContourData.forceBX = fbx;
+            ContourData.forceAY = fay;
+            ContourData.forceBY = fby;
+            ContourData.extension = ext;
+            ContourData.force = frc;
+            ContourData.time = tim;
+%             ContourData.contour = {con};
+            ContourData.cal = raw.cal;
+            ContourData.off = off;
+            %Save
+            [~, fstrip, ~] = fileparts(f{i});
+            save(fullfile(p, [fstrip '.mat']), 'ContourData')
+    end
     
-    %Assemble output stepdata
-    stepdata.forceAX = {fax};
-    stepdata.forceBX = {fbx};
-    stepdata.forceAY = {fay};
-    stepdata.forceBY = {fby};
-    stepdata.extension = {ext};
-    stepdata.force = {frc};
-    stepdata.time = {tim};
-    stepdata.contour = {con};
-    stepdata.cal = raw.cal;
-    stepdata.off = off;
     
-    %Save
-    [~, fstrip, ~] = fileparts(f{i});
-    save(fullfile(p, [fstrip '.mat']), 'stepdata')
 end
 
 

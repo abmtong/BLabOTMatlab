@@ -4,9 +4,9 @@ function opts = DataOptsPopup()
 %See the end / run this to see the fieldnames
 
 %Make the figure
-pxx = 600;
-txty = 20;
-nrows = 17;
+pxx = 600; %Width (px)
+txty = 20; %Height per row (px)
+nrows = 17; %Num Rows
 pxy = txty*nrows;
 boxsz = [pxx,pxy];
 %Use this fcn so we can count rows from the top instead of from the bottom
@@ -14,7 +14,7 @@ rx = @(x) pxy - x * txty;
 %Get screensize so we can center this figure in the screen
 ssz = get(0, 'ScreenSize');
 ssz = ssz(3:4);
-%Need ssz >= boxsz
+%Need ssz >= boxsz; as in shrink popup if screen size is small
 ssz = max(boxsz, ssz);
 fg = figure('Name', 'AProcessData Options', 'Position', [(ssz-boxsz)/2 boxsz]);
 col = [0 100 300 400]; %Column positions, we're gonna do [Text Box   Text Box]

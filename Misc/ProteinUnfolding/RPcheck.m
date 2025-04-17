@@ -95,7 +95,7 @@ for i = 1:len
     hold on
     copyobj(ax3.Children, ax4);
     ylim(yl);
-    if isfield(tmp,'refind')
+    if isfield(tmp,'refind') && ~isempty(tmp.refind)
         plot( floor(tmp.refind / dsamp ) * [1 1], yl, 'g');
         xl = floor(tmp.refind / dsamp ) + [-ripwid ripwid]/dsamp;
         xlim(xl)
