@@ -1,4 +1,4 @@
-function out = stateHMMV2(tr, inModel)
+function out = stateHMMV2_sig(tr, inModel)
 %Fits a HMM to a n-state hopping problem; generates test data if nothing supplied
 
 if nargin<2 %generate model guess
@@ -63,10 +63,13 @@ else
 end
 
 if ~isfield(inModel, 'sig')
-    sig = sqrt(estimateNoise(tr));
+    sig = sqrt(estimateNoise(tr)) * ones(1,ns);
     inModel.sig = sig;
 else
     sig = inModel.sig;
+    if length(sig) == 1
+        sig = sig * ones(1,ns);
+    end
 end
 
 if ~isfield(inModel, 'pi')
@@ -80,7 +83,7 @@ end
 len = length(tr);
 
 %precalc & normalize normpdf
-gauss = @(x) exp( -(mu-x).^2 /2 /sig/sig);
+gauss = @(x) exp( -(mu-x).^2 /2 ./sig./sig);
 npdf = zeros(len,ns);
 for i = 1:len
     npdf(i,:) = gauss(tr(i));
@@ -217,9 +220,9 @@ newpi = ga(1,:);
 newa = squeeze(sum(xi,1));
 newa = bsxfun(@rdivide, newa, sum(newa, 2));
 newmu = sum(bsxfun(@times, ga, tr'), 1) ./ sum(ga, 1);
-newsig = sqrt( sum(sum(ga .* bsxfun(@minus, tr', newmu).^2))  / (len-1) ) ;
+newsig = sqrt( sum(ga .* bsxfun(@minus, tr', newmu).^2,1)  ./ (sum(ga ,1)-1) ) ;
 
-newgauss = @(x) exp( -(mu-x).^2 /2 /newsig/newsig);
+newgauss = @(x) exp( -(mu-x).^2 /2 ./newsig./newsig);
 newnpdf = zeros(len, ns);
 
 %precalc & normalize (necessary?) normpdf
@@ -283,7 +286,7 @@ end
 
 %Calculate logprob of this path. Is this just log(vitsc), if we didn't kept track of normalization? Oh well
 %Noise term
-lp1 = sum( log(normpdf(tr-newmu(st), 0, newsig) ) );
+lp1 = sum( log(normpdf(tr-newmu(st), 0, newsig(st)) ) );
 %Transitions term
 lp2 = zeros(1,len-1);
 for i = 1:len-1

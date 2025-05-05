@@ -5,6 +5,7 @@ function out = RP_hop(infp, inOpts)
 
 %WLC fitting per-pull
 opts.xwlcfit = 2; %Do fitting. Set 0 to use backup, 2 for fitPFFD, 1 for just DNA crop
+opts.otherfxdata = 0; %Data for pull is from a separate file
 opts.cropstrfx = 'fx'; %Crop string for initial pulling curve. DNA only.
 opts.xwlcfil = 30; %Filter and downsample XWLC pull by this much
 opts.xwlcguess = [50 900 700]; %XWLC guess / fallback
@@ -41,9 +42,22 @@ cd = cd.ContourData;
 [p f e] = fileparts(infp);
 
 %XWLC fitting
+if opts.otherfxdata
+    [ffx, pfx] = uigetfile('*.mat', 'Select F-X Data File', 'Mu', 'on');
+    if ~pfx
+        fxfp = infp;
+        warning('Using same file for F-X')
+    else
+        fxfp = fullfile(pfx,ffx);
+    end
+else
+    fxfp = infp;
+end
+
 if opts.xwlcfit == 1
     %Load crop
-    xcT = loadCrop(opts.cropstrfx, p, [f e]);
+    [pfx, ffx, efx] = fileparts(fxfp);
+    xcT = loadCrop(opts.cropstrfx, pfx, [ffx efx]);
     
     %Crop
     ki = cd.time > xcT(1) & cd.time < xcT(2);
@@ -64,7 +78,7 @@ if opts.xwlcfit == 1
 elseif opts.xwlcfit == 2
     %Use fitPFFD
     fpopts = struct('pwlcc', opts.pwlcc, 'dsamp', opts.xwlcfil, 'pwlcg', opts.pwlcg);
-    xft = fitPFFD(infp, fpopts);
+    xft = fitPFFD(fxfp, fpopts);
     %Extract DNA + protein params from this data
     xwlcparams = xft(1:3);
     opts.pwlcg = xft(6);

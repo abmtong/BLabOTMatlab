@@ -149,10 +149,14 @@ for i = 1:len
         yf(~ki) = nan;
     end
     
-    %Rip force: Take the highest force, after filtering
+    %Rip force: Take the highest force, after filtering, in TP range
     ff = windowFilter(@mean, tmp.frc(irng), opts.fil, 1);
     ff = ff(1+pad:end-pad);
-    frip(i) = max(ff);
+    if opts.refold %Or if refolding, min force
+        frip(i) = min(ff);
+    else
+        frip(i) = max(ff);
+    end
     
     %Save
     tpcrp{i} = yf;
