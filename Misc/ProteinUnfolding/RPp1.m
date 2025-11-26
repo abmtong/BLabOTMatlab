@@ -15,7 +15,7 @@ if nargin > 1
     opts = handleOpts(opts, inOpts);
 end
 
-%Estimate Fsamp from input data if not supplied
+%Get Fsamp from input data
 opts.Fs = condat.opts.Fsamp;
 
 % Estimate mirror extension : ext ~= trappos + beadAX - beadBX
@@ -26,9 +26,14 @@ trappos = condat.extension - condat.forceAX/condat.cal.AX.k + condat.forceBX/con
 % So let's extract these by finding contiguous sections greater than some trap position
 if isempty(opts.start)
     %Estimate by finding most probable position
-    [hy, hx] = nhistc(trappos, 0.2); %Let's set a 0.2nm step size
-    [~, maxi] = max(hy);
-    opts.start =hx(maxi);
+    [hy, hx] = nhistc(trappos, 0.2); %Let's set a 0.2nm bin size
+%     [~, maxi] = max(hy);
+%     opts.start =hx(maxi);
+%   
+    %Let's take the lowest pt. over half-max
+    opts.start = min(hx( hy > max(hy)/2 ));
+    
+    
 end
 %Find regions above this trap position
 tfpull = trappos > opts.start;
@@ -36,7 +41,7 @@ tfpull = trappos > opts.start;
 indSta = find( diff([false tfpull]) == 1 ); %Find when ki goes from 0 -> 1
 indEnd = find( diff([tfpull false]) == -1 ); %Find when ki goes from 1 -> 0
 % Pad with false so length(indSta) == length(indEnd), and so indicies match (@diff shortens length by one)
-%Mirror baseline noise might peek over otps.start, this would result in a very short pull. Remove them.
+%Mirror baseline noise might peek over opts.start, this would result in a very short pull. Remove them.
 tpull = (indEnd-indSta)/opts.Fs;
 ki = tpull > opts.minpull;
 indSta = indSta(ki);

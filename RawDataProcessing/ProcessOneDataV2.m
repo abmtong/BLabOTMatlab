@@ -26,7 +26,7 @@ else
             spfn = '%sN%02d.dat';
         case 'Boltzmann'
             spfn = '%s_%03d.dat';
-        case 'Meitner'
+        case {'Meitner' 'Avogadro' 'SalaFleezer'}
             spfn = '%s_%03d.dat';
         case 'Lumicks'
             spfn = '%s-%06d*.h5';
@@ -57,6 +57,15 @@ calopts.raA = opts.raA;
 calopts.raB = opts.raB;
 calopts.Instrument = opts.Instrument;
 calopts.normalize = opts.normalize;
+%Set temperature cal opts if asked
+if isfield(opts, 'custtemp') && opts.custtemp
+    %Get temperature from comment, as it will be the first thing of comment
+    tempc = textscan(opts.comment , '%f %s');
+    tempc = tempc{1}(1);
+    %Just set kT and wV
+    calopts.wV = lookup_visc(tempc);
+    calopts.kT = .0138 * (273 + tempc);
+end
 %Get Fs
 switch calopts.Instrument
     case {'HiRes' 'HiRes PSD' 'HiRes QPD'}
@@ -67,7 +76,7 @@ switch calopts.Instrument
 %         calopts.Fsamp = 70000; %Hard code this, at least for now
         cal = ACalibrateV2(fullfile(path, file{3}), calopts);
         drawnow %Can inspect calibration while program continues
-    case {'Boltzmann' 'Meitner'}
+    case {'Boltzmann' 'Meitner' 'Avogadro' 'SalaFleezer'}
         %Read the header to get Fs
         calhdr = timesharereadhdr(fullfile(path, file{3}));
         calopts.Fsamp = 1/calhdr.Fsamp;
@@ -170,7 +179,7 @@ switch opts.Protocol
                     npul = max(round(rawoff.meta.scanNSteps/rawoff.meta.scanCycPerStep),1); %Scans in Timeshared are two-way, take the first way.
                 else
                     switch inOpts.Instrument
-                        case {'Boltzmann' 'Meitner'}
+                        case {'Boltzmann' 'Meitner' 'Avogadro'}
                             npul = 2;
                         case 'Lumicks'
                             npul = 1;
@@ -243,7 +252,7 @@ out.force = hypot((out.forceBX - out.forceAX)/2, ...
 
 %Get Fs from meta if needed
 switch calopts.Instrument
-    case {'Boltzmann' 'Meitner'}
+    case {'Boltzmann' 'Meitner' 'Avogadro' 'SalaFleezer'}
         %Read the header to get Fs
         opts.Fsamp = 1/rawdat.meta.Fsamp;
 end
@@ -317,7 +326,17 @@ if isfield(rawdat, 'meta')
     %Metadata from Timeshared instruments
     out.meta = rawdat.meta;
 end
-if isfield(rawdat, 'APD1')
+if isfield(rawdat, 'APDcol')
+    %Fluorescence data from Avo
+    out.apd1 = rawdat.APD1;
+    out.apd2 = rawdat.APD2;
+    out.apd3 = rawdat.APD2;
+    out.apdT = rawdat.APDT;
+    if isfield(rawdat, 'APDcol')
+        out.apdcol = rawdat.APDcol;
+        out.apdcolT = rawdat.APDcolT;
+    end
+elseif isfield(rawdat, 'APD1')
     %Fluorescence data from Fleezers
     out.apd1 = rawdat.APD1;
     out.apd2 = rawdat.APD2;

@@ -1,10 +1,10 @@
-function out = RP_hop(infp, inOpts)
+function out = RPhop(infp, inOpts)
 
 %RP for 'hopping passive data'
 %Would RP_passive just work for this? maybe? Probably better to not...
 
 %WLC fitting per-pull
-opts.xwlcfit = 2; %Do fitting. Set 0 to use backup, 2 for fitPFFD, 1 for just DNA crop
+opts.xwlcfit = 3; %Do fitting. Set 0 to use backup, 2 for fitPFFD, 1 for just DNA crop
 opts.otherfxdata = 0; %Data for pull is from a separate file
 opts.cropstrfx = 'fx'; %Crop string for initial pulling curve. DNA only.
 opts.xwlcfil = 30; %Filter and downsample XWLC pull by this much
@@ -17,6 +17,7 @@ opts.pwlcg = 0.4; %Protein persistence length
 opts.pwlcc = 93 * 0.35; %Protein contour length, only if xwlcfit == 2
 opts.minjump = 100; %Minimum state duration, see code
 opts.edgetrim = 1e3;%Pts to trim from edges, to account for mirror movement. Decent value is 20ms * Fsamp ?
+opts.Foff = 0; %Force offset, obtained from XWLC fit
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
@@ -29,7 +30,10 @@ if nargin < 1
         return
     end
     if iscell(f)
-        out = cellfun(@(x) RP_hop(fullfile(p,x)), f, 'Un', 0);
+        out = cellfun(@(x) RPhop(fullfile(p,x)), f, 'Un', 0);
+        for i = 1:length(out)
+            [out{i}.file] = deal(f{i});
+        end
         out = [out{:}];
         return
     end
@@ -82,6 +86,18 @@ elseif opts.xwlcfit == 2
     %Extract DNA + protein params from this data
     xwlcparams = xft(1:3);
     opts.pwlcg = xft(6);
+elseif opts.xwlcfit == 3
+    %Use fitPFFDV2
+    %Crop data in fx
+    fxfil = 100;
+    fxdat = loadCroppedData(fxfp, 'fx');
+    fxx = windowFilter(@mean, fxdat.extension, [], fxfil);
+    fxy = windowFilter(@mean, fxdat.force, [], fxfil);
+    xft = fitPFFDV2(fxx, fxy);
+    xwlcparams = xft(1:3);
+    opts.pwlcg = xft(4);
+    opts.pwlcc = xft(5);
+    opts.Foff = xft(6);
 else
     %Guess distance... somehow? lets just use 700nm for now...
     xwlcparams = opts.xwlcguess;
@@ -98,7 +114,7 @@ end
 %Extract data and apply crop
 ki = cd.time > cT(1) & cd.time < cT(2);
 
-frc = double(cd.force(ki));
+frc = double(cd.force(ki)) - opts.Foff;
 ext = double(cd.extension(ki));
 tim = double(cd.time(ki));
 

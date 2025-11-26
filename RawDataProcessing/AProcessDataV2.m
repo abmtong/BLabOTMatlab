@@ -100,6 +100,12 @@ switch opts.Instrument
         datname = '*.h5';    %Name.h5
 end
 
+%Add Temperature if custom temperature
+if isfield(opts, 'custtemp') && opts.custtemp %Make the temperature as a third NN, so dat off cal temp , temp is %f
+    addpath([thispath filesep 'Temperature'])
+    fprintf('Using custom temperature, format text as "dat off cal temp comment"\n')
+end
+
 %To debug, we can't have the error be caught for dbstop to fire
 debug = 1; %#ok<*UNRCH>
 if debug

@@ -24,7 +24,11 @@ for i = nfil:-1:1;
         txwlc = newxwlc;
     else
         %Or if not, use median XWLC fit
-        txwlc = median( reshape( [inst(iki).xwlcft], length(inst(1).xwlcft), []), 2)';
+        tmp = [inst(iki).xwlcft];
+        if isempty(tmp)
+            continue
+        end
+        txwlc = median( reshape( tmp, length(inst(1).xwlcft), []), 2)';
         
         %Shift something? DNA WLC? Or something else?
     end

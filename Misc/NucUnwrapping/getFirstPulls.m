@@ -1,6 +1,9 @@
-function out = getFirstPulls(inp)
+function out = getFirstPulls(inp, cropstr)
 %Get first pulls of files
 
+if nargin < 2
+    cropstr = -1;
+end
 
 if nargin < 1
     inp = uigetdir();
@@ -26,10 +29,29 @@ for i = 1:len
     %Grab data
     ext = dat.extension;
     frc = dat.force;
+    tim = dat.time;
+    
+    %Crop
+    if cropind ~= -1
+        ci = loadCrop(cropstr, inp, f{i});
+        if isempty(ci)
+            continue
+        end
+    else
+        ci = [-inf inf];
+    end
+    ki = tim > ci(1) & tim < ci(2);
+
     
     %Grab first pull: Look for first 'local maximum' in trap sep
     % Estimate trap sep
     tsep = ext - dat.forceAX / dat.cal.AX.k  + dat.forceBX / dat.cal.BX.k;
+    
+    %Apply crop
+    ext = ext(ki);
+    frc = frc(ki);
+    tsep = tsep(ki);
+    
     
     %Downsample
     

@@ -1,4 +1,4 @@
-function TxPull_plot(inst)
+function TxPullV2_plot(inst)
 
 %Plots F-X and C-F data separated by type
 
@@ -16,32 +16,31 @@ arrayfun(@(x) hold(x, 'on'), [ax1 ax2]);
 
 %Options
 fil = 100;
-xwlc = [48 1340];
-fcen = 7;
+% fcen = 7;
 
 tits = {'Bare' 'Tet' 'Hex' 'Nuc'};
 
 %Loop through data
 len = length(inst);
+cts = zeros(1,4);
 for i = 1:len
-    id = 1 + inst(i).tfpbe1 + 2 * inst(i).tfpbe2;
+    id = inst(i).nucid;
     
     if isnan(id)
         continue
     end
     
+    %Increment counts
+    cts(id) = cts(id)+1;
+    
     %Calculate force, ext
     frc = windowFilter(@mean, inst(i).frc, [], fil);
     ext = windowFilter(@mean, inst(i).ext, [], fil);
-    con = ext ./ XWLC( frc, xwlc(1), xwlc(2) );
+    con = ext ./ XWLC( frc, inst(i).xwlc(1), inst(i).xwlc(2) );
     
-    %Zero to fcen
-    ki = find(frc > fcen, 1, 'first');
-    if isempty(ki)
-        continue
-    end
-    ext = ext - ext( ki );
-    con = con - con( ki );
+    %Zero to xwlc(3)
+    ext = ext - inst(i).xwlc(3);
+    con = con - inst(i).xwlc(3);
     
     
     %Plot on ax(id)
@@ -63,5 +62,19 @@ ylim(ax1(1), [0 45])
 
 xlim(ax2(1), [0 45])
 ylim(ax2(1), [-35 35])
+
+%Plot bar graphs
+figure Name Bars
+bar(cts/sum(cts)*100)
+set(gca,'XTick', [1 2 3 4], 'XTickLabel', tits)
+ylabel('Occurrence (%)')
+yl = ylim;
+yyaxis('right')
+bar(cts)
+ylim([0 yl(2)/100*sum(cts)])
+ylabel('N')
+
+
+
 
 

@@ -1,5 +1,6 @@
-function out = fitNuc(inst, frng, debug)
+function out = fitNucV2(inst, frng, debug)
 %Fit each trace separately
+% V2: Change xwlc(5) to be HF , not LF+HF. Works better with lb=0
 
 if nargin < 2 || isempty(frng)
     %Force bounds to remove the LF transition
@@ -67,20 +68,18 @@ for i = 1:len
     
     
     %Create fit fcn, special for each
-    fitfcn = @(x0, x) XWLC(x, x0(1),x0(2)).*(x0(3)+x0(4)*th1 + (x0(4)+x0(5))*th2);
-    xg = [50 400 ext(i2) 25 30  ]; %PL SM CL dCL1 dCL2
+    fitfcn = @(x0, x) XWLC(x, x0(1),x0(2)).*(x0(3)+x0(4)*th1 + (x0(4)+ x0(5))*th2);
+    xg = [50 400 ext(i2) 20 20 ]; %PL SM CL dCL1 dCL2
     lb = [0     0  0   0   0 ];
     ub = [100 1e4 3e3 1e2 1e2];
     opop = optimoptions('lsqcurvefit', 'Display', 'none');
     %Fit
     ft = lsqcurvefit(fitfcn, xg, fc, xc, lb, ub, opop);
     
-    %BAD: make ft(5) = LB+UB, for compatability. At some point change this
-    ft(5) = ft(4)+ft(5);
-    
     %Get average residual of each section
     rsd = (fitfcn(ft, fc) - xc).^2;
     res123 = [ mean( rsd( ~(th1|th2)) ) mean( rsd( th1 == 1) ) mean(rsd(th2 == 1) ) ];
+    
     
     
     %Debug: Check fit

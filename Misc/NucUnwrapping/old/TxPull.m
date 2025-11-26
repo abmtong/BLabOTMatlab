@@ -8,15 +8,20 @@ fil = 100;
 % xloc = ([-360 550 730] +360) *.34 + 400; %Nuc key locs [initial, entry, exit]], plus the base tether length
 
 %4kb handles xloc (with the molecular ruler)
-xloc = [1200 1468 1488 1520 1551]; %Nuc key locs, avg [stall, entry, dyad, end] extenstion @ 13pN for 4kb handles
+% xloc = [1200 1468 1488 1520 1551]; %Nuc key locs, avg [stall, entry, dyad, end] extenstion @ 13pN for 4kb handles
+xloc = [1200 1468 1488 1520 1551] -40 ; %250705 Shifted by a bit? New stall loc ~ 1160 (40 earlier), shift them all
+
 % xloc = [0 0 1200 1468 1488 1520 1551]; %Nuc key locs, avg [stall, entry, dyad, end] extenstion @ 13pN for 4kb handles
   % These are obtained by [-NTP, abasic@entry, abasic@dyad, No Nuc] traces
   % Nuc is 146bp ~ 50nm, so entry-dyad should be ~25nm apart, end is a bit further
   %   ADD line at 1520, the current cutoff pt
-
+  
 S = 900; %Stretch modulus
 
-fco = 13; %Force cutoff for length judgment
+fco = 13; %Force cutoff for length judgment.. 13pN is where XWLC = 1 ish
+
+%Although, some guys rip before this loc, and will be wrongly accepted.
+% Maybe we need another method...
 
 
 if nargin < 1
@@ -56,6 +61,9 @@ end
 xlabel('Extension (nm)')
 ylabel('Force (pN)')
 
+%Also plot ''
+
+
 %Add guidelines
 for i = 1:length(xloc)
     frc = [0 60];
@@ -77,7 +85,7 @@ end
 xlabel('Tether Length (ish) (nm)')
 ylabel('CDF')
 
-xlim( xloc([2 end]) + 50 * [-1 1])
+xlim( xloc([1 end]) + 50 * [-1 1])
 gi = ginput(1); %Choose crossing position
 
 % %Sort by distance
@@ -86,12 +94,5 @@ gi = ginput(1); %Choose crossing position
 out = outraw( lens > gi(1) );
 
 out = [out{:}];
-
-
-
-
-
-
-
 
 

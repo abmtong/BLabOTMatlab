@@ -17,7 +17,7 @@ opts.tpfil = 10; %Filtering for TPs for detection, different from opts.fil (filt
 
 opts.tpzero = 0; %Zero the F side of the TP, i.e. subtract by median of pre-rip
 
-% opts.pwlcc = 0.38*106; %Protein size (nm)
+opts.pwlcc = 0.38*106; %Protein size (nm)
 % opts.pwlcfudge = 1; %Protein size offset, nm
 
 opts.refold = 0; %Calc refolding vs. unfolding
@@ -59,7 +59,9 @@ for i = 1:len
         yy = yy * tmp.pclscale;
         opts.pwlcc = tmp.xwlcft(7) * tmp.pclscale;
     else
-        opts.pwlcc = tmp.xwlcft(7);
+        if isfield(tmp, 'xwlcft')
+            opts.pwlcc = tmp.xwlcft(7);
+        end
     end
     
     %Sloppy, but hotwire refolding index as rip index and invert

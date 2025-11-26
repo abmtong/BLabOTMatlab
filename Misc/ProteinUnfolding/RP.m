@@ -7,7 +7,12 @@ if nargin < 1 || isempty(infp)
         return
     end
     if ~iscell(f)
-        f = {f};
+        if nargin > 1
+            out = RP(fullfile(p,f), inOpts);
+        else
+            out = RP(fullfile(p,f));
+        end
+        return
     end
     infp = cellfun(@(x)fullfile(p, x), f, 'Un', 0);
 end
@@ -22,13 +27,24 @@ end
 % fprintf('Using a protein length of ~[%d-%d] aa\n', round(opts.pwlcc/0.38)/2, round(opts.pwlcc/0.38)*2)
 
 if iscell(infp)
-    out = cellfun(@(x)RP(x, opts), infp, 'Un', 0);
+    %Parfor if pool exists
+    pp = gcp('nocreate');
+    if isempty(pp)
+        out = cellfun(@(x)RP(x, opts), infp, 'Un', 0);
+    else
+        len = length(infp);
+        out = cell(1,len);
+        parfor i = 1:len
+            out{i} = RP(infp{i}, opts);
+        end
+    end
     %Add file field
     for i = 1:length(out)
         [~, f, ~] = fileparts(infp{i});
         [out{i}.file] = deal(f);
     end
     %And combine
+    out = out(~cellfun(@isempty, out));
     out = [out{:}];
     %Check per-tether stats
     RPcheck_tethers(out);
@@ -55,6 +71,7 @@ p3out = RPp2(p3out, opts);
 p3out = RPp3V2(p3out, opts);
 
 %P3_avg: Then reconvert with average XWLC values (as opposed to per-pull)
+%Skip empty files
 p3out = RPp3_avg(p3out);
 p3out = RPp3_avgp2(p3out);
 
@@ -71,7 +88,7 @@ RPcheck(out(rr));
 
 %Run histograms
 %P3b: Unfolding histogram
-RPp3bV2(out);
+% RPp3bV2(out);
 %P3b_kv: Unfolding histogram (stepfinding)
 % RPp3b_kv(out);
 %P4b: Refolding histogram

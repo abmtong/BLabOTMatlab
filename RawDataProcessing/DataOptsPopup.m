@@ -22,7 +22,7 @@ col = [0 100 300 400]; %Column positions, we're gonna do [Text Box   Text Box]
 %Add stuff to the figure
 
 %Row 1: Dropdown menus to choose presets
-optInstr = {'HiRes QPD' 'Meitner' 'Boltzmann' 'Mini' 'Lumicks' 'HiRes PSD' 'HiRes bPD'};
+optInstr = {'HiRes QPD' 'Meitner' 'Boltzmann' 'Mini' 'Lumicks' 'HiRes PSD' 'HiRes bPD' 'Avogadro' 'SalaFleezer'};
 optProt  = {'Semipassive' 'Force feedback' 'Force-Extension' 'One Trap'};
 dropInstL= uicontrol(fg, 'Style', 'text'     , 'Position', [col(1) rx(1) 100 txty], 'String', 'Instrument: ', 'HorizontalAlignment', 'right', 'FontSize', 12); %#ok<*NASGU>
 dropInst = uicontrol(fg, 'Style', 'popupmenu', 'Position', [col(2) rx(1) 200 txty], 'String', optInstr, 'Callback', @dropInst_cb);
@@ -56,7 +56,7 @@ label7    = uicontrol(fg, 'Style', 'text', 'Position', [0 rx(8) 300 txty], 'Stri
 
 %Row 9: Calibration options
 %Lorentian Models
-lormodels = {'No filter (Timeshared default)' 'One first-order filter' 'Delayed response filter (HiRes default)' 'Two first-order filters'};
+lormodels = {'No filter (QPD default)' 'One first-order filter' 'Delayed response filter (PSD default)' 'Two first-order filters'};
 txtLorFltL= uicontrol(fg, 'Style', 'text',      'Position', [col(1) rx(9) 100 txty], 'String', 'Lorentzian filtering: ', 'HorizontalAlignment', 'right');
 txtLorFlt = uicontrol(fg, 'Style', 'popupmenu', 'Position', [col(2) rx(9) 200 txty], 'String', lormodels);
 txtWaterVL= uicontrol(fg, 'Style', 'text',      'Position', [col(3) rx(9) 100 txty], 'String', 'Water Viscosity: ', 'HorizontalAlignment', 'right');
@@ -244,6 +244,30 @@ delete(fg)
                 txtCustom.String = '{''cal.Fmax'', ''1e4'';}';
                 tfNormalize.Value = 0;
                 txtCFsamp.String = '70000';
+            case 8 %Avogadro, taking Meitner defaults
+                txtFsamp.Enable = 'off';
+                txtTConvXY.Enable = 'on';
+                txtTOffV.Enable = 'off';
+                txtTConvXY.String = '[160.2656 0]';
+                txtTOffV.String = '[0 0]';
+                txtLorFlt.Value = 1;
+                txtLorFlt.Enable = 'on';
+                txtWaterV.Enable = 'on';
+                txtCustom.String = '{''cal.Fmax'', ''2e4'';}';
+                tfNormalize.Value = 1;
+                txtCFsamp.String = '200000/3';
+            case 9 %Salamanca Fleezer, taking Meitner defaults
+                txtFsamp.Enable = 'off';
+                txtTConvXY.Enable = 'on';
+                txtTOffV.Enable = 'off';
+                txtTConvXY.String = '[133.1416 0]'; %AOM calibrated 251109
+                txtTOffV.String = '[0 0]';
+                txtLorFlt.Value = 1;
+                txtLorFlt.Enable = 'on';
+                txtWaterV.Enable = 'on';
+                txtCustom.String = '{''cal.Fmax'', ''2e4'';}';
+                tfNormalize.Value = 1;
+                txtCFsamp.String = '200000/3';
             otherwise
                 error('Dropdown menu for Instruments can''t handle value %d', src.Value)
         end

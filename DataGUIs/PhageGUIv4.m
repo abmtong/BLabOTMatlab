@@ -89,10 +89,12 @@ txtSlider = uicontrol(panlef, 'Style', 'text',   'Units', 'normalized', 'Positio
 clrGraph  = uicontrol(panlef,                    'Units', 'normalized', 'Position', [0 .875 1 .025],   'String', 'Clear Graph', 'Callback', @clrGraph_callback);
 %This subpanel has the filtering text boxes
 panFil = uipanel(panlef, 'Position', [0 .8 1 .075]);
-filtFactT = uicontrol(panFil, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .67 .5 .33],  'String', 'Filt Fact');
-filtFact  = uicontrol(panFil, 'Style', 'edit', 'Units', 'normalized', 'Position', [0 .0 .5 .67],   'String', '[]', 'Callback', @refilter_callback);
-deciFactT = uicontrol(panFil, 'Style', 'text', 'Units', 'normalized', 'Position', [.5 .67 .5 .33], 'String', 'Dec Fact');
-deciFact  = uicontrol(panFil, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .0 .5 .67],  'String', '20', 'Callback', @refilter_callback);
+filtFactT = uicontrol(panFil, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .67 .33 .33],  'String', 'Fil');
+filtFact  = uicontrol(panFil, 'Style', 'edit', 'Units', 'normalized', 'Position', [0 .0 .33 .67],   'String', '[]', 'Callback', @refilter_callback);
+deciFactT = uicontrol(panFil, 'Style', 'text', 'Units', 'normalized', 'Position', [.33 .67 .33 .33], 'String', 'Dec');
+deciFact  = uicontrol(panFil, 'Style', 'edit', 'Units', 'normalized', 'Position', [.33 .0 .33 .67],  'String', '20', 'Callback', @refilter_callback);
+deciRawT  = uicontrol(panFil, 'Style', 'text', 'Units', 'normalized', 'Position', [.66 .67 .33 .33], 'String', 'RawDec');
+deciRaw   = uicontrol(panFil, 'Style', 'edit', 'Units', 'normalized', 'Position', [.66 .0 .33 .67],  'String', '1', 'Callback', @refilter_callback);
 %This subpanel has the contour limit text boxes
 panConMx= uipanel(panlef, 'Position', [0 .725 1 .075]);
 conMinT = uicontrol(panConMx, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .67 .5 .33],  'String', 'Y Min');
@@ -240,6 +242,17 @@ fig.Visible = 'on';
         cropT = [];
         
         zoom on
+
+        
+        %Filter raw if asked
+        rawdec = str2double(deciRaw.String);
+        if rawdec > 1 || ~isempty(rawdec)
+            fns = {'contour' 'time' 'force' };
+                for i = 1:length(fns)
+                    stepdata.(fns{i}) = cellfun(@(x)windowFilter(@mean, x, [], rawdec),stepdata.(fns{i}),'UniformOutput',0);
+                end
+        end
+
         %Plot
         refilter_callback
         fixLimit_callback
@@ -286,7 +299,7 @@ fig.Visible = 'on';
         %Filter the data
         %Get the filtering parameters (width and decimation)
         fil = str2num(filtFact.String); %#ok<ST2NM>, we need to have '[]' be interpretable as [], not NaN
-        dec = str2double(deciFact.String);
+        dec = str2double(deciFact.String);        
         %And filter
         conF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.contour,'UniformOutput',0);
         timF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.time,'UniformOutput',0);
@@ -371,22 +384,47 @@ fig.Visible = 'on';
                     ylim(subAxis, [0 1])
                 else %Else it's point scan
                     flfil = str2double(radioEd.String);
-                    gt = windowFilter(@mean, stepdata.apdT, flfil, dec);
-                    %Let's have the order be G/R/B = 1/2/3 to match Flzr Green/Red=1/2 only
-                    if radioChk1.Value && isfield(stepdata,'apd1')
-                        %Take data
-                        g = windowFilter(@mean, double(stepdata.apd1), flfil, dec);
-                        plot(subAxis, gt, g, 'g')
-                    end
-                    if radioChk2.Value && isfield(stepdata,'apd2')
-                        %Take data
-                        g = windowFilter(@mean, double(stepdata.apd2), flfil, dec);
-                        plot(subAxis, gt, g, 'r')
-                    end
-                    if radioChk3.Value && isfield(stepdata,'apd3')
-                        %Take data
-                        g = windowFilter(@mean, double(stepdata.apd31), flfil, dec);
-                        plot(subAxis, gt, g, 'b')
+                    %Check for deinterlaced lasers
+                    if isfield(stepdata, 'apdcolT')
+                        %Downsample time
+                        gt = windowFilter(@mean, stepdata.apdcolT, flfil, dec);
+                        lstyle = {'' '--' ':'}; %Styles for BGR = regular, dashed, dotted
+                        if radioChk1.Value && isfield(stepdata,'apd1') %G, thick-dashed
+                            for i = 1:3
+                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{2,i}), flfil, dec), ['g' lstyle{i}], 'LineWidth', 2)
+                            end
+                        end
+                        if radioChk2.Value && isfield(stepdata,'apd2') %R, thin-dotted
+                            for i = 1:3
+                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{3,i}), flfil, dec), ['r' lstyle{i}])
+                            end
+                        end
+                        if radioChk3.Value && isfield(stepdata,'apd3') %B, normal
+                            for i = 1:3
+                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{1,i}), flfil, dec), ['b' lstyle{i}])
+                            end
+                        end
+                        %Add legend for first three, at least
+                        legend(subAxis, {'Blue Laser' 'Green Laser' 'Red Laser'})
+                        
+                    else %Else do normally
+                        gt = windowFilter(@mean, stepdata.apdT, flfil, dec);
+                        %Let's have the order be G/R/B = 1/2/3 to match Flzr Green/Red=1/2 only
+                        if radioChk1.Value && isfield(stepdata,'apd1')
+                            %Take data
+                            g = windowFilter(@mean, double(stepdata.apd1), flfil, dec);
+                            plot(subAxis, gt, g, 'g')
+                        end
+                        if radioChk2.Value && isfield(stepdata,'apd2')
+                            %Take data
+                            g = windowFilter(@mean, double(stepdata.apd2), flfil, dec);
+                            plot(subAxis, gt, g, 'r')
+                        end
+                        if radioChk3.Value && isfield(stepdata,'apd3')
+                            %Take data
+                            g = windowFilter(@mean, double(stepdata.apd3), flfil, dec);
+                            plot(subAxis, gt, g, 'b')
+                        end
                     end
                 end
             end

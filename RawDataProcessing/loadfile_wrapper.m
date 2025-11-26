@@ -123,7 +123,7 @@ switch inOpts.Instrument
             out.AX = out.AX * -1;
             out.BX = out.BX * -1;
         end %PSD era, do nothing
-    case 'Meitner'
+    case {'Meitner' 'SalaFleezer'}
         opts.datType = 'int16';
         opts = handleOpts(opts, inOpts);
         dat = timeshareread(filepath, opts.datType);
@@ -143,7 +143,7 @@ switch inOpts.Instrument
         dat.BS = as;
         
         out=dat;
-    case 'Boltzmann'
+    case {'Boltzmann' 'Avogadro'}
         opts.datType = 'single';
         opts = handleOpts(opts, inOpts);
         dat = timeshareread(filepath, opts.datType);

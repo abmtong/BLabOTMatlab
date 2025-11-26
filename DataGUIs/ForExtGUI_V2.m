@@ -318,7 +318,7 @@ fig.Visible = 'on';
         opts.hiF = flim(2);
         
         %Override bounds/guess
-        opts.lb = [0   0   0   -00 -0];
+        opts.lb = [0   0   0   -00 -2];
         opts.ub = [1e5 1e5 inf  00  0];
         opts.inGuess = [40 900 4000];
 

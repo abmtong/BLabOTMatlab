@@ -23,6 +23,10 @@ if nargin > 1
     opts = handleOpts(opts, inOpts);
 end
 
+%Add fields, if all fail it won't add the field, so this allows RPp3_avg and other fcns to work
+[inst.xwlcft] = deal([]);
+[inst.conpro] = deal([]);
+
 %Fit pre-rip to DNA XWLC (detected in p2) and post-rip to XWLC DNA+protein (set protein CL constant, as PL and CL are roughly inversely proportional at low PL)
 len = length(inst);
 optopts = optimoptions('lsqcurvefit', 'Display', 'off');
@@ -82,6 +86,10 @@ for i = 1:len
     end
     
     pft = lsqcurvefit(fitfcn2, xg2, f, x, lb2, ub2, optopts);
+    
+    %Apply ext, frc offsets
+    inst(i).frc = tmp.frc - pft(5);
+    inst(i).ext = tmp.ext - pft(4);
     
     %Subtract away DNA portion
     extpro =  tmp.ext - XWLC( tmp.frc, pft(1), pft(2) ) * pft(3);

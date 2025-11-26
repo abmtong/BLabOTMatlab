@@ -27,7 +27,7 @@ for i = 1:len
     trs = trs(~cellfun(@isempty, trs));
     
     %Join backtracks
-    [trs, isbt] = cellfun(@(x)removeTrBts(x, opts.dir), trs, 'Un', 0);
+%     [trs, isbt] = cellfun(@(x)removeTrBts(x, opts.dir), trs, 'Un', 0);
     
     %Convert staircases to ind, mea
     [dws, mes] = cellfun(@(x) tra2ind(x), trs, 'Un', 0);
@@ -39,7 +39,7 @@ for i = 1:len
     
     %Add to struct
     inst(i).pdd = trs;
-    inst(i).isbt = isbt;
+%     inst(i).isbt = isbt;
 end
 
 out = inst;

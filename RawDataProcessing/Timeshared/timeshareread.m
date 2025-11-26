@@ -174,17 +174,52 @@ if any(hdr(13) == [1 3])
         
         %Read the actual data
         fldat = fread(flfid, 'uint32');
-        tmpfl = uint16(fldat)';
-        %check to make sure no values overflew
-        if any(tmpfl == intmax('uint16'))
+        %Save as u16 to save space?, check to make sure no values overflow
+        if any(fldat >= intmax('uint16'))
             tmpfl = fldat;
-            warning('Fluorescence values in file %s unexpectedly high, saving as uint64', file);
+            warning('Fluorescence values in file %s unexpectedly high', file);
+        else
+            tmpfl = uint16(fldat)';
         end
-        %Reshape counts
-        tmpfl = (reshape(tmpfl(1:2*floor(end/2)),2,[]));
-        dat.APD1 = tmpfl(1,:);
-        dat.APD2 = tmpfl(2,:);
-        dat.APDT = (0:length(dat.APD1)-1) * apddt + apddt/4;
+        %check to make sure no values overflew
+        
+        %Number of APDs: Avogadro has 3 apds + Laser Color, check
+        if flhdr(3) == 3; %"N APD" field, only in Avogadro, can use this as a check for if this is Avo data
+            meta.nAPD = flhdr(3);
+            meta.APDdsamp = flhdr(5);
+            tmpfl = (reshape(tmpfl(1:4*floor(end/4)),4,[]));
+            dat.APDcol = tmpfl(1,:);
+            dat.APD1 = tmpfl(2,:);
+            dat.APD2 = tmpfl(3,:);
+            dat.APD3 = tmpfl(4,:);
+            dat.APDT = (0:length(dat.APD1)-1) * apddt + apddt/2; %Match Trap time, 0:dt:... + dt/2
+            %And heck, do laser color downsample. Only if APDcol is not all the same
+            if length(unique(dat.APDcol)) > 1
+%                 rgb = 'RGB';
+%                 nlaser = 3; %In case we want to make this deinterlacing programmatic
+                apdcol = cell(3,3); %apdcol{i,j} is APD counts from APD i from laser j, {blue green red}
+                for i = 1:3
+                    ki = dat.APDcol == (i-1);
+                    
+                    nn = sum(ki);
+                    dsamp = round(nn*3 / length(dat.APD1)); %Round for safety?
+                    %We don't plan to, but integrate if there are multiple cycles of the same color
+                    apdcol{1,i} = windowFilter(@sum, dat.APD1(ki), [], dsamp);
+                    apdcol{2,i} = windowFilter(@sum, dat.APD2(ki), [], dsamp);
+                    apdcol{3,i} = windowFilter(@sum, dat.APD3(ki), [], dsamp);
+                end
+                dat.APDcol = apdcol;
+                apdcoldt = apddt * 3;
+                dat.APDcolT = (0:(length(dat.APD1)/3-1))* apdcoldt + apdcoldt/2;
+            end
+            
+        else %Default to 2 APDs
+            %Reshape counts
+            tmpfl = (reshape(tmpfl(1:2*floor(end/2)),2,[]));
+            dat.APD1 = tmpfl(1,:);
+            dat.APD2 = tmpfl(2,:);
+            dat.APDT = (0:length(dat.APD1)-1) * apddt + apddt/4;
+        end
         fclose(flfid);
         
         meta.flhdr = flhdr;
@@ -206,7 +241,7 @@ if any(hdr(13) == [2 3])
         %Read data, convert to MHz
         posdat = fread(posfid, 'uint64');
         fclose(posfid);
-        %The conversion is based on the frequency of the TCXO (49MHz) and that the raw data is stored as a uint48:
+        %The conversion is based on the referenec clock and the raw data is stored as a uint48:
         % The number is scaled to [0,1) and is a percentage of the REFCLK of the DDS, which is the TXCO frequency multiplied by 6 (~294MHz)
         posdat = double(reshape(posdat, 2, [])) *49.152*6/2^48;
         %Separate to separate traps

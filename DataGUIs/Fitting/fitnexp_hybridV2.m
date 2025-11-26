@@ -30,7 +30,7 @@ ccyl = log(ccy);
 ccx = sort(xdata);
 
 %Crop by xrangefit/prc - here it also affects the Y-axis of ccy, so just for certain unfittable dwells
-ki = ccx > opts.xrangefit(1) & ccx < opts.xrangefit(2) & ccx < prctile(ccx, opts.prcmax);
+ki = ccx > opts.xrangefit(1) & ccx < opts.xrangefit(2) & ccx <= prctile(ccx, opts.prcmax);
 ccx = ccx(ki);
 ccy = ccy(ki);
 ccyl = ccyl(ki);
@@ -57,6 +57,14 @@ for i = 1:n
     
     ecf = nexpdist_cfit(i);
     cfh{i} = ecf;
+    
+    %Break if too few events
+    if length(ftg) > length(ccx)
+        warning('fitnexp_hybrid stopped early because n fit variables (= n_exp*2) > n_pts')
+        optiter = i-1;
+        break
+    end
+    
     [ftc, ~, rsd] = lsqcurvefit(@(x0,x)log(ecf.ccdf(x0,x)), ftg, ccx, ccyl, ecf.lb, ecf.ub, optimoptions('lsqcurvefit', 'Display', 'none'));
     cfits{i} = ftc;
     %AIC for curvefitting = 2k + n log (var_rsd). Do on lcdf since that's what we're fitting to

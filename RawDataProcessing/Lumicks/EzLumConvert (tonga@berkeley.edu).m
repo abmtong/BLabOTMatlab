@@ -129,7 +129,7 @@ for i = 1:len
         if isfield(raw, 'Photoncount_Green')
             %Save and convert average count to kHz
             [fl.gg, fl.at] = drawimageV2(raw.Infowave_Infowave, raw.Photoncount_Green);
-            fl.gg = fl.gg;% * opts.Fs/1e3; %Convert to kHz
+            fl.gg = fl.gg * opts.Fs/1e3; %Convert to kHz
             %             stepdata.apdT = at;
             fl.sz = size(fl.gg);
             hasdata = 1;
@@ -223,7 +223,7 @@ for i = 1:len
             [~, fstrip, ~] = fileparts(f{i});
             save(fullfile(p, [fstrip '.mat']), 'stepdata')
         otherwise
-            %Assemble output struct
+            %Assemble output ContourData
             stepdata.forceAX = fax;
             stepdata.forceBX = fbx;
             stepdata.forceAY = fay;
@@ -234,10 +234,8 @@ for i = 1:len
 %             ContourData.contour = {con};
             stepdata.cal = raw.cal;
             stepdata.off = off;
-            
-            %Rename
-            ContourData = stepdata; %#ok<NASGU>
             %Save
+            ContourData=stepdata;
             [~, fstrip, ~] = fileparts(f{i});
             save(fullfile(p, [fstrip '.mat']), 'ContourData')
     end

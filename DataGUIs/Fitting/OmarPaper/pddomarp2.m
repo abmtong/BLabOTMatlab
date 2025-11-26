@@ -19,10 +19,10 @@ opts.fneopts.prcmax = 100; %Trim longest ?
 opts.fneopts.verbose = 1;
 opts.fneopts.n = 3;
 opts.fneopts.xrange = [0 inf] ;
-opts.fneopts.fitlast = 0;
-opts.fneopts.fitlastxmin = 3;
+opts.fneopts.fitlast = 0; %Fit last exponential separately? useful for Stl
+opts.fneopts.fitlastxmin = 3; %Minimum duration for fitlast
 
-opts.ncrop = 5; %Crop the longest N pts? If mle doesn't behave
+opts.ncrop = 0; %Crop the longest N pts? If mle doesn't behave
 
 %Plots n such
 opts.verbose = 1; %Plot traces, too
@@ -60,6 +60,10 @@ for i = 1:len
     
     
     %Crop extra if asked
+    
+    %Join backtracks
+    [tra, isbt] = removeTrBts(tra, 1);
+   
     
     %Convert to ind/mea
     [ind, mea] = tra2ind(tra);

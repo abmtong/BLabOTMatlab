@@ -1,20 +1,17 @@
-function out = fitNuc(inst, frng, debug)
+function out = fitNuc_array(inst)
 %Fit each trace separately
 
-if nargin < 2 || isempty(frng)
-    %Force bounds to remove the LF transition
-    % Fit to frng(1):frng(2) and frng(3):frng(4) -- crop out frng(2:3) == LF
-    % frng = [1 2.5 5 35]; %For Nuc
-    % frng = [1 2 5 35]; %For Nuc F. Maybe should use the same values...
-    frng = [1.5 2.5 5 50];
-    % frng = [1 1.5 5 50]; %FOX?
-end
-
-if nargin < 3
-    debug = 1; %Debug flag (plotting)
-end
-
+%Force bounds to remove the LF transition
+% frng = [1 2.5 5 35]; %For Nuc
+% frng = [1 2 5 35]; %For Nuc F. Maybe should use the same values...
+frng = [1 2.75 7 50]; %4-Arrays
+% frng = [1 1.5 5 50]; %FOX?
 fil = 100;
+
+lfwid = 5; %Calculate low force force by getting the force at con = (halfway unwrapped) + [-wid wid]
+
+maxtrns = 14; %Max transitions for HF fitting, i.e. 4 for tetranuc, 3 for tri, etc.
+debug = 0; %Debug flag
 
 if debug
     figure Name Debug
@@ -40,20 +37,28 @@ for i = 1:len
     
     %Crop around LF
     i1 = find(frc > frng(1), 1, 'first');
-    i2 = find(frc < frng(2), 1, 'last');
+    i2 = find(frc > frng(2), 1, 'first');
     i3 = find(frc > frng(3), 1, 'first');
-    i4 = find(frc > frng(4), 1, 'first');
-    
-    if isempty(i4)
-        i4 = length(frc);
-    end
+    i4 = find(frc < frng(4), 1, 'last');
     
     %Find HF in i3:i4. Let's assume it's a single point = make sure fil is large enough
     
-    [~, mi] = max(diff( ext(i3:i4) ) );
-    % Crop out a pt on each side of this diff, too
-    i3b = (i3+mi-2);
-    i4b = i3b+4;
+%     maxtrns = 4;
+    [s, si] = sort( diff( ext(i3:i4) ) , 'descend');
+    mi = si(1:maxtrns);
+    i3b = min(mi) + i3 - 2;
+    i4b = max(mi) + i3 +2;
+    
+    hfind = sort(mi) + i3 -1;
+    [hfs, hfsi] = arrayfun(@(x) max(frc( x-2:x+2)), hfind);
+    hfx = ext(hfsi+hfind-1-2);
+    
+%     ffind = frc(hfind - 2);
+    
+%     [~, mi] = max(diff( ext(i3:i4) ) );
+%     % Crop out a pt on each side of this diff, too
+%     i3b = (i3+mi-2);
+%     i4b = i3b+4;
     
     
     %Crop data
@@ -67,21 +72,33 @@ for i = 1:len
     
     
     %Create fit fcn, special for each
-    fitfcn = @(x0, x) XWLC(x, x0(1),x0(2)).*(x0(3)+x0(4)*th1 + (x0(4)+x0(5))*th2);
+    fitfcn = @(x0, x) XWLC(x, x0(1),x0(2)).*(x0(3)+x0(4)*th1 + x0(5)*th2);
     xg = [50 400 ext(i2) 25 30  ]; %PL SM CL dCL1 dCL2
-    lb = [0     0  0   0   0 ];
-    ub = [100 1e4 3e3 1e2 1e2];
+    lb = [0 0 0 0 0];
+    ub = [500 1e4 1e4 1e3 1e3];
     opop = optimoptions('lsqcurvefit', 'Display', 'none');
     %Fit
     ft = lsqcurvefit(fitfcn, xg, fc, xc, lb, ub, opop);
-    
-    %BAD: make ft(5) = LB+UB, for compatability. At some point change this
-    ft(5) = ft(4)+ft(5);
     
     %Get average residual of each section
     rsd = (fitfcn(ft, fc) - xc).^2;
     res123 = [ mean( rsd( ~(th1|th2)) ) mean( rsd( th1 == 1) ) mean(rsd(th2 == 1) ) ];
     
+    
+    %Calculate low force force
+    %Convert to contour
+    con = ext ./ XWLC(frc, ft(1), ft(2));
+    %Crop contour range
+    conrng = ft(3) + ft(4)/2 + [-lfwid lfwid];
+    ki = con > conrng(1) & con < conrng(2);
+    % Take longest segment in this range
+    [in, me] = tra2ind(double(ki));
+    dw = diff(in);
+    ime = find(me == 1);
+    dw = dw(me == 1);
+    [~, ind] = max(dw);
+    lfrng = [in(ime(ind)) in(ime(ind+1))];
+    lf = median(frc( lfrng(1):lfrng(2) ) );
     
     %Debug: Check fit
     if debug
@@ -101,6 +118,10 @@ for i = 1:len
     inst(i).xwlc = ft;
     inst(i).ftrsd = res123;
     inst(i).con = inst(i).ext ./ XWLC( inst(i).frc, ft(1), ft(2) );
+    inst(i).lff = lf;
+    inst(i).hfs = hfs;
+    inst(i).hfx = hfx;
+    inst(i).hfind = hfind * fil;
     inst(i).fitii = [i1 i2 i3 i3b i4b i4]*fil;
 end
 
