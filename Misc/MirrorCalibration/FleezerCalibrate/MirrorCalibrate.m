@@ -13,7 +13,7 @@ crp = ChooseCrop(p, f);
 len = length(f);
 outPos = zeros(len, 2);
 for i = 1:len
-    outPos(i,:) = FindBeadCentroid(imcrop(imread([p f{i}]), crp));
+    outPos(i,:) = FindBeadCentroid(imcrop(imread([p f{i}]), crp), 0); %last arg = negate image
     %Pause a sec to check the result
     drawnow
     pause(.1)

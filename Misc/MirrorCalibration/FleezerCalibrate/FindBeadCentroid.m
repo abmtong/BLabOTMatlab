@@ -1,6 +1,15 @@
-function outPos = FindBeadCentroid(inImg)
+function outPos = FindBeadCentroid(inImg, tfinvert)
 
 iptsetpref Imshowborder tight; %Display preference for @imshow
+
+if nargin < 2
+    tfinvert = 0;
+end
+
+%Invert if ROI is white (eg laser) instead of black (bead)
+if tfinvert
+    inImg = max(inImg(:)) - inImg;
+end
 
 %convert to gray if rgb
 if size(inImg, 3) > 1

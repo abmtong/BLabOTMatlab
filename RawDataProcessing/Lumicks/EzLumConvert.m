@@ -137,7 +137,7 @@ for i = 1:len
         if isfield(raw, 'Photoncount_Red')
             %Save and convert average count to kHz
             [fl.rr, fl.at] = drawimageV2(raw.Infowave_Infowave, raw.Photoncount_Red);
-            fl.rr = fl.rr * opts.Fs/1e3; %Convert to kHz
+            fl.rr = fl.rr;% * opts.Fs/1e3; %Convert to kHz
             %             stepdata.apd1 = rr;
             %             stepdata.apdT = at;
             fl.sz = size(fl.rr);
@@ -146,7 +146,7 @@ for i = 1:len
         if isfield(raw, 'Photoncount_Blue')
             %Save and convert average count to kHz
             [fl.bb, fl.at] = drawimageV2(raw.Infowave_Infowave, raw.Photoncount_Blue);
-            fl.bb = fl.bb * opts.Fs/1e3; %Convert to kHz
+            fl.bb = fl.bb;% * opts.Fs/1e3; %Convert to kHz
             %             stepdata.apd1 = bb;
             %             stepdata.apdT = at;
             fl.sz = size(fl.bb);
@@ -167,6 +167,52 @@ for i = 1:len
                 img(:,:,3) = fl.bb;
             end
             stepdata.apdimg = img;
+            
+            %Save kymograph as name_kymo.png
+            %First do contrast
+            imgsv = img / max(img(:));
+            imwrite(imgsv, fullfile(p, [fil '_kymo.png']) );
+            
+            fns = fieldnames(raw);
+            kymotf = strncmpi('Kymograph', fns , 9);
+            if any(kymotf)
+                metaraw = [raw.(fns{kymotf})];
+                metaraw = [metaraw{:}];
+                %Process kymo meta 'json--like' string to struct? Or just hard-code find what we want
+                % Hard-code for now
+                
+                %Look for these strings
+                % Start here
+                strst = {'"pixel time (ms)":' '"pixel size (nm)":' '"scan width (um)":'};
+                strfn = {'pxtimems' 'pxsznm' 'scanwidum'}; %Save as these fields
+                % Go until next end char
+                stren = ',}'; %Search for next , or }
+                %And str2double it (or leave as string?)
+                str2dbl = [1 1 1]; %tf whether to str2double or just leave as strong
+                meta = [];
+                for j = 1:length(strst)
+                    str = strst{j};
+                    ind = strfind(metaraw, str);
+                    if isempty(ind)
+                        continue
+                    end
+                    ind = ind(1); %Assume only one kymo
+                    ind = ind + length(str);
+                    indcom = find( metaraw(ind:end) == stren(1) | metaraw(ind:end) == stren(2) , 1, 'first');
+                    if isempty(indcom)
+                        continue
+                    end
+                    valstr = metaraw(ind:ind+indcom-2);
+                    if str2dbl(j)
+                        valstr = str2double(valstr);
+                    end
+                    meta.(strfn{j}) = valstr;
+                end
+                
+                stepdata.metaraw = metaraw;
+                stepdata.meta = meta;
+                
+            end
         end
     else
         %Else, just save data if it exists
@@ -206,6 +252,9 @@ for i = 1:len
     off.BY = zeros(size(dx));
     off.TX = dt;
     
+    %Add a flag that this was EzLumConvert data
+    opts.Instrument = 'Lumicks'; %Should match the opts from DataOptsPopup
+    
     switch opts.output
         case 1 %Phage data
             %Assemble output stepdata
@@ -219,6 +268,7 @@ for i = 1:len
             stepdata.contour = {con};
             stepdata.cal = raw.cal;
             stepdata.off = off;
+            stepdata.opts = opts;
             %Save
             [~, fstrip, ~] = fileparts(f{i});
             save(fullfile(p, [fstrip '.mat']), 'stepdata')
@@ -234,6 +284,7 @@ for i = 1:len
 %             ContourData.contour = {con};
             stepdata.cal = raw.cal;
             stepdata.off = off;
+            stepdata.opts = opts;
             
             %Rename
             ContourData = stepdata; %#ok<NASGU>

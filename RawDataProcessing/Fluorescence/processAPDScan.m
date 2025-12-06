@@ -20,22 +20,38 @@ end
 meta = dat.meta;
 
 %Load data
-a1 = dat.APD1;
-a2 = dat.APD2;
+a = {dat.APD1 dat.APD2};
+if isfield(dat, 'APD3')
+    a{3} = dat.APD3;
+end
+
+%Get scan params
+if isfield(meta, 'APDdsamp')
+    dsamp = meta.apdNSampPerStep / meta.APDdsamp;
+else
+    dsamp = meta.apdNSampPerStep;
+end
+scanX = meta.scanNStepsX;
+scanY = meta.scanStepsYorNScans;
+npx = scanX*2*scanY;
 
 %Downsample
-a1 = windowFilter(@sum, a1, [], meta.apdNSampPerStep);
-a2 = windowFilter(@sum, a2, [], meta.apdNSampPerStep);
+a = cellfun(@(x) windowFilter(@sum, x, [], dsamp), a, 'Un', 0);
+% a1 = windowFilter(@sum, a1, [], dsamp);
+% a2 = windowFilter(@sum, a2, [], dsamp);
 
-%Reshape
-a1 = reshape(a1, meta.scanNStepsX*2, meta.scanStepsYorNScans);
-a2 = reshape(a2, meta.scanNStepsX*2, meta.scanStepsYorNScans);
+%Reshape. Trim if scan goes a bit longer
+a = cellfun(@(x) reshape(x(1:npx), scanX*2, scanY), a, 'Un', 0);
+
+% a1 = reshape(a1(1:npx), scanX*2, scanY);
+% a2 = reshape(a2(1:npx), scanX*2, scanY);
 
 %Average across left and right scan
-a1 = a1(1:end/2,:) + a1( end:-1:end/2+1, :);
-a2 = a2(1:end/2,:) + a2( end:-1:end/2+1, :);
+a = cellfun(@(x) x(1:end/2,:) + x( end:-1:end/2+1, :), a, 'Un', 0);
+% a1 = a1(1:end/2,:) + a1( end:-1:end/2+1, :);
+% a2 = a2(1:end/2,:) + a2( end:-1:end/2+1, :);
 
-out = {a1' a2'};
+out = a;
 
 
 

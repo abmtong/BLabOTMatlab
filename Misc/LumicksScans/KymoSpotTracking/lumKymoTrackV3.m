@@ -1,4 +1,7 @@
 function out = lumKymoTrackV3(infp, inOpts)
+%Tracks the location of a fluorescence spot in a Lumicks kymograph (or any kymograph?).
+% e.g. for an experiment where just a DNA is tethered, and a fluorescently-labeled polymerase moves on the DNA. A DNA curtain-like experiment.
+
 
 %Options
 
