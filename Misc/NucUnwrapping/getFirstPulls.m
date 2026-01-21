@@ -32,7 +32,7 @@ for i = 1:len
     tim = dat.time;
     
     %Crop
-    if cropind ~= -1
+    if cropstr ~= -1
         ci = loadCrop(cropstr, inp, f{i});
         if isempty(ci)
             continue

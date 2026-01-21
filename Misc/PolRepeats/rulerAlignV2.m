@@ -243,6 +243,7 @@ off = off + round( (opts.start - off) / opts.per*scl ) * opts.per*scl;
 %Output: Scaled trace
 out = (tra  - off)* scl;
 
+outraw.ki = ki;
 outraw.off = off;
 outraw.scl = scl;
 %Aligned repeat histogram

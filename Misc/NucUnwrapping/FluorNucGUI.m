@@ -1,12 +1,10 @@
-function PhageGUIv4()
-%% PhageGUI: Interface for viewing optical tweezers .mat files
-%Expects a mat file that contains a struct, with fields time, contour, force, all of which are cell arrays of data
-% Can work with most other subgroups' mat files -- detects their format and re-wraps them to work with this GUI [see @renametophage]
-%Last annotated 191127
+function FluorNucGUI()
+%% FluorNucGUI: Interface for viewing optical tweezers .mat files
+% Based on PhageGUIv4
 
 %% Add paths, by running startup.m
 thispath = fileparts(mfilename('fullpath'));
-run( fullfile( thispath, '..', 'startup.m') )
+run( fullfile( thispath, '..', '..', 'startup.m') )
 
 %Load settings file (or create one)
 path = 'C:\Data';
@@ -46,11 +44,11 @@ fig = figure('Name', 'PhageGUIcrop', 'Position', [scrsz(3:4)/8 .75*scrsz(3:4)], 
 %Use panels to help organization. This is the main panel, which holds the axes.
 panaxs = uipanel('Position', [.1 0 .9 .95]); %'panel for axes'
 panaxs.BackgroundColor = [1 1 1];
-mainAxis = axes(panaxs, 'Position', [.05 .31 .78 .68]); %Holds the main distance-time plot
-mainRAxis= axes(panaxs, 'Position', [.85 .31 .14 .68]); %'main right axis': Holds the kernel density plot
-subAxis  = axes(panaxs, 'Position', [.05 .05 .78 .2]);
-subRAxisB= axes(panaxs, 'Position', [.85, .05, .14, .1]);
-subRAxisT= axes(panaxs, 'Position', [.85, .15, .14, .1]);
+mainAxis = axes(panaxs, 'Position', [.05 .31 .58 .68]); %Holds the main distance-time plot
+mainRAxis= axes(panaxs, 'Position', [.65 .31 .34 .68]); %'main right axis': Holds the kernel density plot
+subAxis  = axes(panaxs, 'Position', [.05 .05 .58 .2]);
+subRAxisB= axes(panaxs, 'Position', [.65, .05, .34, .1]);
+subRAxisT= axes(panaxs, 'Position', [.65, .15, .34, .1]);
 %Hold all of the axes
 hold(mainAxis,'on')
 hold(mainRAxis,'on')
@@ -127,7 +125,7 @@ radioChk1 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Pos
 radioChk2 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [.33 0 .33 .33], 'String', 'R', 'Value', true,  'Callback', @refilter_callback);
 radioChk3 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [.66 0 .33 .33], 'String', 'B', 'Value', true,  'Callback', @refilter_callback);
 radioBot.Visible = 'off'; %Only show if we detect fluorescence data
-radioBot1.Value = true; %Default to plotting force
+radioBot2.Value = true; %Default to plotting force
 
 %Load first file
 loadFile_callback
@@ -304,10 +302,16 @@ fig.Visible = 'on';
         conF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.contour,'UniformOutput',0);
         timF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.time,'UniformOutput',0);
         forF = cellfun(@(x)windowFilter(@mean, x, fil, dec),stepdata.force,'UniformOutput',0);
+        
         %Plot contour on top, first unfiltered in grey then filtered in color
         arrayfun(@delete,mainAxis.Children) %Don't use cla to keep current zoom
-        cellfun(@(x,y)plot(mainAxis, x, y, 'Color', .7 * [1 1 1]), stepdata.time, stepdata.contour);
-        filtLine = plotCell(mainAxis, timF, conF);
+        cellfun(@(x,y)plot(mainAxis, x, y, 'Color', .7 * [1 1 1]), stepdata.time, stepdata.force);
+        filtLine = plotCell(mainAxis, timF, forF);
+        
+        %Plot F-X in kdf axis
+        cla(mainRAxis)
+        cellfun(@(x,y)plot(mainRAxis, x, y, 'Color', .7 * [1 1 1]), stepdata.contour, stepdata.force);
+        plotCell(mainRAxis, conF, forF);
         
         arrayfun(@delete,subAxis.Children)
         %Plot bottom
@@ -387,187 +391,189 @@ fig.Visible = 'on';
                     %Check for deinterlaced lasers
                     if isfield(stepdata, 'apdcolT')
                         %Downsample time
-                        gt = windowFilter(@mean, stepdata.apdcolT, flfil, dec);
+                        gt = windowFilter(@mean, stepdata.apdcolT, flfil, 1);
                         lstyle = {'' '--' ':'}; %Styles for BGR = regular, dashed, dotted
                         if radioChk1.Value && isfield(stepdata,'apd1') %G, thick-dashed
                             for i = 1:3
-                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{2,i}), flfil, dec), ['g' lstyle{i}], 'LineWidth', 2)
+                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{2,i}), flfil, 1), ['g' lstyle{i}], 'LineWidth', 2)
                             end
                         end
                         if radioChk2.Value && isfield(stepdata,'apd2') %R, thin-dotted
                             for i = 1:3
-                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{3,i}), flfil, dec), ['r' lstyle{i}])
+                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{3,i}), flfil, 1), ['r' lstyle{i}])
                             end
                         end
                         if radioChk3.Value && isfield(stepdata,'apd3') %B, normal
                             for i = 1:3
-                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{1,i}), flfil, dec), ['b' lstyle{i}])
+                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{1,i}), flfil, 1), ['b' lstyle{i}])
                             end
                         end
                         %Add legend for first three, at least
                         legend(subAxis, {'Blue Laser' 'Green Laser' 'Red Laser'})
                         
                     else %Else do normally
-                        gt = windowFilter(@mean, stepdata.apdT, flfil, dec);
+                        gt = windowFilter(@mean, stepdata.apdT, flfil, 1);
                         %Let's have the order be G/R/B = 1/2/3 to match Flzr Green/Red=1/2 only
                         if radioChk1.Value && isfield(stepdata,'apd1')
                             %Take data
-                            g = windowFilter(@mean, double(stepdata.apd1), flfil, dec);
+                            g = windowFilter(@mean, double(stepdata.apd1), flfil, 1);
                             plot(subAxis, gt, g, 'g')
                         end
                         if radioChk2.Value && isfield(stepdata,'apd2')
                             %Take data
-                            g = windowFilter(@mean, double(stepdata.apd2), flfil, dec);
+                            g = windowFilter(@mean, double(stepdata.apd2), flfil, 1);
                             plot(subAxis, gt, g, 'r')
                         end
                         if radioChk3.Value && isfield(stepdata,'apd3')
                             %Take data
-                            g = windowFilter(@mean, double(stepdata.apd3), flfil, dec);
+                            g = windowFilter(@mean, double(stepdata.apd3), flfil, 1);
                             plot(subAxis, gt, g, 'b')
                         end
                     end
                 end
             end
         end
+        
+        
         %Calculate and list the local noise at each section
         locNoise_callback
-        %Calculate the kernel density function of the filtered data
-        kdf_callback
+%         %Calculate the kernel density function of the filtered data
+%         kdf_callback
     end
 
-    function kdf_callback(src,~)
-        %Calculate the kernel density function (akin to a residence time histogram) of the curve
-        % oops also K-V stepfinding is handled here
-        %Don't recalc if we change a KDF option but that method isn't selected
-        if nargin > 1 && isequal(src, radioKDF2t) && ~radioKDF2.Value
-            return
-        end
-        if nargin > 1 && isequal(src, radioKDF3t) && ~radioKDF3.Value
-            return
-        end
-        %Clear the kdf, histogram axes
-        cla(mainRAxis)
-        cla(subRAxisT)
-        cla(subRAxisB)
-        %If the option is KDF, calculate the KDF
-        if radioKDF2.Value || radioKDF3.Value
-            %Gather [filtered] contour together, apply crop to if it exists
-            cons = [conF{:}];
-            tims = [timF{:}];
-            frcs = [forF{:}];
-            loadCrop_callback
-            if ~isempty(cropT)
-                cons = cons(tims > cropT(1) & tims < cropT(2) );
-            end
-            %Trim to plot limits
-            cons = cons( cons > str2double(conMin.String) & cons < str2double(conMax.String) );
-            if isempty(cons)
-                return
-            end
-            %Set the y bin size; this works well in all(?) cases
-            hbinsz = 0.1;
-            if radioKDF2.Value
-                %Calc kdf by nhistc (histogram)
-                [histy, histxx] = nhistc(cons, hbinsz);
-                %Smooth by the user-input parameter
-                histy = smooth(histy, str2double(radioKDF2t.String));
-                plot(mainRAxis, histy, histxx, 'Color', 'b');
-            elseif radioKDF3.Value
-                %Calc kdf using @kdf (actual kernel density, i.e. place a gaussian with width [input parameter] at each point
-                [histy, histxx] = kdf(cons, hbinsz, str2double(radioKDF3t.String));
-                plot(mainRAxis, histy, histxx, 'Color', 'b');
-                %We can do some stepfinding, since kdf is smooth, we can get peak heights
-                % Can't use @kdfsfind because we need the peak heights, too, for plotting purposes
-                pkhei = findpeaks(double(histy), double(histxx));
-                trhei = findpeaks(-double(histy), double(histxx));
-                %Set MinPeakProminence to be the median peak difference
-                medpk = median(pkhei);
-                medtr = -median(trhei);
-                mpp = (medpk - medtr) / 2;
-                [pkhei, pkloc] = findpeaks(double(histy), double(histxx), 'MinPeakProminence', mpp);
-                pkcen = (pkloc(1:end-1) + pkloc(2:end))/2;
-                pkheis = mean([pkhei(1:end-1); pkhei(2:end)], 1);
-                pkdsts = diff(pkloc);
-                if pkdsts %If there's only one peak, theres no pkdsts
-                    arrayfun(@(x,y,z)text(mainRAxis,y,x,sprintf('%0.2f',z), 'Clipping', 'on'), pkcen, pkheis, pkdsts)
-                end
-                %plot lines from 0 to peak
-                lx = [pkloc; pkloc; pkloc];
-                lx = lx(:);
-                ly = [zeros(size(pkhei)); pkhei; zeros(size(pkhei))];
-                ly = ly(:);
-                line(mainRAxis, ly, lx);
-                %Calculate step size histogram. Hard code for Phage numbers
-                binsz = .1;
-                %Bin from 0 to 20
-                xs = -100*binsz:binsz:101+binsz;
-                xs = xs - binsz/2; %shift by binsz/2 bc step sizes will be even multiples of binsz, and thus may differ by eps
-                cts = histcounts(pkdsts, xs);
-                %Plot on subR axes
-                xp = xs(1:end-1)+ binsz/2;
-                %Plot bar as 
-                bar(subRAxisT, xp, cts, 'EdgeColor', 'none')
-                axis(subRAxisT, 'tight')
-                bar(subRAxisB, xp, cts, 'EdgeColor', 'none')
-                axis(subRAxisB, 'tight')
-                %On top, show 0-5
-                xlim(subRAxisT, [0 5])
-                %On bottom, show 0-20
-                xlim(subRAxisB, [0 20])
-                %Fit gaussian
-                gauss = @(x0, x) exp( -(x-x0(1)).^2 / 2 / x0(2) ) * x0(3);
-                lsqopts = optimoptions('lsqcurvefit');
-                lsqopts.Display = 'none';
-                lb = [0 0 0];
-                ub = [20 20 length(cts)];
-                fit = lsqcurvefit(gauss, [10 2 max(cts)], xp, cts, lb, ub, lsqopts);
-                %Plot the gaussian fit
-                arrayfun(@(x)plot(x, xp, gauss(fit, xp)), [subRAxisT, subRAxisB]);
-                %Display fit stats as text
-                text(subRAxisB, fit(1), 1.1*gauss(fit, fit(1)), sprintf('%0.2f+-%0.2f', fit(1), fit(2)), 'HorizontalAlignment', 'left')
-                text(subRAxisT, fit(1), 1.1*gauss(fit, fit(1)), sprintf('%0.2f+-%0.2f', fit(1), fit(2)), 'HorizontalAlignment', 'left')
-            end
-            %Remove x tick of kdf graph
-            mainRAxis.XTickLabel = [];
-        elseif radioKDF4.Value
-            %Do K-V stepfinding
-            cellfun(@delete,kvlines)
-            %For speed, apply K-V only if cropped - KV takes a long time on long traces
-            if isempty(cropT)
-                return
-            end
-            %Apply crop
-            cf = cellfun(@(x,y) y(x > cropT(1) & x < cropT(2)), stepdata.time, stepdata.contour, 'Un', 0);
-            tf = cellfun(@(x,y) y(x > cropT(1) & x < cropT(2)), stepdata.time, stepdata.time, 'Un', 0);
-            %Filter using K-V--specific filter options
-            wid = 5;
-            pf = single(8);
-            cf = cellfun(@(x)windowFilter(@mean, x, [], wid), cf, 'un',0);
-            tf = cellfun(@(x)windowFilter(@mean, x, [], wid), tf, 'un',0);
-            %Remove empty cells
-            cf(cellfun(@isempty,cf)) = [];
-            tf(cellfun(@isempty,tf)) = [];
-            %Apply K-V stepfinding
-            [~, ~, trs, sszs] = BatchKV(cf, pf, 500, 0);
-            %Plot in red
-            kvlines = cellfun(@(x,y)plotkv(mainAxis, x, y, 'LineWidth', 1, 'Color', 'r'), tf, trs, 'Un',0);
-            %Calculate step size histogram
-            binsz = .1;
-            xs = -1:0.1:21;
-            xs = xs - binsz/2; %shift by binsz/2 bc step sizes might differ by eps
-            cts = histcounts(sszs, xs);
-            %plot on both subR axes
-            xp = xs(1:end-1)+ binsz/2;
-            bar(subRAxisT, xp, cts, 'EdgeColor', 'none')
-            axis(subRAxisT, 'tight')
-            bar(subRAxisB, xp, cts, 'EdgeColor', 'none')
-            axis(subRAxisB, 'tight')
-            %On top, show 0-5
-            xlim(subRAxisT, [0 5])
-            %On bottom, show 0-20
-            xlim(subRAxisB, [0 20])
-        end
-    end
+%     function kdf_callback(src,~)
+%         %Calculate the kernel density function (akin to a residence time histogram) of the curve
+%         % oops also K-V stepfinding is handled here
+%         %Don't recalc if we change a KDF option but that method isn't selected
+%         if nargin > 1 && isequal(src, radioKDF2t) && ~radioKDF2.Value
+%             return
+%         end
+%         if nargin > 1 && isequal(src, radioKDF3t) && ~radioKDF3.Value
+%             return
+%         end
+%         %Clear the kdf, histogram axes
+%         cla(mainRAxis)
+%         cla(subRAxisT)
+%         cla(subRAxisB)
+%         %If the option is KDF, calculate the KDF
+%         if radioKDF2.Value || radioKDF3.Value
+%             %Gather [filtered] contour together, apply crop to if it exists
+%             cons = [conF{:}];
+%             tims = [timF{:}];
+%             frcs = [forF{:}];
+%             loadCrop_callback
+%             if ~isempty(cropT)
+%                 cons = cons(tims > cropT(1) & tims < cropT(2) );
+%             end
+%             %Trim to plot limits
+%             cons = cons( cons > str2double(conMin.String) & cons < str2double(conMax.String) );
+%             if isempty(cons)
+%                 return
+%             end
+%             %Set the y bin size; this works well in all(?) cases
+%             hbinsz = 0.1;
+%             if radioKDF2.Value
+%                 %Calc kdf by nhistc (histogram)
+%                 [histy, histxx] = nhistc(cons, hbinsz);
+%                 %Smooth by the user-input parameter
+%                 histy = smooth(histy, str2double(radioKDF2t.String));
+%                 plot(mainRAxis, histy, histxx, 'Color', 'b');
+%             elseif radioKDF3.Value
+%                 %Calc kdf using @kdf (actual kernel density, i.e. place a gaussian with width [input parameter] at each point
+%                 [histy, histxx] = kdf(cons, hbinsz, str2double(radioKDF3t.String));
+%                 plot(mainRAxis, histy, histxx, 'Color', 'b');
+%                 %We can do some stepfinding, since kdf is smooth, we can get peak heights
+%                 % Can't use @kdfsfind because we need the peak heights, too, for plotting purposes
+%                 pkhei = findpeaks(double(histy), double(histxx));
+%                 trhei = findpeaks(-double(histy), double(histxx));
+%                 %Set MinPeakProminence to be the median peak difference
+%                 medpk = median(pkhei);
+%                 medtr = -median(trhei);
+%                 mpp = (medpk - medtr) / 2;
+%                 [pkhei, pkloc] = findpeaks(double(histy), double(histxx), 'MinPeakProminence', mpp);
+%                 pkcen = (pkloc(1:end-1) + pkloc(2:end))/2;
+%                 pkheis = mean([pkhei(1:end-1); pkhei(2:end)], 1);
+%                 pkdsts = diff(pkloc);
+%                 if pkdsts %If there's only one peak, theres no pkdsts
+%                     arrayfun(@(x,y,z)text(mainRAxis,y,x,sprintf('%0.2f',z), 'Clipping', 'on'), pkcen, pkheis, pkdsts)
+%                 end
+%                 %plot lines from 0 to peak
+%                 lx = [pkloc; pkloc; pkloc];
+%                 lx = lx(:);
+%                 ly = [zeros(size(pkhei)); pkhei; zeros(size(pkhei))];
+%                 ly = ly(:);
+%                 line(mainRAxis, ly, lx);
+%                 %Calculate step size histogram. Hard code for Phage numbers
+%                 binsz = .1;
+%                 %Bin from 0 to 20
+%                 xs = -100*binsz:binsz:101+binsz;
+%                 xs = xs - binsz/2; %shift by binsz/2 bc step sizes will be even multiples of binsz, and thus may differ by eps
+%                 cts = histcounts(pkdsts, xs);
+%                 %Plot on subR axes
+%                 xp = xs(1:end-1)+ binsz/2;
+%                 %Plot bar as 
+%                 bar(subRAxisT, xp, cts, 'EdgeColor', 'none')
+%                 axis(subRAxisT, 'tight')
+%                 bar(subRAxisB, xp, cts, 'EdgeColor', 'none')
+%                 axis(subRAxisB, 'tight')
+%                 %On top, show 0-5
+%                 xlim(subRAxisT, [0 5])
+%                 %On bottom, show 0-20
+%                 xlim(subRAxisB, [0 20])
+%                 %Fit gaussian
+%                 gauss = @(x0, x) exp( -(x-x0(1)).^2 / 2 / x0(2) ) * x0(3);
+%                 lsqopts = optimoptions('lsqcurvefit');
+%                 lsqopts.Display = 'none';
+%                 lb = [0 0 0];
+%                 ub = [20 20 length(cts)];
+%                 fit = lsqcurvefit(gauss, [10 2 max(cts)], xp, cts, lb, ub, lsqopts);
+%                 %Plot the gaussian fit
+%                 arrayfun(@(x)plot(x, xp, gauss(fit, xp)), [subRAxisT, subRAxisB]);
+%                 %Display fit stats as text
+%                 text(subRAxisB, fit(1), 1.1*gauss(fit, fit(1)), sprintf('%0.2f+-%0.2f', fit(1), fit(2)), 'HorizontalAlignment', 'left')
+%                 text(subRAxisT, fit(1), 1.1*gauss(fit, fit(1)), sprintf('%0.2f+-%0.2f', fit(1), fit(2)), 'HorizontalAlignment', 'left')
+%             end
+%             %Remove x tick of kdf graph
+%             mainRAxis.XTickLabel = [];
+%         elseif radioKDF4.Value
+%             %Do K-V stepfinding
+%             cellfun(@delete,kvlines)
+%             %For speed, apply K-V only if cropped - KV takes a long time on long traces
+%             if isempty(cropT)
+%                 return
+%             end
+%             %Apply crop
+%             cf = cellfun(@(x,y) y(x > cropT(1) & x < cropT(2)), stepdata.time, stepdata.contour, 'Un', 0);
+%             tf = cellfun(@(x,y) y(x > cropT(1) & x < cropT(2)), stepdata.time, stepdata.time, 'Un', 0);
+%             %Filter using K-V--specific filter options
+%             wid = 5;
+%             pf = single(8);
+%             cf = cellfun(@(x)windowFilter(@mean, x, [], wid), cf, 'un',0);
+%             tf = cellfun(@(x)windowFilter(@mean, x, [], wid), tf, 'un',0);
+%             %Remove empty cells
+%             cf(cellfun(@isempty,cf)) = [];
+%             tf(cellfun(@isempty,tf)) = [];
+%             %Apply K-V stepfinding
+%             [~, ~, trs, sszs] = BatchKV(cf, pf, 500, 0);
+%             %Plot in red
+%             kvlines = cellfun(@(x,y)plotkv(mainAxis, x, y, 'LineWidth', 1, 'Color', 'r'), tf, trs, 'Un',0);
+%             %Calculate step size histogram
+%             binsz = .1;
+%             xs = -1:0.1:21;
+%             xs = xs - binsz/2; %shift by binsz/2 bc step sizes might differ by eps
+%             cts = histcounts(sszs, xs);
+%             %plot on both subR axes
+%             xp = xs(1:end-1)+ binsz/2;
+%             bar(subRAxisT, xp, cts, 'EdgeColor', 'none')
+%             axis(subRAxisT, 'tight')
+%             bar(subRAxisB, xp, cts, 'EdgeColor', 'none')
+%             axis(subRAxisB, 'tight')
+%             %On top, show 0-5
+%             xlim(subRAxisT, [0 5])
+%             %On bottom, show 0-20
+%             xlim(subRAxisB, [0 20])
+%         end
+%     end
 
     function toWorksp_callback(~,~)
         %Copy the currently open file to the workspace, for convenience
@@ -688,8 +694,9 @@ fig.Visible = 'on';
             
         end
         %For contour, fit the trace, but only consider where F>1, and stay within the input min/max boxes
-        cmin = max(str2double(conMin.String), min(cellfun(@grabmin, stepdata.contour, stepdata.force)));
-        cmax = min(str2double(conMax.String), max(cellfun(@grabmax, stepdata.contour, stepdata.force)));
+        cmin = min( [stepdata.force{:}], [], 'omitnan');
+        cmax = max( [stepdata.force{:}], [], 'omitnan');
+%         cmax = min(str2double(conMax.String), max(cellfun(@grabmax, stepdata.force, stepdata.force)));
         clim = [cmin cmax];
         if length(clim) ~= 2 || ~issorted(clim)
             clim = [0 6000]; %Fallback if automatic procedure messes up
@@ -721,6 +728,8 @@ fig.Visible = 'on';
     end
 
     function locNoise_callback(~,~)
+        %locNoise is now extension value for for-tim graph
+        
         %Plot the local noise levels (sd)
         netlen = sum(cellfun(@length, stepdata.time));
         %Plot every noiwin points
@@ -738,19 +747,19 @@ fig.Visible = 'on';
                 %Find out where to place the text marker
                 ran = (j-1)*noiwin+1:j*noiwin;
                 textt = double(mean(stepdata.time{i}(ran([1 end]))));
-                textc = double(mean(stepdata.contour{i}(ran)));
+                textc = double(mean(stepdata.force{i}(ran)));
                 %And calculate the velocity
-                textv = sqrt(estimateNoise(stepdata.contour{i}(ran), [], 2));
-                if j == 1
-                    %The first also has velocity information. Don't do this every point, as it takes some time
-                    pfit = @(x)polyfit(1:length(x), x(:)', 1);
-                    textvel = pfit(stepdata.contour{i});
-                    textvel = -textvel(1) * 2500;
-                    text(mainAxis, textt, textc+20, sprintf('%0.2f, %0.1fv',textv, textvel), 'Rotation', 90, 'Clipping', 'on')
-                else
+                textv = mean(stepdata.contour{i}(ran));
+%                 if j == 1
+%                     %The first also has velocity information. Don't do this every point, as it takes some time
+%                     pfit = @(x)polyfit(1:length(x), x(:)', 1);
+%                     textvel = pfit(stepdata.contour{i});
+%                     textvel = -textvel(1) * 2500;
+%                     text(mainAxis, textt, textc+5, sprintf('%0.2f, %0.1fv',textv, textvel), 'Rotation', 90, 'Clipping', 'on')
+%                 else
                     %Plot text that says the noise
-                    text(mainAxis, textt, textc+20, sprintf('%0.2f',textv), 'Rotation', 90, 'Clipping', 'on')
-                end
+                    text(mainAxis, textt, textc+3, sprintf('%0.2f',textv), 'Rotation', 90, 'Clipping', 'on')
+%                 end
             end
         end
     end

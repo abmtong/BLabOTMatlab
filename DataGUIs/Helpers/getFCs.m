@@ -58,6 +58,7 @@ for i = 1:length(files)
         fprintf('Crop%s not found for %s\n', cropstr, file)
         continue
     end
+    
     stepdata = load(fullfile(path, file));
     fname = fieldnames(stepdata);
     fname = fname{1};

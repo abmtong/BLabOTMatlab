@@ -4,7 +4,7 @@ function out = procFranp2(inp, inrAop)
 %Folder structure /a NAME/*.mat
 
 newcon = 0; %Recalculate contour from ext and F
-xwlcparams = {50 900}; %XWLC params for newcon
+xwlcparams = {50 900}; %XWLC params for newcon, if used
 fmin = 3; %Minimum force, crop trace at first force < fmin (for broken tethers, e.g.)
 
 %Take folder
@@ -36,10 +36,44 @@ dats = cell(1,len);
 datsrA = cell(1,len);
 rths = cell(1,len);
 frcs = cell(1,len);
+filnams = cell(1,len);
+cmts = cell(1,len);
 for i = 1:length(fols)
     %Get data
     fn = fols{i};
-    [d, e, f] = getFCs(-1, fullfile(inp, fn));
+    
+    
+%     [d, e, f] = getFCs(-1, );
+    %Want to save file info (name, cmt) so don't use getFCs anymore
+    d = dir( fullfile(inp, fn, '*.mat') );
+    
+    fs = {d.name};
+    hei = length(fs);
+    
+    %Prealloc
+    d = cell(1, hei); %Contour
+    e = cell(1, hei); %Ext
+    f = cell(1, hei); %Force
+    fil = cell(1, hei); %File name
+    cmt = cell(1, hei); %Comment
+    for j = 1:hei
+        %Load file
+        tmp = load( fullfile(inp, fn, fs{j}) );
+        %Loaded as tmp.stepdata.(fields), change to tmp.(fields)
+        tmpfn = fieldnames(tmp);
+        tmp = tmp.(tmpfn{1});
+        
+        %Load. Hardcode as first feedback cycle
+        d{j} = tmp.contour{1};
+        e{j} = tmp.extension{1};
+        f{j} = tmp.force{1};
+        [~, fil{j}, ~] = fileparts( fs{j} );
+        if isfield(tmp, 'comment')
+            cmt{j} = tmp.comment;
+        else
+            cmt{j} = [];
+        end
+    end
     
     %Recalc contour if asked. Useful for non-my data
     if newcon
@@ -63,8 +97,15 @@ for i = 1:length(fols)
         continue
     end
     
+    %Apply ki
+    d = d(ki);
+    e = e(ki); %Ext
+    f = f(ki); %Force
+    fil = fil(ki); %File name
+    cmt = cmt(ki);
+    
     %Zero based on start position
-    d0 = cellfun(@(x) x - mean(x(1:10)), d(ki), 'Un', 0);
+    d0 = cellfun(@(x) x - mean(x(1:10)), d, 'Un', 0);
     %RulerAlign
     dR = rulerAlignV2(d0, inrAop);
     %RulerAlign again, twice
@@ -81,7 +122,9 @@ for i = 1:length(fols)
     datsrA{i} = dR;
     rths{i} = [hx(:) hy(:)];
     frcs{i} = cellfun(@median,f);
+    filnams{i} = fil;
+    cmts{i} = cmt;
 end
 
 %Output struct
-out = struct('nam', nams, 'raw', dats, 'drA', datsrA, 'rth', rths, 'frc', frcs);
+out = struct('nam', nams, 'raw', dats, 'drA', datsrA, 'rth', rths, 'frc', frcs, 'file', filnams, 'cmt', cmts );

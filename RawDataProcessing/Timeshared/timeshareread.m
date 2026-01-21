@@ -1,4 +1,4 @@
-function [dat, cmt] = timeshareread(infp, dtype)
+function [dat, cmt] = timeshareread(infp, dtype, skipfl)
 %% Rewrite of ReadMattFile v8
 %Reads a timeshared data file (usually named YYMMDD_NNN.dat, also reads associated _pos, _fl, _grn data if available
 %Outputs a struct with fieldnames = detector names (raw QPD / etc. signals)
@@ -16,6 +16,10 @@ if nargin < 1 || isempty(infp)
     if ~path
         return
     end
+end
+
+if nargin <2
+    skipfl = 0;
 end
 
 %Separate to path, file, ext
@@ -155,7 +159,7 @@ dat.T = single( (0:len-1)*dt ) + dt/2;
 %% Read Fluorescence Data if it was saved (if extrasaved = 1 or 3)
 %Fluorescence counts are saved as uint64, but probably can do fewer bytes: 
 %  max rate = 1e6, min saving fsamp is say 100Hz -> max photons/tick = 1e4 < intmax uint16 = 6.5e4
-if any(hdr(13) == [1 3])
+if any(hdr(13) == [1 3]) && ~skipfl
     %check for file existence
     flfile = [path filesep file '_fl' ext];
     if exist(flfile, 'file')

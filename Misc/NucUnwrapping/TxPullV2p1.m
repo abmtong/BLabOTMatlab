@@ -11,7 +11,8 @@ function out = TxPullV2p1(inst)
 % xloc = ([-360 550 730] +360) *.34 + 400; %Nuc key locs [initial, entry, exit]], plus the base tether length
 
 %4kb handles xloc (with the molecular ruler)
-xloc = [1200 1468 1488 1520 1551]; %Nuc key locs, avg [stall, entry, dyad, end] extenstion @ 13pN for 4kb handles
+% xloc = [1200 1468 1488 1520 1551]; %Nuc key locs, avg [stall, entry, dyad, end] extenstion @ 13pN for 4kb handles
+xloc = [900 1030 1200]; %3kb new handles. [Rough lower limit, no nuc 601, rough upper limit]
 % xloc = [1200 1468 1488 1520 1551] -40 ; %250705 Shifted by a bit? New stall loc ~ 1160 (40 earlier), shift them all
 
 % xloc = [0 0 1200 1468 1488 1520 1551]; %Nuc key locs, avg [stall, entry, dyad, end] extenstion @ 13pN for 4kb handles

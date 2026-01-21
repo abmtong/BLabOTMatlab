@@ -146,7 +146,12 @@ switch inOpts.Instrument
     case {'Boltzmann' 'Avogadro'}
         opts.datType = 'single';
         opts = handleOpts(opts, inOpts);
-        dat = timeshareread(filepath, opts.datType);
+        if strcmp(inOpts.Instrument, 'Boltzmann')
+            skipfl = 1;
+        else
+            skipfl = 0;
+        end
+        dat = timeshareread(filepath, opts.datType, skipfl);
         if isfield(dat, 'T1F')
             dat.TX = (dat.T2F - dat.T1F) * opts.convTrapX;
             dat.TY = zeros(size(dat.TX));
