@@ -5,6 +5,10 @@ hfbinsz = 2; %pN
 hfxbinsz = 1; %nm
 extnbin = 10; %N bins for LF/HF histograms
 
+%Apply tfpbe
+if isfield(inst, 'tfpbe1')
+    inst = inst(logical([inst.tfpbe]));
+end
 
 xwlc = reshape([inst.xwlc], 5, [])';
 

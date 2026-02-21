@@ -5,7 +5,7 @@ if nargin < 2
     cropstr = -1;
 end
 
-if nargin < 1
+if nargin < 1 || isempty(inp)
     inp = uigetdir();
 end
 

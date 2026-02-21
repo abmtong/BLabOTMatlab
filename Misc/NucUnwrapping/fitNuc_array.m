@@ -8,7 +8,10 @@ frng = [1 2.75 7 50]; %4-Arrays
 % frng = [1 1.5 5 50]; %FOX?
 fil = 100;
 
-lfwid = 5; %Calculate low force force by getting the force at con = (halfway unwrapped) + [-wid wid]
+%Calculate low force force by averging over 
+
+lfwidmult = 0.7; %Calculate low force force by getting the force at con range between pre-LF and post-LF * this amt
+lfwidmin = 7; % Use this minimum con range
 
 maxtrns = 14; %Max transitions for HF fitting, i.e. 4 for tetranuc, 3 for tri, etc.
 debug = 0; %Debug flag
@@ -89,6 +92,7 @@ for i = 1:len
     %Convert to contour
     con = ext ./ XWLC(frc, ft(1), ft(2));
     %Crop contour range
+    lfwid = max(lfwidmin, ft(4)/2*lfwidmult);
     conrng = ft(3) + ft(4)/2 + [-lfwid lfwid];
     ki = con > conrng(1) & con < conrng(2);
     % Take longest segment in this range
@@ -97,7 +101,7 @@ for i = 1:len
     ime = find(me == 1);
     dw = dw(me == 1);
     [~, ind] = max(dw);
-    lfrng = [in(ime(ind)) in(ime(ind+1))];
+    lfrng = [in(ime(ind)) in(ime(ind)+1)];
     lf = median(frc( lfrng(1):lfrng(2) ) );
     
     %Debug: Check fit

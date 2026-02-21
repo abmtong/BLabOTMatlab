@@ -25,8 +25,8 @@ end
 fil = 10; %Filtering amount
 Fs=800; %Fsamp
 rulerdat = [ 59 64 8]; %Ruler pause position, repeat period, num repeats
-guidelines = [558 631 704]-16; %Guidelines, here Nuc Entry/Dyad/Exit
-
+% guidelines = [558 631 704]-16; %Guidelines, here Nuc Entry/Dyad/Exit
+guidelines = [ 756   829   902];
 %Default button labels. Will show but1lab{1} if tfpbe1 == 0, {2} if == 1
 but1lab = {'Un-Reject' 'Reject'};
 but1blab = {'Mark Crossed' 'Mark Not Crossed'};
