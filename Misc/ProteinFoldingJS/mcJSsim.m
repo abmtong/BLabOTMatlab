@@ -1,8 +1,12 @@
 function out = mcJSsim(pdbdm, inOpts)
-%pdbdm: Output of pdbDistanceMap
+%pdbdm: Output of pdbDistanceMap. Contains everything we need to do MC
 
 
-%Create residue contact matrix, epislon_ij, from the pdbdm list
-eij = 
+%Unfurl pdbdm for ease of use
+dmap = pdbdm.dmap;
 
-%Need is-alpha helix... so is_bb & is within 3 or 4 residues? any 3-4 residue interaction? manual? use the HELIX remark?
+%Calculate interaction energy matrix
+
+
+
+

@@ -45,7 +45,9 @@ Calculation
 
  Start with one CC c, find list of addable verticies
 
-
+Matlab has builtin graph theory things, what format for input? conncomp can detect connected components, e.g.
+@conncomp
+@graph
 
 
 

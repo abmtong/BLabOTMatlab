@@ -29,7 +29,7 @@ nnuc = length(nuc_starts);
 
 outrAop = repmat(rAopts, 1, nnuc);
 outefpop = repmat(efpop, 1, nnuc);
-for i = 1:length(nnuc)
+for i = 1:nnuc
     tmpdisp = nuc_starts(i) + stdyen;
     tmpshift = tmpdisp(1)-1;
     

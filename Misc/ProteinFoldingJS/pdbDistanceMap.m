@@ -81,6 +81,37 @@ out.dmap = dmap;
 out.nhc = nhc;
 % out.isbb = isbb; Eh replace this with ChimeraX's H-bonds tool, below
 
+%Also need some XYZ coordinate for each... c-alpha position? Do real C to N? Just save the entire pdb?
+out.pdb = dat;
+
+%And need average backbone covalent bond length... so 1N-1Ca-1C-2N-2Ca-2C...
+%Get backbone coords
+%Pre-find backbone AtomNames
+isn = strcmp( {atm.AtomName}, 'N' );
+isca = strcmp( {atm.AtomName}, 'CA' );
+isc = strcmp( {atm.AtomName}, 'C' );
+isan = {isn isca isc};
+rsd = [atm.resSeq];
+bbcoord = nan(nr,3,3);
+for i = 1:nr
+    for j = 1:3
+        iin = find( (rsd == i) & isan{j} );
+        bbcoord(i,j,:) = [atm(iin).X atm(iin).Y atm(iin).Z];
+    end
+end
+%Save backbone coords, as (res, NCC=123, XYZ), e.g. C-alpha of residue 3 = (3,2,:)
+out.bbcoord = bbcoord;
+
+%Calculate average bond length. Permute and reshape to list of backbone coords xyz
+tmpbb = permute(bbcoord, [3 2 1]);
+tmpbb = reshape(tmpbb, 3, [])';
+dbb = diff(tmpbb, 1);
+bonlen = sqrt(sum(dbb.^2,2)); %This basicaly bins into 3, probably for each type of bond
+bonlenavg = mean(bonlen, 'omitnan'); %Just take mean, then
+out.bbbonlen = bonlenavg;
+
+
+
 %Try loading hbonds if .txt file with same name exists
 [p, f, ~] = fileparts(infp);
 hbpf = fullfile(p, [f '.txt']);
