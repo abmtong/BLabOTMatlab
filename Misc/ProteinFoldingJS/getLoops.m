@@ -9,7 +9,7 @@ function out = getLoops(cc)
 me = me(2:end-1);
 in = in(2:end-1);
 
-%Remaining 0's are edges, then
+%Remaining 0's are loops, then
 ki = find( me == 0 );
 len = length(ki);
 out = zeros(len,2);

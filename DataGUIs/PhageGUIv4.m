@@ -1,4 +1,4 @@
-function PhageGUIv4()
+function PhageGUIv4(infp)
 %% PhageGUI: Interface for viewing optical tweezers .mat files
 %Expects a mat file that contains a struct, with fields time, contour, force, all of which are cell arrays of data
 % Can work with most other subgroups' mat files -- detects their format and re-wraps them to work with this GUI [see @renametophage]
@@ -130,7 +130,26 @@ radioBot.Visible = 'off'; %Only show if we detect fluorescence data
 radioBot1.Value = true; %Default to plotting force
 
 %Load first file
-loadFile_callback
+if nargin < 1 %Filepicker
+    loadFile_callback
+elseif ischar(infp) %Passed filename
+    [p, f, e] = fileparts(infp);
+    p = [p filesep];
+    f = [f e];
+    fileSlider.String = {f};
+    fileSlider.Enable = 'off';
+    loadFile_callback([], [], f, p);
+elseif isstruct(infp) %Passed data
+    stepdata = infp;
+    
+    fig.Visible = 'on';
+    if isfield(stepdata, 'apdT') %Check for fluorescence data. Plotting in refilter_callback
+            radioBot.Visible = 'on';
+    end
+    refilter_callback
+    fixLimit_callback
+    return
+end
 
 %Now that we've made the figure and loaded the data, draw the figure
 if strcmp(file, 'phageMMDDYYN00.mat') %If loadFile was canceled, just exit
@@ -341,6 +360,7 @@ fig.Visible = 'on';
             %Grab time
             if isfield(stepdata, 'apdT')
                 
+                
                 %Check for image (kymograph / movie)
                 if isfield(stepdata, 'apdimg')
                     %Plot this img on the bottom
@@ -362,12 +382,12 @@ fig.Visible = 'on';
                     [xx, yy] = meshgrid( linspace(0,1, size(img, 1)), apdt );
                     zz = zeros(size(xx));
                     
-                    %Apply max filter
+                    %Filter
                     num = str2double(radioEd.String);
                     if num > 1 %Check if it's a number (i.e. not NaN) and greater than 1
                         num = ceil((num-1)/2); %Make filter half-width
                         for i = 1:size(img, 1)
-                            %Max filter trace
+                            %Filter trace
                             img(i,:,1) = windowFilter(@mean, img(i,:,1), num, 1);
                             img(i,:,2) = windowFilter(@mean, img(i,:,2), num, 1);
                             img(i,:,3) = windowFilter(@mean, img(i,:,3), num, 1);
@@ -384,45 +404,48 @@ fig.Visible = 'on';
                     ylim(subAxis, [0 1])
                 else %Else it's point scan
                     flfil = str2double(radioEd.String);
+                    apddec = 1; %Downsample APD?
+                    apddt = mean(diff(stepdata.apdT));
                     %Check for deinterlaced lasers
                     if isfield(stepdata, 'apdcolT')
+                        apdcoldt = mean(diff(stepdata.apdcolT));
                         %Downsample time
-                        gt = windowFilter(@mean, stepdata.apdcolT, flfil, dec);
+                        gt = windowFilter(@mean, stepdata.apdcolT, flfil, apddec);
                         lstyle = {'' '--' ':'}; %Styles for BGR = regular, dashed, dotted
                         if radioChk1.Value && isfield(stepdata,'apd1') %G, thick-dashed
                             for i = 1:3
-                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{2,i}), flfil, dec), ['g' lstyle{i}], 'LineWidth', 2)
+                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{2,i}), flfil, apddec) / apdcoldt, ['g' lstyle{i}], 'LineWidth', 2)
                             end
                         end
                         if radioChk2.Value && isfield(stepdata,'apd2') %R, thin-dotted
                             for i = 1:3
-                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{3,i}), flfil, dec), ['r' lstyle{i}])
+                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{3,i}), flfil, apddec) / apdcoldt, ['r' lstyle{i}])
                             end
                         end
                         if radioChk3.Value && isfield(stepdata,'apd3') %B, normal
                             for i = 1:3
-                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{1,i}), flfil, dec), ['b' lstyle{i}])
+                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{1,i}), flfil, apddec) / apdcoldt, ['b' lstyle{i}])
                             end
                         end
                         %Add legend for first three, at least
                         legend(subAxis, {'Blue Laser' 'Green Laser' 'Red Laser'})
                         
                     else %Else do normally
-                        gt = windowFilter(@mean, stepdata.apdT, flfil, dec);
+                        gt = windowFilter(@mean, stepdata.apdT, flfil, apddec);
                         %Let's have the order be G/R/B = 1/2/3 to match Flzr Green/Red=1/2 only
                         if radioChk1.Value && isfield(stepdata,'apd1')
                             %Take data
-                            g = windowFilter(@mean, double(stepdata.apd1), flfil, dec);
+                            g = windowFilter(@mean, double(stepdata.apd1), flfil, apddec) / apddt;
                             plot(subAxis, gt, g, 'g')
                         end
                         if radioChk2.Value && isfield(stepdata,'apd2')
                             %Take data
-                            g = windowFilter(@mean, double(stepdata.apd2), flfil, dec);
+                            g = windowFilter(@mean, double(stepdata.apd2), flfil, apddec) / apddt;
                             plot(subAxis, gt, g, 'r')
                         end
                         if radioChk3.Value && isfield(stepdata,'apd3')
                             %Take data
-                            g = windowFilter(@mean, double(stepdata.apd3), flfil, dec);
+                            g = windowFilter(@mean, double(stepdata.apd3), flfil, apddec) / apddt;
                             plot(subAxis, gt, g, 'b')
                         end
                     end
@@ -433,6 +456,7 @@ fig.Visible = 'on';
         locNoise_callback
         %Calculate the kernel density function of the filtered data
         kdf_callback
+        fixLimit_callback
     end
 
     function kdf_callback(src,~)
@@ -682,6 +706,8 @@ fig.Visible = 'on';
                 %Get children and set ylims? Just axis tight?
                 if isfield(stepdata, 'apdimg')
                     ylim(subAxis, [0 1]);
+                else
+                    ylim(subAxis, [0 inf]); %Re-ylim fluorescence data
                 end
 %                 axis(subAxis, 'tight')
             end

@@ -1,4 +1,4 @@
-function ForExtGUI_V2()
+function ForExtGUI_V2(infp)
 %ForceGUI, but now programmatic - GUIDE has bad limitations/bugs
 
 %Add paths
@@ -97,7 +97,17 @@ plotCal   = uicontrol('Parent', panlef,                  'Units', 'normalized', 
 plotOff   = uicontrol('Parent', panlef,                  'Units', 'normalized', 'Position', [.5 .3 .5 .05], 'String', 'Plot Off', 'Callback', @plotOff_callback);
 
 %Load first file
-loadFile_callback
+if nargin < 1 %Filepicker
+    loadFile_callback
+else %Passed filename
+    [p, f, e] = fileparts(infp);
+    p = [p filesep];
+    f = [f e];
+    fileSlider.String = {f};
+    fileSlider.Enable = 'off';
+    loadFile_callback([], [], f, p);
+end
+
 
 fig.Visible = 'on';
 

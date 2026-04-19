@@ -86,7 +86,7 @@ txtButOK  = uicontrol(fg, 'Style', 'pushbutton', 'Position', [col(4)+100 rx(17) 
 %Set defaults
 dropInst.Value = 1; %Instrument - HiRes QPD
 dropInst_cb(dropInst);
-dropProt.Value = 1; %Protocol - Semipassive
+dropProt.Value = 3; %Protocol - Semipassive
 dropProt_cb(dropProt);
 
 %Wait for person to press the OK button, which calls uiresume

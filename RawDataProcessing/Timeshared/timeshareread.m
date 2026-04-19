@@ -18,7 +18,7 @@ if nargin < 1 || isempty(infp)
     end
 end
 
-if nargin <2
+if nargin <3
     skipfl = 0;
 end
 

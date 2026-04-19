@@ -7,6 +7,8 @@ cellfinden = @(ce) (find(ce < tlim(2),1, 'last'));
 indst = cellfun(cellfindst, stepdata.time, 'UniformOutput', false);
 inden = cellfun(cellfinden, stepdata.time, 'UniformOutput', false);
 
+%Also handle fluorescence, specially after
+
 %We're going to put these in the cut field. If it doesn't exist, we'll make it [later]
 if ~isfield(stepdata, 'cut')
     newcut = 1;
@@ -21,6 +23,10 @@ for j = 1:length(fnames)
     %For those that are cells, ...
     if iscell(stepdata.(fnames{j})) && isnumeric(stepdata.(fnames{j}){1})
         temp = stepdata.(fnames{j});
+        %Skip fields that start apd -- this is probably just apdcol
+        if strncmp(temp, 'apd', 3)
+            continue
+        end
         %Trim
         for k = length(indst):-1:1 %process in reverse so cell removal, e.g. a(3) = [], doesn't disrupt indicies
             %Check that there are actually points to remove
@@ -61,3 +67,25 @@ for j = 1:length(fnames)
     end
 end
 
+%Fluorescence
+if isfield(stepdata, 'apdT')
+    apdrm = stepdata.apdT > tlim(1) & stepdata.apdT < tlim(2);
+    stepdata.apdT(apdrm) = [];
+    %Crop
+    for i = 1:3 %3 max APDs
+        fn = sprintf('apd%d',i);
+        if isfield(stepdata, fn)
+            stepdata.(fn)(apdrm) = [];
+        end
+    end
+end
+
+%Fluorescence LaserChoice
+if isfield(stepdata, 'apdcolT')
+    apdcolrm = stepdata.apdcolT > tlim(1) & stepdata.apdcolT < tlim(2);
+    stepdata.apdT(apdcolrm) = [];
+    %Crop
+    for i = 1:numel(stepdata.apdcol)
+        stepdata.apdcol{i}(apdcolrm) = [];
+    end
+end

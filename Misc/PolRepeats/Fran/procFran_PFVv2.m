@@ -6,7 +6,7 @@ function [out, outp] = procFran_PFVv2(inst, inOpts)
 
 %Basic options
 opts.tfpick = 1; %Use tfpick traces only
-opts.tfcross =0; %Use tfcross traces only
+opts.tfcross =1; %Use tfcross traces only
 opts.Fs = 800; %Sampling frequency
 
 %Regions of interest for PFV / pauses
@@ -35,7 +35,7 @@ if nargin > 1
 end
 
 %Set Fs for sum nuc hist
-opts.snhopts.Fs = 800;
+opts.snhopts.Fs = opts.Fs;
 
 len = length(inst);
 out = cell(1,len);
