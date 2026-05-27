@@ -8,6 +8,10 @@ opts.pdd = 0; %Use PDD for RTH?
 opts.Fs = 1e3;
 opts.binsz = 0.5;
 
+%Fluorescence
+opts.plotfl = 1; %Do fluorescence or not, if data is found
+
+
 if nargin > 1
     %Handle inputting opts as NVPs
     if length(varargin) > 1
@@ -44,11 +48,11 @@ for i = 1:len
         tmp = inst(i).drA;
     end
     
-    ki = true(size(tmp));
-    if opts.onlycross
+    ki = true(size(tmp)); 
+    if opts.onlycross && isfield(inst, 'tfc')
         ki = ki & inst(i).tfc;
     end
-    if opts.onlypick
+    if opts.onlypick && isfield(inst, 'tfpick')
         ki = ki & inst(i).tfpick;
     end
     

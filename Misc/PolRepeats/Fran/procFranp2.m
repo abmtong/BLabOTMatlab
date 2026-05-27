@@ -38,6 +38,7 @@ rths = cell(1,len);
 frcs = cell(1,len);
 filnams = cell(1,len);
 cmts = cell(1,len);
+fl = cell(1,len);
 for i = 1:length(fols)
     %Get data
     fn = fols{i};
@@ -56,6 +57,7 @@ for i = 1:length(fols)
     f = cell(1, hei); %Force
     fil = cell(1, hei); %File name
     cmt = cell(1, hei); %Comment
+    fltmp = cell(1,hei); %Fluorescence
     for j = 1:hei
         %Load file
         tmp = load( fullfile(inp, fn, fs{j}) );
@@ -72,6 +74,17 @@ for i = 1:length(fols)
             cmt{j} = tmp.comment;
         else
             cmt{j} = [];
+        end
+        
+        %Add fluorescence data, too, by taking all tmp.apd* fields
+        fns = fieldnames(tmp);
+        fns = fns( ~strncmpi('apd', fns, 3 ) );
+        fltmp{j} = rmfield(tmp, fns);
+        %Don't add if cts ~ 0... just check if apd1 counts < 10 [there might be some fake counts due to electrical noise]
+        if isfield(fltmp{j}, 'apd1')
+            if sum( fltmp{j}.apd1 ) < 10
+                fltmp{j} = [];
+            end
         end
     end
     
@@ -124,7 +137,8 @@ for i = 1:length(fols)
     frcs{i} = cellfun(@median,f);
     filnams{i} = fil;
     cmts{i} = cmt;
+    fl{i} = fltmp;
 end
 
 %Output struct
-out = struct('nam', nams, 'raw', dats, 'drA', datsrA, 'rth', rths, 'frc', frcs, 'file', filnams, 'cmt', cmts );
+out = struct('nam', nams, 'raw', dats, 'drA', datsrA, 'rth', rths, 'frc', frcs, 'fl', fl, 'file', filnams, 'cmt', cmts );

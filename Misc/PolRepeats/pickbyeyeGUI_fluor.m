@@ -1,11 +1,23 @@
-function pickbyeyeGUI(dat)
+function pickbyeyeGUI_fluor(dat)
 %Pick by eye 
 %Based on RPpickbyeyeGUI
+% For fluorescence crossing data
 
 %Need to provide inst, the output of @procFran
 if nargin < 1
     return
 end
+
+%Options
+fil = 50; %Filtering amount
+Fs=800; %Fsamp
+rulerdat = [ 59 64 8]; %Ruler pause position, repeat period, num repeats
+guidelines = [558 631 704]-16; %Guidelines, here Nuc Entry/Dyad/Exit
+% guidelines = [ 756   829   902];
+
+flint = 1e3; %Integration for fluorescence
+fldsamp = 1e2; %Downsampling for fluorescence
+flFs = 1e3; %Fluorescence Fsamp
 
 %Declare variables
 set = 1; %Index of current dataset, i.e. dat(set).drA(num)
@@ -21,41 +33,42 @@ if ~isfield(dat, 'tfpick')
     end
 end
 
-%Options
-fil = 10; %Filtering amount
-Fs=800; %Fsamp
-rulerdat = [ 59 64 8]; %Ruler pause position, repeat period, num repeats
-guidelines = [558 631 704]-16; %Guidelines, here Nuc Entry/Dyad/Exit
-% guidelines = [ 756   829   902];
 %Default button labels. Will show but1lab{1} if tfpbe1 == 0, {2} if == 1
 but1lab = {'Un-Reject' 'Reject'};
 but1blab = {'Mark Crossed' 'Mark Not Crossed'};
 but1txt = { 'Rejected' 'Kept' };
 but1btxt = { 'Not Crossed' 'Crossed Nuc' };
 
-
 %Make figure
 ssz = get(groot, 'ScreenSize');
 fg = figure('Position', ssz + [ssz(3:4)/10 -ssz(3:4)/5], 'Color', [1 1 1], 'CloseRequestFcn', @(x,y)addwkspc([],[],1));
-ax1 = subplot2(fg, [1 5], [1 2 3]); %Con-tim
-ax2 = subplot2(fg, [1 5], 4); %RTH
+ax1a = subplot2(fg, [2 5], [1 3]); %RTH
+ax1b = subplot2(fg, [2 5], [2 4]); %Fluor
+ax2 = subplot2(fg, [1 5], [3 4]); %con-tim
 
-hold(ax1, 'on')
+hold(ax1a, 'on')
+hold(ax1b, 'on')
 hold(ax2, 'on')
-linkaxes([ax1, ax2], 'y')
+linkaxes([ax1a, ax1b], 'x')
 
 %Set labels
-xlabel(ax1, 'Time (s)')
-ylabel(ax1, 'Extension (bp)')
-xlabel(ax2, 'RTH')
-% ylabel(ax2, '')
+xlabel(ax2, 'Time (s)')
+ylabel(ax2, 'Extension (bp)')
+xlabel(ax1a, 'Extension (bp)')
+ylabel(ax1a, 'RTH (s/bp)')
+xlabel(ax1b, 'Extension (bp)')
+ylabel(ax1b, 'Fluorescence (kHz)')
+
 
 %UIcontrols. Put them in the empty quadrant, top-right
 numtext = uicontrol('Style', 'text', 'Units', 'normalized', 'Position', [.05, .925, .7, .075], 'String', '0/0', 'BackgroundColor', [.99 .99 .99], 'FontSize', 16 );
 butlef0= uicontrol( 'Units', 'normalized', 'Position', [.8, .9, .1, .1],       'String', 'Dataset <<', 'Callback',@(x,y)cycleData(x,y,-2) );
 butrig0= uicontrol( 'Units', 'normalized', 'Position', [.8+.1, .9, .1, .1],       'String', 'Dataset >>', 'Callback',@(x,y)cycleData(x,y,+2) );
 
-txtax2yl = uicontrol('Style', 'edit', 'Units', 'normalized', 'Position', [.8, .05, .1, .05], 'String', '[ 0 3 ]', 'BackgroundColor', [.99 .99 .99], 'FontSize', 16 );
+uicontrol('Style', 'text', 'Units', 'normalized', 'Position', [.8, .1, .1, .05], 'String', 'RTH YLims', 'BackgroundColor', [.99 .99 .99], 'FontSize', 12 )
+txtax2yl = uicontrol('Style', 'edit', 'Units', 'normalized', 'Position', [.8, .15, .1, .05], 'String', '[ 0 3 ]', 'BackgroundColor', [.99 .99 .99], 'FontSize', 16 );
+uicontrol('Style', 'text', 'Units', 'normalized', 'Position', [.8, .0, .1, .05], 'String', 'Fluor [Backg, Single]', 'BackgroundColor', [.99 .99 .99], 'FontSize', 12 )
+txtax2y2 = uicontrol('Style', 'edit', 'Units', 'normalized', 'Position', [.8, .05, .1, .05], 'String', '[ 50 140 ]', 'BackgroundColor', [.99 .99 .99], 'FontSize', 16 );
 
 butlef = uicontrol( 'Units', 'normalized', 'Position', [.8, .8, .1, .1],       'String', 'Trace <<', 'Callback',@(x,y)cycleData(x,y,-1) );
 butrig = uicontrol( 'Units', 'normalized', 'Position', [.8+.1, .8, .1, .1],       'String', 'Trace >>', 'Callback',@(x,y)cycleData(x,y,+1) );
@@ -112,34 +125,91 @@ cycleData([],[],0)
         rth = [xx(:) yy(:)];
         
         %Plot the Con-Tim above, with guidelines
-        cla(ax1)
-        plot(ax1, windowFilter(@median, tim, fil, 1), windowFilter(@median, ext, fil, 1));
+        cla(ax2)
+        
+        %Convert fluorescence to # Cy3s
+        %Integrate fl, convert to Hz
+        fl = windowFilter(@mean, double( dat(set).fl{num}.apd1 ), round(flint/2), 1) * ( round(flint/2)*2+1) * flFs / 1e3;
+       
+        %Get background, count per cy3 from text box. Maybe do this programmatically at some point later
+        fllines = str2num(txtax2y2.String); %#ok<ST2NM>
+        flnn = round( abs(fl-fllines(1))  / fllines(2) );
+        
+        %Match sampling via interp1
+        tt = linspace(1, length(fl), length(ext)+1);
+        tt = (tt(1:end-1)+tt(2:end) ) /2;
+        nf = interp1( 1:length(fl), flnn, tt );
+        nf = round(nf);
+        
+%         plot(ax2, windowFilter(@median, tim, fil, 1), windowFilter(@median, ext, fil, 1));
+        tf = windowFilter(@median, tim, fil, 1);
+        xf = windowFilter(@median, ext, fil, 1);
+        surface(ax2, [tf; tf], [xf; xf], [nf; nf], 'EdgeColor', 'interp')
+        
+        
+        nfl = 2; %Number of fluorophores max
+        ax2.CLim = [0 2];
+        cmap = [zeros(nfl+1, 1) linspace(0,1,nfl+1)', zeros(nfl+1,1)];
+        colormap(ax2, cmap);
+        
         
         %Guidelines for pauses
         for ii = 1:rulerdat(3)
-            plot(ax1, [0 tim(end)] , (rulerdat(1) + rulerdat(2) * (ii-1)) * [1 1], 'k', 'LineWidth', 1)
+            plot(ax2, [0 tim(end)] , (rulerdat(1) + rulerdat(2) * (ii-1)) * [1 1], 'k', 'LineWidth', 1)
         end
         %Nuc Entry/Dyad/Exit
         for ii = 1:length(guidelines)
-            plot(ax1, [0 tim(end)] , guidelines(ii) * [1 1]);
+            plot(ax2, [0 tim(end)] , guidelines(ii) * [1 1]);
         end
-        
-        axis(ax1, 'tight')
-        
-        %Plot RTHs. Plot vertical so do (y,x)
-        cla(ax2)
-        plot(ax2, rth(:,2), rth(:,1), 'LineWidth', 2)
-        plot(ax2, rthall(:,2), rthall(:,1), 'k', 'LineWidth', 2)
-        legend({'This trace' 'Average RTH'}, 'Location', 'southeast')
         
         axis(ax2, 'tight')
         
+        %Plot RTHs
+        cla(ax1a)
+        plot(ax1a, rth(:,1), rth(:,2), 'LineWidth', 2)
+        plot(ax1a, rthall(:,1), rthall(:,2), 'k', 'LineWidth', 2)
+        
+        %Plot fluorescence-extension
+        cla(ax1b)
+        flx = double( dat(set).drA{num} );
+%         fl = double( dat(set).fl{num}.apd1 );
+        
+        %Integrate fl, convert to Hz
+%         fl = windowFilter(@mean, fl, round(flint/2), 1) * flint * flFs / 1e3;
+        
+        %Filter extension to match
+        extfil = round(length(flx)/length(fl) * flint /2);
+        flx = windowFilter(@mean, flx, extfil, 1);
+        
+        %Match sampling via interp1
+        tt = linspace(1, length(flx), length(fl)+1);
+        tt = (tt(1:end-1)+tt(2:end) ) /2;
+        flx = interp1( 1:length(flx), flx, tt );
+        
+        %Downsample
+        fl = fl(1:fldsamp:end);
+        flx = flx(1:fldsamp:end);
+        
+        plot(ax1b, flx, fl, 'o');
+        
+        %Add fluorescence guidelines (dotted)
+%         maxmin = [min(flx) max(flx)];
+        maxmin = [min(guidelines) max(guidelines)] + [-10 10];
+        for j = 0:nfl
+            plot(ax1b, maxmin, fllines(1) + j*fllines(2) * [1 1], 'k--')
+        end
+        
+        
+        legend(ax1a, {'Trace RTH' 'Average RTH'}, 'Location', 'southeast')
+        
+        axis(ax1a, 'tight')
+        
         %Set lims
-        ylim(ax1, [-rulerdat(2) max(guidelines)+10]);
-%         xlim(ax2, [0 4])
+        xlim(ax1a, [ min(guidelines) max(guidelines)] + [-10 10]);
         
-        xlim(ax2, str2num(txtax2yl.String)); %#ok<ST2NM>
+        ylim(ax1a, str2num(txtax2yl.String)); %#ok<ST2NM>
         
+        ylim(ax2, [ min(guidelines) max(guidelines)] + [-10 10]);
         
         %Set button strings
         but1.String = but1lab{ dat(set).tfpick(num) + 1 };

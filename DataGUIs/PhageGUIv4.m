@@ -18,7 +18,7 @@ else
     c = 'Settings file for PhageGUI'; %#ok<*NASGU> - A lot of uicontrols will be unused, too - OK
     save('GUIsettings.mat', 'c');
 end
-
+ 
 %% Declare variables
 stepdata = []; %The name of the struct is stepdata
 cropLines = cell(1,4); %The crop lines (t_start and t_end for time and force axis)
@@ -100,7 +100,7 @@ panConMx= uipanel(panlef, 'Position', [0 .725 1 .075]);
 conMinT = uicontrol(panConMx, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .67 .5 .33],  'String', 'Y Min');
 conMin  = uicontrol(panConMx, 'Style', 'edit', 'Units', 'normalized', 'Position', [0 .0 .5 .67],   'String', '0', 'Callback', @fixLimit_callback);
 conMaxT = uicontrol(panConMx, 'Style', 'text', 'Units', 'normalized', 'Position', [.5 .67 .5 .33], 'String', 'Y Max');
-conMax  = uicontrol(panConMx, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .0 .5 .67],  'String', '4000', 'Callback', @fixLimit_callback);
+conMax  = uicontrol(panConMx, 'Style', 'edit', 'Units', 'normalized', 'Position', [.5 .0 .5 .67],  'String', '9999', 'Callback', @fixLimit_callback);
 %This subpanel has buttons, 
 panPlotX = uipanel(panlef, 'Position', [0 .65 1 .075]);
 plotCal   = uicontrol(panPlotX, 'Units', 'normalized', 'Position', [0  .5 .5 .5], 'String', 'Plot Cal', 'Callback', @plotCal_callback);
@@ -130,7 +130,7 @@ radioBot.Visible = 'off'; %Only show if we detect fluorescence data
 radioBot1.Value = true; %Default to plotting force
 
 %Load first file
-if nargin < 1 %Filepicker
+if nargin < 1 %No inputs, use filepicker
     loadFile_callback
 elseif ischar(infp) %Passed filename
     [p, f, e] = fileparts(infp);
@@ -139,7 +139,7 @@ elseif ischar(infp) %Passed filename
     fileSlider.String = {f};
     fileSlider.Enable = 'off';
     loadFile_callback([], [], f, p);
-elseif isstruct(infp) %Passed data
+elseif isstruct(infp) %Passed data. A bit hacky, bypassing the normal methods
     stepdata = infp;
     
     fig.Visible = 'on';
@@ -235,6 +235,8 @@ fig.Visible = 'on';
             subAxis.Position(4) = .2 +dy;
             mainAxis.Position(2) = .31 + dy;
             mainAxis.Position(4) = .68 - dy;
+            mainRAxis.Position(2) = .31 + dy;
+            mainRAxis.Position(4) = .68 - dy;
             
             radioBot.Visible = 'off';
         end
@@ -351,7 +353,8 @@ fig.Visible = 'on';
             subAxis.Position(4) = .2 +dy;
             mainAxis.Position(2) = .31 + dy;
             mainAxis.Position(4) = .68 - dy;
-            
+            mainRAxis.Position(2) = .31 + dy;
+            mainRAxis.Position(4) = .68 - dy;
             %Orig dims:
 %             mainAxis = axes(panaxs, 'Position', [.05 .31 .78 .68]); %Holds the main distance-time plot
 %             subAxis  = axes(panaxs, 'Position', [.05 .05 .78 .2]);
@@ -721,7 +724,7 @@ fig.Visible = 'on';
             clim = [0 6000]; %Fallback if automatic procedure messes up
         end
         %Zoom out, set limits, zoom reset so the figure 'remembers' this zoom on double-click
-        zoom(mainAxis, 'out')
+%         zoom(mainAxis, 'out')
 %         zoom(subAxis, 'out')
         xlim(mainAxis, tlim)
         ylim(mainAxis, clim + [0 1])
@@ -862,20 +865,20 @@ fig.Visible = 'on';
 %% Custom Callbacks
 %These are here to do custom, variable things. May be moved to a more permanent button.
     function custom01_callback(~,~)
-        %If it's Boltzmann data, draw lines for ruler
-        if isfield(stepdata, 'opts') && isfield(stepdata.opts, 'Instrument') && strcmp(stepdata.opts.Instrument, 'Boltzmann')
-            customB1.String = 'MolRuler';
-            %Draw lines at 3500 + n*64 + offset
-            args = str2num(customB1t.String); %#ok<ST2NM>
-            yy = 3600 + 350 + 59 + (0:7) * 64 + args(2); %3600 (avg start pos) + 350 (offset to ruler start) + 59 (offset to first pause)
-            xx = xlim;
-            delete(stripes)
-            stripes = gobjects(1, length(yy));
-            for i = 1:length(yy)
-                stripes(i) = line(xx, yy(i)*[1 1]);
-            end
-            return
-        end
+%         %If it's Boltzmann data, draw lines for ruler
+%         if isfield(stepdata, 'opts') && isfield(stepdata.opts, 'Instrument') && strcmp(stepdata.opts.Instrument, 'Boltzmann')
+%             customB1.String = 'MolRuler';
+%             %Draw lines at 3500 + n*64 + offset
+%             args = str2num(customB1t.String); %#ok<ST2NM>
+%             yy = 3400 + 350 + 59 + (0:7) * 64 + args(2); %3600 (avg start pos) + 350 (offset to ruler start) + 59 (offset to first pause)
+%             xx = xlim;
+%             delete(stripes)
+%             stripes = gobjects(1, length(yy));
+%             for i = 1:length(yy)
+%                 stripes(i) = line(xx, yy(i)*[1 1]);
+%             end
+%             return
+%         end
         
         
         

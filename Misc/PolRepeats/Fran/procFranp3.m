@@ -56,5 +56,6 @@ figure, hold on
 cellfun(ccdf, tcr)
 legend(nams(ifcross))
 set(gca, 'YScale', 'log')
+ylim([ max( 1/max( cellfun(@(x) sum(~isnan(x)), tcr) ) , .01) 1])
 axis tight
 

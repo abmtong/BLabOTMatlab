@@ -52,8 +52,8 @@ for i = 1:len
     
 end
 
-ylim([1e-2 1])
-xlim([0 200])
+ylim([ max( 1/max( outraw(:,4), .01)) 1])
+xlim([0 max( outraw(:,2) ) * 3])
 
 out = outraw;
 

@@ -176,7 +176,8 @@ switch opts.Protocol
                 [rawoff, ~] = loadfile_wrapper(fullfile(path, file{2}), opts);
                 %Average down to 100pts
                 if isfield(rawoff, 'meta') && isfield(rawoff.meta, 'scanNSteps')
-                    npul = max(round(rawoff.meta.scanNSteps/rawoff.meta.scanCycPerStep),1); %Scans in Timeshared are two-way, take the first way.
+%                     npul = max(round(rawoff.meta.scanNSteps/rawoff.meta.scanCycPerStep),1); %Scans in Timeshared are two-way, take the first way.
+                    npul = rawoff.meta.scanNScans*2; %One scan is one pull+retract, so x2 it
                 else
                     switch inOpts.Instrument
                         case {'Boltzmann' 'Meitner' 'Avogadro'}
