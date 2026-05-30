@@ -17,7 +17,7 @@ guidelines = [558 631 704]-16; %Guidelines, here Nuc Entry/Dyad/Exit
 
 flint = 1e3; %Integration for fluorescence
 fldsamp = 1e2; %Downsampling for fluorescence
-flFs = 1e3; %Fluorescence Fsamp
+% flFs = 1e3; %Fluorescence Fsamp
 
 %Declare variables
 set = 1; %Index of current dataset, i.e. dat(set).drA(num)
@@ -67,7 +67,7 @@ butrig0= uicontrol( 'Units', 'normalized', 'Position', [.8+.1, .9, .1, .1],     
 
 uicontrol('Style', 'text', 'Units', 'normalized', 'Position', [.8, .1, .1, .05], 'String', 'RTH YLims', 'BackgroundColor', [.99 .99 .99], 'FontSize', 12 )
 txtax2yl = uicontrol('Style', 'edit', 'Units', 'normalized', 'Position', [.8, .15, .1, .05], 'String', '[ 0 3 ]', 'BackgroundColor', [.99 .99 .99], 'FontSize', 16 );
-uicontrol('Style', 'text', 'Units', 'normalized', 'Position', [.8, .0, .1, .05], 'String', 'Fluor [Backg, Single]', 'BackgroundColor', [.99 .99 .99], 'FontSize', 12 )
+txtax2y2lab = uicontrol('Style', 'text', 'Units', 'normalized', 'Position', [.8, .0, .1, .05], 'String', 'Fluor [Backg, Single]', 'BackgroundColor', [.99 .99 .99], 'FontSize', 12 );
 txtax2y2 = uicontrol('Style', 'edit', 'Units', 'normalized', 'Position', [.8, .05, .1, .05], 'String', '[ 50 140 ]', 'BackgroundColor', [.99 .99 .99], 'FontSize', 16 );
 
 butlef = uicontrol( 'Units', 'normalized', 'Position', [.8, .8, .1, .1],       'String', 'Trace <<', 'Callback',@(x,y)cycleData(x,y,-1) );
@@ -84,6 +84,8 @@ but3   =  uicontrol( 'Units', 'normalized', 'Position', [.9, .70, .1, .05],     
 % butrig = uicontrol( 'Units', 'normalized', 'Position', [.15, .90, .05, .05],       'String', '>', 'Callback',@(x,y)cycleData(x,y,+1) );
 % but1   = uicontrol( 'Units', 'normalized', 'Position', [.25, .90, .25, .05],       'String', but1lab{2}, 'Callback',@but1_cb );
 % but2   = uicontrol( 'Units', 'normalized', 'Position', [.60, .90, .25, .05],       'String', but2lab{2}, 'Callback',@but2_cb );
+
+
 
 %Load first data
 cycleData([],[],0)
@@ -127,13 +129,26 @@ cycleData([],[],0)
         %Plot the Con-Tim above, with guidelines
         cla(ax2)
         
-        %Convert fluorescence to # Cy3s
+        
+        %Get raw fluorescence data
+        flraw = double( dat(set).fl{num}.apd1 );
+        fltraw = double( dat(set).fl{num}.apdT );
+        fllgn = {'Cy3'};
+        
+        flFs = 1/mean(diff(fltraw));
+        
         %Integrate fl, convert to Hz
-        fl = windowFilter(@mean, double( dat(set).fl{num}.apd1 ), round(flint/2), 1) * ( round(flint/2)*2+1) * flFs / 1e3;
-       
+        fl = windowFilter(@mean, flraw, round(flint/2), 1) * ( round(flint/2)*2+1) * flFs / 1e3;
+        
         %Get background, count per cy3 from text box. Maybe do this programmatically at some point later
         fllines = str2num(txtax2y2.String); %#ok<ST2NM>
         flnn = round( abs(fl-fllines(1))  / fllines(2) );
+        
+        
+        %Convert fluorescence to # Cy3s
+
+       
+
         
         %Match sampling via interp1
         tt = linspace(1, length(fl), length(ext)+1);
@@ -210,6 +225,8 @@ cycleData([],[],0)
         ylim(ax1a, str2num(txtax2yl.String)); %#ok<ST2NM>
         
         ylim(ax2, [ min(guidelines) max(guidelines)] + [-10 10]);
+        
+        legend(ax1b, fllgn);
         
         %Set button strings
         but1.String = but1lab{ dat(set).tfpick(num) + 1 };

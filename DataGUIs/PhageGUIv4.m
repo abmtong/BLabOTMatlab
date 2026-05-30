@@ -118,14 +118,31 @@ radioKDF3t= uicontrol(radioKDF, 'Style', 'edit',        'Units', 'normalized', '
 radioKDF2.Value = true; %Default to KDF Quick
 
 %This panel controls what the bottom plot plots, force or fluorescence (if the data has it)
-radioBot  = uibuttongroup(panlef,                       'Units', 'normalized', 'Position', [0 .15 1 .1 ], 'SelectionChangedFcn', @refilter_callback);
+radioBot  = uibuttongroup(panlef,                       'Units', 'normalized', 'Position', [0 0 1 .5 ], 'SelectionChangedFcn', @refilter_callback);
 % radioBotTxt = uicontrol(radioBot, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .66 1 .33], 'String', 'Bottom Plot', 'Callback', []);
-radioBot1 = uicontrol(radioBot, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0 .66 5 .34], 'String', 'Force', 'Callback', []);
-radioBot2 = uicontrol(radioBot, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0 .33 1 .33], 'String', 'Fluor', 'Callback', []);
-radioEd   = uicontrol(radioBot, 'Style', 'edit',     'Units', 'normalized', 'Position', [.5 .33 .5 .33], 'String', '10', 'Callback', @refilter_callback);
-radioChk1 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [0 .0 .33 .33], 'String', 'G', 'Value', true, 'Callback', @refilter_callback);
-radioChk2 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [.33 0 .33 .33], 'String', 'R', 'Value', true,  'Callback', @refilter_callback);
-radioChk3 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [.66 0 .33 .33], 'String', 'B', 'Value', true,  'Callback', @refilter_callback);
+radioBot1 = uicontrol(radioBot, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0 .9 5 .1], 'String', 'Force', 'Callback', []);
+radioBot2 = uicontrol(radioBot, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0 .8 1 .1], 'String', 'Fluor', 'Callback', []);
+radioEd   = uicontrol(radioBot, 'Style', 'edit',     'Units', 'normalized', 'Position', [.5 .8 .5 .1], 'String', '10', 'Callback', @refilter_callback);
+radioChkTxt= uicontrol(radioBot, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .766 1 .034], 'String', 'APD', 'Callback', []);
+radioChk1 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [0  .7 .8 .066], 'String', 'G', 'Value', true, 'Callback', @refilter_callback);
+radioChk2 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [.33 .7 .8 .066], 'String', 'R', 'Value', true,  'Callback', @refilter_callback);
+radioChk3 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [.66 .70 .8 .066], 'String', 'B', 'Value', true,  'Callback', @refilter_callback);
+
+radioFluorEd   = uicontrol(radioBot, 'Style', 'edit',  'Units', 'normalized', 'Position', [.0 .5 1 .1], 'String', '[ 0 0 0    0 .2 ]', 'Callback', @refilter_callback);
+radioFluorTxt = uicontrol(radioBot, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .4 1 .1], 'String', '[ Backg R G B, Bleedthrough B>G G>R ]', 'Callback', []);
+
+radioFlRadio = uibuttongroup(radioBot,                       'Units', 'normalized', 'Position', [0 .6 1 .1 ], 'SelectionChangedFcn', @refilter_callback);
+radioFlChk0 = uicontrol(radioFlRadio, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0  0 .25 1], 'String', 'Off', 'Value', true, 'Callback', @refilter_callback);
+radioFlChk1 = uicontrol(radioFlRadio, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [0.25  0 .25 1], 'String', 'GR', 'Value', false, 'Callback', @refilter_callback);
+radioFlChk2 = uicontrol(radioFlRadio, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [.5 0 .25 1], 'String', 'BG', 'Value', false,  'Callback', @refilter_callback);
+radioFlChk3 = uicontrol(radioFlRadio, 'Style', 'radiobutton', 'Units', 'normalized', 'Position', [.75 0 .25 1], 'String', 'RB', 'Value', false,  'Callback', @refilter_callback);
+
+radioChkTxt= uicontrol(radioBot, 'Style', 'text', 'Units', 'normalized', 'Position', [0 .366 1 .034], 'String', 'LaserChoice', 'Callback', []);
+radioChkL1 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [0  .3 .8 .066], 'String', 'B', 'Value', true, 'Callback', @refilter_callback);
+radioChkL2 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [.33 .3 .8 .066], 'String', 'G', 'Value', true,  'Callback', @refilter_callback);
+radioChkL3 = uicontrol(radioBot, 'Style', 'checkbox', 'Units', 'normalized', 'Position', [.66 .3 .8 .066], 'String', 'R', 'Value', true,  'Callback', @refilter_callback);
+
+
 radioBot.Visible = 'off'; %Only show if we detect fluorescence data
 radioBot1.Value = true; %Default to plotting force
 
@@ -263,7 +280,7 @@ fig.Visible = 'on';
         cropT = [];
         
         zoom on
-
+        
         
         %Filter raw if asked
         rawdec = str2double(deciRaw.String);
@@ -409,29 +426,91 @@ fig.Visible = 'on';
                     flfil = str2double(radioEd.String);
                     apddec = 1; %Downsample APD?
                     apddt = mean(diff(stepdata.apdT));
+                    %Read settings string. Need at least 5 numbers, pad with 0s just in case it isn't
+                    fltxtopts = [str2num( radioFluorEd.String ) zeros(1,5)]; %#ok<ST2NM>
+                    flback = fltxtopts(1:3); %Extract in case we change how we do this later
+                    flbleed = fltxtopts(4:5); 
+                    
                     %Check for deinterlaced lasers
                     if isfield(stepdata, 'apdcolT')
                         apdcoldt = mean(diff(stepdata.apdcolT));
                         %Downsample time
                         gt = windowFilter(@mean, stepdata.apdcolT, flfil, apddec);
                         lstyle = {'' '--' ':'}; %Styles for BGR = regular, dashed, dotted
-                        if radioChk1.Value && isfield(stepdata,'apd1') %G, thick-dashed
+                        
+                        %Only plot certain LaserChoices
+                        lcki = [radioChkL1.Value radioChkL2.Value radioChkL3.Value];
+                        
+                        if isfield(stepdata,'apd3') %B, normal
+                            blu = cell(1,3);
                             for i = 1:3
-                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{2,i}), flfil, apddec) / apdcoldt, ['g' lstyle{i}], 'LineWidth', 2)
+                                blu{i} = windowFilter(@mean, double(stepdata.apdcol{1,i}), flfil, apddec) / apdcoldt;
+                                %Apply background correction
+                                blu{i} = blu{i} - flback(3);
+                                if radioChk3.Value && lcki(i)
+                                    plot(subAxis, gt, blu{i}, ['b' lstyle{i}]);
+                                end
                             end
                         end
-                        if radioChk2.Value && isfield(stepdata,'apd2') %R, thin-dotted
+                        
+                        if isfield(stepdata,'apd1') %G, thick-dashed
+                            grn = cell(1,3);
                             for i = 1:3
-                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{3,i}), flfil, apddec) / apdcoldt, ['r' lstyle{i}])
+                                grn{i} = windowFilter(@mean, double(stepdata.apdcol{2,i}), flfil, apddec) / apdcoldt;
+                                %Apply background correction
+                                grn{i} = grn{i} - flback(2);
+                                %Apply bleedthrough correction
+                                grn{i} = grn{i} - blu{i} * flbleed(1);
+                                if radioChk1.Value && lcki(i)
+                                    plot(subAxis, gt, grn{i}, ['g' lstyle{i}], 'LineWidth', 2)
+                                end
                             end
                         end
-                        if radioChk3.Value && isfield(stepdata,'apd3') %B, normal
+                        if isfield(stepdata,'apd2') %R, thin-dotted
+                            red = cell(1,3);
                             for i = 1:3
-                                plot(subAxis, gt, windowFilter(@mean, double(stepdata.apdcol{1,i}), flfil, apddec) / apdcoldt, ['b' lstyle{i}])
+                                red{i} = windowFilter(@mean, double(stepdata.apdcol{3,i}), flfil, apddec) / apdcoldt;
+                                %Apply background correction
+                                red{i} = red{i}-flback(1);
+                                %Apply bleedthrough correction
+                                red{i} = red{i} - grn{i} * flbleed(2);
+                                if radioChk2.Value && lcki(i)
+                                    plot(subAxis, gt, red{i}, ['r' lstyle{i}])
+                                end
                             end
                         end
-                        %Add legend for first three, at least
-                        legend(subAxis, {'Blue Laser' 'Green Laser' 'Red Laser'})
+
+                        %Add legend for LaserChoice
+                        lclgn = {'Blue Laser' 'Green Laser' 'Red Laser'};
+                        lclgn = lclgn( logical(lcki) );
+                        legend(subAxis, lclgn)
+                        
+                        %Plot FRET in black, all colors (keep lstyle)
+                        ymx = max( subAxis.YTick );
+                        if radioFlChk1.Value %Grn-Red
+                            for i = 1:3
+                                %Try to skip values where 
+                                
+                                frt = red{i} ./ (grn{i} + red{i});
+                                if lcki(i)
+                                    plot(subAxis, gt, frt * ymx, ['k' lstyle{i}])
+                                end
+                            end
+                        elseif radioFlChk2.Value %Blue-Green
+                            for i = 1:3
+                                frt = grn{i} ./ (grn{i} + blu{i});
+                                if lcki(i)
+                                plot(subAxis, gt, frt * ymx, ['k' lstyle{i}])
+                                end
+                            end
+                        elseif radioFlChk3.Value %Red-Blue
+                            for i = 1:3
+                                frt = red{i} ./ (blu{i} + red{i});
+                                if lcki(i)
+                                    plot(subAxis, gt, frt * ymx, ['k' lstyle{i}])
+                                end
+                            end
+                        end
                         
                     else %Else do normally
                         gt = windowFilter(@mean, stepdata.apdT, flfil, apddec);
