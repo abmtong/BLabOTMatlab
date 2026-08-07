@@ -116,18 +116,27 @@ for i = 1:length(fols)
     f = f(ki); %Force
     fil = fil(ki); %File name
     cmt = cmt(ki);
+    fltmp = fltmp(ki);
     
     %Zero based on start position
     d0 = cellfun(@(x) x - mean(x(1:10)), d, 'Un', 0);
     %RulerAlign
-    dR = rulerAlignV2(d0, inrAop);
+    [dR, ~, rAki1] = rulerAlignV2(d0, inrAop);
     %RulerAlign again, twice
-    dR = rulerAlignV2(dR, inrAop2);
-    dR = rulerAlignV2(dR, inrAop2); 
+    [dR, ~, rAki2] = rulerAlignV2(dR, inrAop2);
+    [dR, ~, rAki3] = rulerAlignV2(dR, inrAop2); 
     %SumNucHist
     [hy, hx] = sumNucHist(dR, inrAop);
     %Process filename
     ind = find(fn == ' ', 1, 'first');
+    
+    %Apply rA ki
+    d = d(rAki1); d = d(rAki2); d = d(rAki3);
+    e = e(rAki1); e = e(rAki2); e = e(rAki3);
+    f = f(rAki1); f = f(rAki2); f = f(rAki3);
+    fil = fil(rAki1); fil = fil(rAki2); fil = fil(rAki3);
+    cmt = cmt(rAki1); cmt = cmt(rAki2); cmt = cmt(rAki3);
+    fltmp = fltmp(rAki1); fltmp = fltmp(rAki2); fltmp = fltmp(rAki3);
     
     %Output
     nams{i} = fn(ind+1:end);

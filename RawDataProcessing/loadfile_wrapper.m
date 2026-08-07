@@ -20,7 +20,7 @@ opts.convTrapY = 1;
 % opts = handleOpts(opts, inOpts); %This is done inside the switch, because each instrument has different defaults (set additional defaults, then override with input ones)
 
 switch inOpts.Instrument
-    case {'HiRes' 'HiRes PSD' 'HiRes bPD' 'HiRes QPD'}
+    case {'HiRes' 'HiRes PSD' 'HiRes bPD' 'HiRes QPD' 'HiRes2'}
         %Defaults for readDat
         opts.numLanes = 8;
         opts.numSamples = 1;
@@ -101,6 +101,11 @@ switch inOpts.Instrument
             out.AS = dat(7,:);
             out.BS = dat(8,:);
             out.T = single((0:length(out.AX)-1) / opts.Fsamp);
+        end
+        
+        %HiRes2: Negate AX Channel (no mirror to relay to this detector)
+        if strcmp(inOpts.Instrument, 'HiRes2')
+            out.AX = -out.AX;
         end
         
         %If the date is Dec 22 2021 or later, negate the four forces (PSD > QPD swap)

@@ -1,4 +1,4 @@
-function [out, outraw] = rulerAlignV2(tra, inOpts)
+function [out, outraw, batchki] = rulerAlignV2(tra, inOpts)
 %Time to just write it in matlab...
 %Works okay!? Method is distinct from Antony's but seems to work
 
@@ -72,6 +72,7 @@ if iscell(tra)
     nums = nums(ki);
     out = out(ki);
     outraw = [outraw{ki}];
+    batchki = ki;
     
     if opts.verbosecell
         rulerAlignChkBatch(out, outraw, opts)

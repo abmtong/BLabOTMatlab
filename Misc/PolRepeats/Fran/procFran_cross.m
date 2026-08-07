@@ -24,6 +24,10 @@ for i = 1:len
     xx = sort(t);
     yy = (nn:-1:1)/nn;
     
+    %Make row
+    xx = xx(:)';
+    yy = yy(:)';
+    
 %     %Fit, MLE -- doesn't fit well since it doesn't hit (0,0), so gamma? or 
 %     [mu, ci] = expfit(t);
 

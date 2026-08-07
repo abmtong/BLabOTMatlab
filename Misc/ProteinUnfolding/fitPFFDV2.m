@@ -1,15 +1,21 @@
-function [ft, plotdata] = fitPFFDV2(inx, iny, frng, fmid)
+function [ft, plotdata] = fitPFFDV2(inx, iny, frng, fmid, pwlcc)
 %Fit each trace separately
 % V2: Adapted from fitNuc, takes full pulling data
 % Changed ft to 1x6, might error in some fcns
+% Pass pwlcc to use fixed pwlcc
 
 if nargin < 3 || isempty(frng)
-    frng = [1.5 50]; %Fmin, Fmax -- actually not used
-else
-    warning('force fit range not implemented, oops')
+    frng = [1.5 50];
 end
 if nargin < 4 || isempty(fmid)
     fmid = 4; %For better rip detection, ignore this part before WLC + stepfinding
+end
+if nargin < 5 || isempty(pwlcc)
+    pwlccrng = [0 1e3];% Fit range
+    pwlcc = 30;% Guess
+else
+    pwlccrng = [pwlcc pwlcc];
+    %pwlcc guess = pwlcc
 end
 
 %Grab data
@@ -17,7 +23,9 @@ ext = double( inx );
 frc = double( iny );
 
 %Crop frng
-
+ki = find(frc > frng(1), 1, 'first') : find(frc < frng(end),1, 'last');
+ext = ext(ki);
+frc = frc(ki);
 
 %Crop around LF
 i1 = find(frc > fmid, 1, 'first');
@@ -38,9 +46,9 @@ th1 = [zeros(1, sz(1))  ones(1, sz(2))];
 
 %Create fitfcn
 fitfcn = @(x0, x) XWLC(x-x0(6), x0(1),x0(2)).*x0(3) + th1 .* XWLC(x-x0(6), x0(4),inf) * x0(5);
-xg = [50 700 ext(fmid) .5 30   0]; %PL (nm), SM (pN), CL (nm), PL(protein) CL(protein) dF
-lb = [0     0    0     .4  0  -2];
-ub = [100 1e4  3e3     .8 1e3  0];
+xg = [50 700 ext(fmid) .5 pwlcc   0]; %PL (nm), SM (pN), CL (nm), PL(protein) CL(protein) dF
+lb = [0     0    0     .4 pwlccrng(1)  0];
+ub = [100 1e4  3e3     .8 pwlccrng(2)  0];
 opop = optimoptions('lsqcurvefit', 'Display', 'none');
 %Fit
 ft = lsqcurvefit(fitfcn, xg, [ff{:}], [xx{:}], lb, ub, opop);

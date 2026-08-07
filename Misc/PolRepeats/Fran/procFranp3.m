@@ -38,15 +38,26 @@ out = inst;
 
 %Crossing time CCDF
 tcr = cell(1,len);
-%Extract Fsamp from file
 for i = 1:len
     %Time from crossing the entry to the exit site
-    tmp = cellfun(@(x) find( x >= bdys(3), 1, 'first') - find( x >= bdys(1), 1, 'first'), out(i).drA, 'Un', 0 );
+    tenter = cellfun(@(x) find( x >= bdys(1), 1, 'first'), out(i).drA, 'Un', 0 );
+    texit = cellfun(@(x) find( x >= bdys(end), 1, 'first') , out(i).drA, 'Un', 0 );
     %Turn empty to NaN to preserve tfpick indexing
-    tmp( cellfun(@isempty, tmp) ) = {nan};
-    tcr{i} = [tmp{:}]/rAopts.Fs;
+    tenter( cellfun(@isempty, tenter) ) = {nan};
+    texit( cellfun(@isempty, texit) ) = {nan};
+    %Turn back into array
+    tenter = [tenter{:}]';
+    texit = [texit{:}]';
+    tcr{i} = (texit-tenter)/rAopts.Fs;
     out(i).tcr = tcr{i};
+    out(i).tcrraw = [tenter texit]/rAopts.Fs;
+    
+    %Hmm definition of tfc and tcross is slightly different... no '100pts' check for tcr. Should be handled by tfcross later,
+    % just make sure we also filter by tfc for plotting by this fcn
+    tcr{i} = tcr{i}(inst(i).tfc);
 end
+
+
 %And plot
 ccdf = @(x) plot( sort(x(~isnan(x)) ), (length(x(~isnan(x))):-1:1)/length(x(~isnan(x))) );
 nams = {inst.nam};

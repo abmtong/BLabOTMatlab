@@ -22,7 +22,7 @@ if nargin < 2 || isempty(inNums)
     [file{1}, path] = uigetfile([path filesep '*.dat'], 'Pick your data file');
 else
     switch inOpts.Instrument
-        case {'HiRes' 'HiRes PSD' 'HiRes-legacy' 'HiRes bPD' 'HiRes QPD'}
+        case {'HiRes' 'HiRes PSD' 'HiRes-legacy' 'HiRes bPD' 'HiRes QPD' 'HiRes2'}
             spfn = '%sN%02d.dat';
         case 'Boltzmann'
             spfn = '%s_%03d.dat';
@@ -68,7 +68,7 @@ if isfield(opts, 'custtemp') && opts.custtemp
 end
 %Get Fs
 switch calopts.Instrument
-    case {'HiRes' 'HiRes PSD' 'HiRes QPD'}
+    case {'HiRes' 'HiRes PSD' 'HiRes QPD' 'HiRes2'}
 %         calopts.Fsamp = 62500; %Hard code this, at least for now
         cal = ACalibrateV2(fullfile(path, file{3}), calopts);
         drawnow %Can inspect calibration while program continues
@@ -118,7 +118,7 @@ switch opts.Protocol
         cal.(dy).k = 1e-5;
     otherwise
         switch inOpts.Instrument
-            case {'HiRes' 'HiRes PSD', 'HiRes QPD'}
+            case {'HiRes' 'HiRes PSD', 'HiRes QPD' 'HiRes2'}
                 %HiRes offset is pre-processed:
                 %rawoff V3 is a 8x[] matrix, with each row being a detector in order [AY BY AX BX MX MY SA SB]
                 % rawoff = readDat(sprintf('%s\\%sN%02d.dat', path, mmddyy, inNums(2)));
@@ -134,6 +134,11 @@ switch opts.Protocol
                 off.TY = (rawoff(6,:) - opts.offTrapY) * opts.convTrapY;
                 off.AS = rawoff(7,:);
                 off.BS = rawoff(8,:);
+                
+                %HiRes2: Negate AX
+                if strcmp(inOpts.Instrument, 'HiRes2')
+                    off.AX = -off.AX;
+                end
                 
                 %If the date is Dec 22 2021 or later, negate the four forces (PSD > QPD swap)
                 dt = dateislater('122221', file{2}(1:6), 'MMDDYY'); %Assumes file starts MMDDYY

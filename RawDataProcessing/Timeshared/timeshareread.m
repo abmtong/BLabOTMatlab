@@ -206,7 +206,7 @@ if any(hdr(13) == [1 3]) && ~skipfl
                     ki = dat.APDcol == (i-1);
                     
                     nn = sum(ki);
-                    dsamp = round(nn*3 / length(dat.APD1)); %Round for safety?
+                    dsamp = ceil(nn*3 / length(dat.APD1)); %Round for safety?
                     %We don't plan to, but integrate if there are multiple cycles of the same color
                     apdcol{1,i} = windowFilter(@sum, dat.APD1(ki), [], dsamp);
                     apdcol{2,i} = windowFilter(@sum, dat.APD2(ki), [], dsamp);

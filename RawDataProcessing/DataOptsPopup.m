@@ -22,7 +22,7 @@ col = [0 100 300 400]; %Column positions, we're gonna do [Text Box   Text Box]
 %Add stuff to the figure
 
 %Row 1: Dropdown menus to choose presets
-optInstr = {'HiRes QPD' 'Meitner' 'Boltzmann' 'Mini' 'Lumicks' 'HiRes PSD' 'HiRes bPD' 'Avogadro' 'SalaFleezer'};
+optInstr = {'HiRes QPD' 'Meitner' 'Boltzmann' 'Mini' 'Lumicks' 'HiRes PSD' 'HiRes bPD' 'Avogadro' 'SalaFleezer' 'HiRes2'};
 optProt  = {'Semipassive' 'Force feedback' 'Force-Extension' 'One Trap'};
 dropInstL= uicontrol(fg, 'Style', 'text'     , 'Position', [col(1) rx(1) 100 txty], 'String', 'Instrument: ', 'HorizontalAlignment', 'right', 'FontSize', 12); %#ok<*NASGU>
 dropInst = uicontrol(fg, 'Style', 'popupmenu', 'Position', [col(2) rx(1) 200 txty], 'String', optInstr, 'Callback', @dropInst_cb);
@@ -268,6 +268,19 @@ delete(fg)
                 txtCustom.String = '{''cal.Fmax'', ''2e4'';}';
                 tfNormalize.Value = 1;
                 txtCFsamp.String = '200000/3';
+            case 10 %HiRes2, taking HiRes defaults
+                txtFsamp.Enable = 'on';
+                txtFsamp.String = '2500';
+                txtTConvXY.Enable = 'on';
+                txtTOffV.Enable = 'on';
+                txtTConvXY.String = '[753.96 555.47]'; %Mirror calibration 260605, with Nikon objective
+                txtTOffV.String = '[0.3 3.5]';
+                txtLorFlt.Value = 1;
+                txtLorFlt.Enable = 'on';
+                txtWaterV.Enable = 'on';
+                txtCustom.String = '{''cal.Fmax'', ''2e4'';}';
+                tfNormalize.Value = 1;
+                txtCFsamp.String = '62500';
             otherwise
                 error('Dropdown menu for Instruments can''t handle value %d', src.Value)
         end
