@@ -37,8 +37,8 @@ hold(ax2, 'on')
 %Set labels
 xlabel(ax1, 'Extension (nm)')
 ylabel(ax1, 'Force (pN)')
-xlabel(ax2, 'Time (pts)')
-ylabel(ax2, 'Protein Contour (nm)')
+xlabel(ax2, 'Force (pN)')
+ylabel(ax2, 'Contour Length (nm)')
 
 %UIcontrols. Put them in the empty quadrant, top-right
 numtext = uicontrol('Style', 'text', 'Units', 'normalized', 'Position', [.525, .70, .15, .2], 'String', '0/0', 'Callback',@(x,y)cycleData(x,y,-1) );
@@ -63,15 +63,16 @@ xl = [1.5 45]; %X lim for plotting
 fcen = 7; %Force to zero at
 
 %XWLC params. Estimate with TxPull_XWLC, e.g.
-handletype = 1;
-switch handletype
-    case 1
-        xwlc = [48 1340]; %For 4kb handles
-        fprintf('Using XWLC guess for 4kb handle expt\n')
-    case 2
-        xwlc = [55 397]; %For 2kb handles
-        fprintf('Using XWLC guess for 2kb handle expt\n')
-end
+
+% xwlc = [48 1340]; %For 4kb handles
+% fprintf('Using XWLC guess for 4kb handle expt\n')
+
+% xwlc = [55 397]; %For 2kb handles
+% fprintf('Using XWLC guess for 2kb handle expt\n')
+
+xwlc = [30 600]; %2kb, HiRes2
+
+
 %Load first data
 cycleData([],[],0)
 

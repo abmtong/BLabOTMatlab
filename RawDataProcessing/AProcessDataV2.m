@@ -107,7 +107,7 @@ if isfield(opts, 'custtemp') && opts.custtemp %Make the temperature as a third N
 end
 
 %To debug, we can't have the error be caught for dbstop to fire
-debug = 1; %#ok<*UNRCH>
+debug = 0; %#ok<*UNRCH>
 if debug
     warning('Debugging AProcessData')
 end

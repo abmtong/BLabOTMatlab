@@ -1,15 +1,22 @@
-function out = RPzerohopp2(inst, inOpts)
+function out = RPzerohopp2(inst, varargin)
 %RP zero hop p2: Find transition paths, to try to filter for no folding vs. good events
 
 opts.tpfil = 3; %Smooth for TP calc, half-width
 opts.tpwid = [0 30]; %Transition path bounds: Get time from first crossing of tpwid(1) to first crossing of tpwid(2)
 
-opts.tpint = [-4 4 12.5 26.3 36]; %Sub-TPs (i.e. per intermediate)
+opts.tpint = [-4 4 12.5 26.3 35.6]; %Sub-TP bounds (i.e. per intermediate)
 
 if nargin > 1
-    opts = handleOpts(opts, inOpts);
+    opts = handleOpts(opts, varargin);
 end
 
+%Clear ttpint fields if recalculating
+if isfield(inst, 'ttpint')
+    inst = rmfield(inst, 'ttpint');
+end
+if isfield(inst, 'ttpintraw')
+    inst = rmfield(inst, 'ttpintraw');
+end
 
 len = length(inst);
 for i = 1:len
@@ -60,6 +67,7 @@ for i = 1:len
         
     end
 end
+
 
 out = inst;
 

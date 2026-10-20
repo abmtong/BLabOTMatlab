@@ -10,6 +10,28 @@ if isempty(oldOpts)
     return
 end
 
+%Check if newOpts is a struct (like oldOpts) or a cell (varargin, so sent as NVPs)
+if iscell(newOpts)
+    %if newOpts is a cell, could be a cell array of NVPs or a struct sent thru varargin
+    if isstruct(newOpts{1})
+        %newOpts is a struct passed as varargin, so a {struct}, unwrap and set as newOpts
+        newOpts = newOpts{1};
+    else
+        %Failsafe: Could be that this is a cell of NVPs, not the NVPs themselves, e.g. { {'foo', 12, 'bar', 35} }, unwrap
+        if length(newOpts) == 1 && iscell(newOpts{1})
+            newOpts = newOpts{1};
+        end
+        %newOpts is name-value pairs
+        tmp = [];
+        for i = 1:length(newOpts)/2
+            ind = (i-1)*2+1;
+            tmp.(newOpts{ind}) = newOpts{ind+1};
+        end
+        newOpts = tmp;
+    end
+end
+
+
 fnNew = fieldnames(newOpts);
 fnOld = fieldnames(oldOpts);
 

@@ -6,7 +6,7 @@ function PhageGUIv4(infp)
 
 %% Add paths, by running startup.m
 thispath = fileparts(mfilename('fullpath'));
-run( fullfile( fileparts(thispath), 'startup.m') )
+run( fullfile( fileparts(thispath), 'startup.m') ) %fullfile(..., '..', ...) doesn't seem to work anymore somehow? Box Drive related?
 
 %Load settings file (or create one)
 path = 'C:\Data';

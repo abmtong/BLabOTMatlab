@@ -15,6 +15,6 @@ for i = 1:length(fn1)
 end
 
 for i = 1:length(fn2)
-    tmp = cellfun(@(x) x', {inst.(fn2{2})}, 'Un', 0);
+    tmp = cellfun(@(x) x', {inst.(fn2{i})}, 'Un', 0);
     out.(fn2{i}) = [tmp{:}]'; 
 end

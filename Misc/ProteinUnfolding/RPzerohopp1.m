@@ -1,10 +1,12 @@
-function out = RPzerohopp1(infp, inOpts)
+function out = RPzerohopp1(infp, varargin)
 
 %RP for '0 force jump' data
 %Like RPhop but care less about unfolding time, just split by trap sep
-% Doing some shortcuts that assumes this is timeshared data (i.e. trap sep is pretty exact)
+% Doing some shortcuts that only works if this is timeshared data (i.e. trap sep is pretty exact)
 
 opts.wid = [5 1000]; %Grab this neighborhood around transitions. Grab more for 'safety', plot less later
+
+opts.nonhypotforce = 0; %Use non-hypot force (i.e. (fBX - fAX)/2 instead of abs( Fx^2 + Fy^2 ) ), as this can skew low forces at high Fs
 
 %WLC fitting per-pull
 opts.xwlcfit = 3; %Do fitting. Set 0 to use backup, 2 for fitPFFD, 1 for just DNA crop
@@ -15,30 +17,46 @@ opts.xwlcguess = [50 900 700]; %XWLC guess / fallback
 opts.xwlcfrng = [1.5 30]; %XWLC fit range
 opts.xwlcffoldmin = 4; %Unfolding force minimum for rip detection: try 4 unless the protein unfolds lower
 
-opts.cropstr = ''; %Crop string for hopping data
-opts.pwlcc = 104 * 0.35; %Protein contour length, only if xwlcfit == 2
+opts.cropstr = {'1' '2'}; %Crop string for hopping data. Use cell for batch processing
+opts.pwlcc = 104 * 0.35; %Protein contour length, only if xwlcfit >= 2
 
 opts.Foff = 0; %Force offset, set or obtained from XWLC fit (if allowed)
 
+opts.verbosefit = 1; %Plot fit
+
 if nargin > 1
-    opts = handleOpts(opts, inOpts);
+    opts = handleOpts(opts, varargin);
 end
 
 
-if nargin < 1
+if nargin < 1 || isempty(infp)
     [f, p] = uigetfile('*.mat', 'Mu', 'on');
     if ~p
         return
     end
     if iscell(f)
-        out = cellfun(@(x) RPzerohopp1(fullfile(p,x)), f, 'Un', 0);
-        for i = 1:length(out)
-            [out{i}.file] = deal(f{i});
-        end
-        out = [out{:}];
+        out = cellfun(@(x) RPzerohopp1(fullfile(p,x), varargin{:}), f, 'Un', 0);
+        out = [out{:}]; %Could try to reshape this, but every trace might not have every condition, and empties get nuked by [{:}]
+%         ncrp = length(out{1});
+%         out = reshape( [out{:}] , ncrp, [] )';
         return
     end
     infp = fullfile(p,f);
+end
+
+if iscell(opts.cropstr)
+    len = length(opts.cropstr);
+    tmpout = cell(1,len);
+    for i = 1:len
+        %This will show the fitting multiple times if opts.verbosefit, turn it off for others...?
+        if i == 2
+            opts.verbosefit = 0;
+        end
+        tmpout{i} = RPzerohopp1(infp, setfield(opts, 'cropstr',  opts.cropstr{i})) ;
+    end
+    tmpout = [tmpout{:}];
+    out = tmpout;
+    return
 end
 
 %Load file
@@ -66,8 +84,12 @@ if opts.xwlcfit == 1
     
     %Crop
     ki = cd.time > xcT(1) & cd.time < xcT(2);
-
-    xfrc = cd.force(ki);
+    
+    if opts.nonhypotforce
+        xfrc = ( cd.forceBX(ki) - cd.forceAX(ki) )/2; %Recalc force as BX-AX /2. May lead to negative forces which may warn in @XWLC
+    else
+        xfrc = cd.force(ki);
+    end
     xext = cd.extension(ki);
     
     %Downsample
@@ -92,13 +114,37 @@ elseif opts.xwlcfit == 3
     %Crop data in fx
     fxfil = 100;
     fxdat = loadCroppedData(fxfp, 'fx');
+    if isempty(fxdat)
+        out = [];
+        return
+    end
+    if opts.nonhypotforce
+        fxy = windowFilter(@mean, (fxdat.forceBX - fxdat.forceAX) /2, [], fxfil); %Recalc force as BX-AX /2. May lead to negative forces which may warn in @XWLC
+    else
+        fxy = windowFilter(@mean, fxdat.force, [], fxfil);
+    end
     fxx = windowFilter(@mean, fxdat.extension, [], fxfil);
-    fxy = windowFilter(@mean, fxdat.force, [], fxfil);
-    xft = fitPFFDV2(fxx, fxy, opts.xwlcfrng, opts.xwlcffoldmin, opts.pwlcc );
+    
+    fxx = double(fxx);
+    fxy = double(fxy);
+    
+    [xft, ftdat] = fitPFFDV2(fxx, fxy, opts.xwlcfrng, opts.xwlcffoldmin, opts.pwlcc );
     xwlcparams = xft(1:3);
     opts.pwlcg = xft(4);
     opts.pwlcc = xft(5);
     opts.Foff = xft(6);
+    
+    %Plot
+    if opts.verbosefit
+        figure('Name', sprintf('RPzhp1: %s', f))
+        hold on
+        plot(fxx, fxy)
+        plot(ftdat(:,1), ftdat(:,2))
+        %Add fit txt
+        txtind = find( fxy > max(fxy)/2, 1, 'first');
+        text( (fxx(txtind)), (fxy(txtind)), sprintf('PL: %0.2f, SM:%0.2f, CL: %0.2f\n pPL: %0.2f, pCL: %0.2f', xwlcparams(1), xwlcparams(2), xwlcparams(3), opts.pwlcg, opts.pwlcc), 'HorizontalAlignment', 'right')
+    end
+    
 else
     %Guess distance... somehow? lets just use 700nm for now...
     xwlcparams = opts.xwlcguess;
@@ -111,11 +157,20 @@ if opts.cropstr == -1
 else
     cT = loadCrop(opts.cropstr, p, [f e]);
 end
+if isempty(cT)
+    out = [];
+    return
+end
 
 %Extract data and apply crop
 ki = cd.time > cT(1) & cd.time < cT(2);
 
-frc = double(cd.force(ki)) - opts.Foff;
+if opts.nonhypotforce
+    frc = double(cd.forceBX(ki) - cd.forceAX(ki))/2 - opts.Foff; %Recalc force as BX-AX /2. May lead to negative forces which may warn in @XWLC
+else
+    frc = double(cd.force(ki)) - opts.Foff;
+end
+
 ext = double(cd.extension(ki));
 conpro = (ext - xwlcparams(3) * XWLC(frc, xwlcparams(1), xwlcparams(2))) ./ XWLC( frc, opts.pwlcg, inf ) ;
 tsep = double( ext - cd.forceAX(ki) / cd.cal.AX.k + cd.forceBX(ki) / cd.cal.BX.k );
@@ -162,6 +217,7 @@ for i = nn:-1:1 %Store in struct, so do in reverse
     outraw(i).conpro = conpro(ki);
     outraw(i).frc    = tmpfrc;
     outraw(i).frcraw = frc(ki);
+    outraw(i).xwlcft = [xwlcparams opts.pwlcg opts.pwlcc opts.Foff];
 end
 %Remove empty
 ki = arrayfun(@(x) isempty(x.frc), outraw);
@@ -175,6 +231,7 @@ out.ext = {outraw.ext};
 out.conpro = {outraw.conpro};
 out.frc = [outraw.frc];
 out.frcraw = {outraw.frcraw};
+out.xwlcft = {outraw.xwlcft};
 
 
 

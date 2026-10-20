@@ -1,4 +1,4 @@
-function fitNGaussiansGraph(guessmean, onlypos)
+function out = fitNGaussiansGraph(guessmean, onlypos)
 if nargin<2
     onlypos = 0;
 end
@@ -14,4 +14,8 @@ if onlypos
     y = y(keepind);
 end
 
-fitNGaussians(x, y, guessmean);
+tmp = fitNGaussians(x, y, guessmean);
+
+if nargout
+    out = tmp;
+end

@@ -24,6 +24,11 @@ end
 
 crp = loadCrop(cropstr, p, [f e]);
 
+if isempty(crp)
+    out = [];
+    fprintf('Crop%s not found for %s\n', cropstr, f)
+    return
+end
 
 
 %Crop based on fieldname

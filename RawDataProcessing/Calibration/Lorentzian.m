@@ -15,6 +15,9 @@ end
 Fs = inOpts.Fs;
 nAlias = inOpts.nAlias;
 
+%Convert inF to row, since it has to be for bsxfun
+inF = inF(:)';
+
 %Deal with aliasing by summing over f + n*Fs
 inFF = bsxfun(@plus, inF, Fs*(-nAlias:nAlias)');
 switch lortype

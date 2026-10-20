@@ -20,6 +20,7 @@ function out = Calibrate(inData, inOpts)
 opts.ra = 500; %Bead radius, nm
 opts.Fmin = 100; %Fit start (Hz); end fit at Fnyq unless overridden
 opts.Fmax = [];
+opts.Fcropmeth = 2; %Freq crop method, 1 = bin, then crop, 2 = crop, then bin
 opts.nBin = 1563; %Points per bin, currently taking 3127*200 pts, so closest divisor for 200 fit pts (half are tossed b/c Fnyq)
 opts.Fs = 62500; %sampling freq.
 opts.nAlias = 20; %Aliasing window size
@@ -32,6 +33,7 @@ opts.color = [0 0 1]; %Color to plot the power spectrum fit points
 opts.verbose = 1;
 opts.Sum = 0;
 opts.lortype = 3; %1 = pure lorentzian, 2 = 1 filter, 3 = filter+timedelay, 4 = 2 filters
+
 
 if nargin > 1
     opts = handleOpts(opts, inOpts);
@@ -63,8 +65,24 @@ F(1) = [];
 P(1) = [];
 len = len-1; %Could assign len=len-1 earlier, but more clarity here (aligns with usual powerspec calculations, keeps my convention of len)
 
+%Crop pre-bin if Fcropmeth ==2
+% Should want to crop pre-binning, as usually nBin is large enough that binned F > Fmin(1), which includes the lo freq noise (don't want)
+%  Otherwise could like skip the first point or something, but I think this is better
+if opts.Fcropmeth == 2
+    %Crop beforehand
+    ind = F>opts.Fmin & F<opts.Fmax;
+    Ff = F(ind);
+    Pf = P(ind);
+    lenf = length(Ff);
+else
+    %Just rename
+    Ff = F;
+    Pf = P;
+    lenf = length(Ff);
+end
+
 %Create bins
-binF = (0:opts.nBin:len-1)+1;
+binF = (0:opts.nBin:lenf-1)+1;
 %And bin the data
     function outdata = binValues(data)
         lenbin = length(binF)-1;
@@ -73,8 +91,8 @@ binF = (0:opts.nBin:len-1)+1;
             outdata(ibin) = mean(data(binF(ibin):binF(ibin+1)-1));
         end
     end
-Fb = binValues(F);
-Pb = binValues(P);
+Fb = binValues(Ff);
+Pb = binValues(Pf);
 
 % Fb = geofilter(F, 1.05);
 % Pb = geofilter(P, 1.05);
@@ -148,6 +166,7 @@ dC = 6*pi*opts.wV*opts.ra;
 D = opts.kT/dC;
 %Conversion factor alpha, gotten by the ratio of D (nm^2/V^2)
 a = sqrt(D/fit(2));
+
 %Spring constant kappa, 2 pi dC Fc
 k = 2*pi*dC*fit(1);
 

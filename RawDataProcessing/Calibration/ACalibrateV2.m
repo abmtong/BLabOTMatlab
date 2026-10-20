@@ -60,6 +60,11 @@ end
 %Load data
 dat = loadfile_wrapper(filepath, opts);
 
+%Grab Fsamp from header if timeshared
+if any( strcmp( opts.Instrument, {'Boltzmann' 'Meitner' 'Avogadro' 'SalaFleezer'} ) )
+        opts.Fs = 1/dat.meta.Fsamp;
+end
+
 if opts.verbose
     %Define plot window
     scrsz = get(groot,'ScreenSize');

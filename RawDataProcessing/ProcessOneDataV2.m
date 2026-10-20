@@ -77,9 +77,9 @@ switch calopts.Instrument
         cal = ACalibrateV2(fullfile(path, file{3}), calopts);
         drawnow %Can inspect calibration while program continues
     case {'Boltzmann' 'Meitner' 'Avogadro' 'SalaFleezer'}
-        %Read the header to get Fs
+        %Read the header to get Fs. Should be handled natively in ACalibrateV2, but eh keep here
         calhdr = timesharereadhdr(fullfile(path, file{3}));
-        calopts.Fsamp = 1/calhdr.Fsamp;
+        calopts.Fs = 1/calhdr.Fsamp; %Oops this was misnamed for a while
         cal = ACalibrateV2(fullfile(path, file{3}), calopts);
         drawnow %Can inspect calibration while program continues
     case 'Lumicks'
@@ -338,7 +338,7 @@ if isfield(rawdat, 'APDcol')
     out.apd2 = rawdat.APD2;
     out.apd3 = rawdat.APD2;
     out.apdT = rawdat.APDT;
-    if isfield(rawdat, 'APDcol')
+    if isfield(rawdat, 'APDcol') && isfield(rawdat, 'APDcolT')
         out.apdcol = rawdat.APDcol;
         out.apdcolT = rawdat.APDcolT;
     end

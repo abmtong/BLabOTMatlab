@@ -22,11 +22,12 @@ fnames = fieldnames(stepdata);
 for j = 1:length(fnames)
     %For those that are cells, ...
     if iscell(stepdata.(fnames{j})) && isnumeric(stepdata.(fnames{j}){1})
-        temp = stepdata.(fnames{j});
         %Skip fields that start apd -- this is probably just apdcol
-        if strncmp(temp, 'apd', 3)
+        if strncmp(fnames{j}, 'apd', 3)
             continue
         end
+        temp = stepdata.(fnames{j});
+
         %Trim
         for k = length(indst):-1:1 %process in reverse so cell removal, e.g. a(3) = [], doesn't disrupt indicies
             %Check that there are actually points to remove
@@ -83,9 +84,12 @@ end
 %Fluorescence LaserChoice
 if isfield(stepdata, 'apdcolT')
     apdcolrm = stepdata.apdcolT > tlim(1) & stepdata.apdcolT < tlim(2);
-    stepdata.apdT(apdcolrm) = [];
+    stepdata.apdcolT(apdcolrm) = [];
     %Crop
     for i = 1:numel(stepdata.apdcol)
+        if isempty(stepdata.apdcol{i})
+            continue
+        end
         stepdata.apdcol{i}(apdcolrm) = [];
     end
 end
