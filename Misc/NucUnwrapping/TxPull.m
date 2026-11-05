@@ -4,11 +4,11 @@ function out = TxPull(inp)
 fil = 100;
 
 %2kb handles xloc (without the molecular ruler)
-xloc = ([-360 550 730] +360) *.34 + 400 +40; %Nuc key locs [initial, entry, exit]], plus the base tether length
+% xloc = ([-360 550 730] +360) *.34 + 400 +40; %Nuc key locs [initial, entry, exit]], plus the base tether length
 
 %4kb handles xloc (with the molecular ruler)
 % xloc = [1200 1468 1488 1520 1551]; %Nuc key locs, avg [stall, entry, dyad, end] extenstion @ 13pN for 4kb handles
-% xloc = [1200 1468 1488 1520 1551] -40 ; %250705 Shifted by a bit? New stall loc ~ 1160 (40 earlier), shift them all
+xloc = [1200 1468 1488 1520 1551] -40 ; %250705 Shifted by a bit? New stall loc ~ 1160 (40 earlier), shift them all
 % xloc = [ 700 750  ]; %2kb ish?
 
 % xloc = [0 0 1200 1468 1488 1520 1551]; %Nuc key locs, avg [stall, entry, dyad, end] extenstion @ 13pN for 4kb handles
@@ -87,6 +87,8 @@ ylabel('CDF')
 
 xlim( xloc([1 end]) + 50 * [-1 1])
 gi = ginput(1); %Choose crossing position
+
+% gi = 750;
 
 % %Sort by distance
 % [~, si] = sort(lens);

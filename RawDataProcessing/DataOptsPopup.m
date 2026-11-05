@@ -274,7 +274,8 @@ delete(fg)
                 txtTConvXY.Enable = 'on';
                 txtTOffV.Enable = 'on';
                 txtTConvXY.String = '[753.96 555.47]'; %Mirror calibration 260605, with Nikon objective
-                txtTOffV.String = '[0.3 3.5]';
+%                 txtTOffV.String = '[0.3 3.5]'; %Original #s
+                txtTOffV.String = '[2.5 2.5]'; %261103 Realign to fix drifting fixed trap?
                 txtLorFlt.Value = 1;
                 txtLorFlt.Enable = 'on';
                 txtWaterV.Enable = 'on';
